@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "极简立体仪表盘主题 · 适配 Monitor 探针，支持四种布局、流速图表、资产统计与动态背景",
-  "version": "1.0.8",
+  "version": "1.0.7",
   "author": "jerry",
   "url": "https://github.com/monitor-probe/monitor"
 }
