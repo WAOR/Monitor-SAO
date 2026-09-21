@@ -1,26 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
+import {
+  getLocalThemeSettings,
+  subscribeLocalThemeSettings,
+} from "@/services/themeSettingsStore";
 import { normalizeThemeSettings, type ResolvedThemeSettings } from "@/utils/themeSettings";
 
-type RawThemeSettings = Parameters<typeof normalizeThemeSettings>[0];
-
-let cachedRawThemeSettings: RawThemeSettings = undefined;
-let cachedResolvedThemeSettings: ResolvedThemeSettings | null = null;
-
-function getCachedResolvedThemeSettings(raw: RawThemeSettings): ResolvedThemeSettings {
-  if (cachedResolvedThemeSettings && raw === cachedRawThemeSettings) {
-    return cachedResolvedThemeSettings;
-  }
-  cachedRawThemeSettings = raw;
-  cachedResolvedThemeSettings = normalizeThemeSettings(raw);
-  return cachedResolvedThemeSettings;
-}
-
 type ThemeSettingsState = ResolvedThemeSettings & {
-  /**
-   * 服务端 config 到达后为 true。config 请求失败时它也会变 true，
-   * 让应用回退到默认值，而不是一直空白。
-   */
   isReady: boolean;
   isLoading: boolean;
   isError: boolean;
@@ -28,15 +14,25 @@ type ThemeSettingsState = ResolvedThemeSettings & {
 
 export function useThemeSettings(): ThemeSettingsState {
   const { data: config, isError, isLoading } = usePublicConfig();
+  const localSettings = useSyncExternalStore(
+    subscribeLocalThemeSettings,
+    getLocalThemeSettings,
+    () => ({}),
+  );
+
   const hasConfig = config != null;
   const isReady = hasConfig || isError;
-  return useMemo(
-    () => ({
-      ...getCachedResolvedThemeSettings(config?.theme_settings),
+
+  return useMemo(() => {
+    const merged = {
+      ...(config?.theme_settings || {}),
+      ...localSettings,
+    };
+    return {
+      ...normalizeThemeSettings(merged),
       isReady,
       isLoading: isLoading && !hasConfig,
       isError,
-    }),
-    [config?.theme_settings, hasConfig, isError, isLoading, isReady],
-  );
+    };
+  }, [config?.theme_settings, localSettings, hasConfig, isError, isLoading, isReady]);
 }

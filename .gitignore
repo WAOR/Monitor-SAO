@@ -11,6 +11,7 @@ pnpm-debug.log*
 Thumbs.db
 
 *.zip
+*.tar.gz
 
 .idea/
 .vscode/

@@ -10,6 +10,18 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      "/api/ws": {
+        target: "ws://127.0.0.1:9911",
+        ws: true,
+      },
+      "/api": {
+        target: "http://127.0.0.1:9911",
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     // 与 CSS 实际基线对齐:全站大量 color-mix()/oklch(需 Chrome 111 / Safari 16.2+),
     // JS 没必要为更老的引擎转译。

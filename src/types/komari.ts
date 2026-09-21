@@ -266,7 +266,7 @@ export interface LoadRecordsResponse {
 }
 
 export interface PingRecordsResponse {
-  count: number;
+  count?: number;
   records: PingRecord[];
   tasks: PingTask[];
   /** 新 metric API 实际采用的聚合间隔，用于图表正确识别长区间连续点。 */

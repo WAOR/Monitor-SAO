@@ -44,6 +44,10 @@ export const router = createBrowserRouter([
         element: suspended(<Instance />),
       },
       {
+        path: "node/:uuid",
+        element: suspended(<Instance />),
+      },
+      {
         path: "assets",
         element: suspended(<Assets />),
       },

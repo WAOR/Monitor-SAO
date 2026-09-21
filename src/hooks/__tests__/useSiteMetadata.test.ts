@@ -72,7 +72,7 @@ describe("useSiteMetadata", () => {
       const res = resolveSiteMetadata(null, null, null, null);
       expect(res.siteName).toBe(FALLBACK_TITLE);
       expect(res.description).toBe(FALLBACK_DESCRIPTION);
-      expect(FALLBACK_TITLE).toBe("Komari-Theme-SAO");
+      expect(FALLBACK_TITLE).toBe("SAO Monitor Theme");
     });
   });
 

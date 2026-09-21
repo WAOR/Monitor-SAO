@@ -1,324 +1,178 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const { rpcCallMock, MockRpcResponseError } = vi.hoisted(() => ({
-  rpcCallMock: vi.fn(),
-  MockRpcResponseError: class MockRpcResponseError extends Error {
-    constructor(
-      message: string,
-      public readonly code?: number,
-    ) {
-      super(message);
-    }
-  },
-}));
-
-vi.mock("@/services/rpc2Client", () => ({
-  getRpc2Client: () => ({ call: rpcCallMock }),
-  RpcResponseError: MockRpcResponseError,
-}));
-
 import {
+  extractUsernameFromStorage,
   getLoadRecords,
-  getPingOverview,
-  getPingOverviewStats,
+  getMe,
+  getNodes,
   getPingRecords,
-  getTodayTrafficMetrics,
+  getPublic,
+  resolveAuthUsername,
+  saveAdminUsername,
 } from "@/services/api";
 
-const START = "2026-07-15T03:00:00Z";
-const END = "2026-07-15T04:00:00Z";
-const TAGS = { task_id: "7" };
+const storageMap = new Map<string, string>();
+const localStorageMock = {
+  getItem: (k: string) => storageMap.get(k) ?? null,
+  setItem: (k: string, v: string) => storageMap.set(k, String(v)),
+  removeItem: (k: string) => storageMap.delete(k),
+  clear: () => storageMap.clear(),
+};
+Object.defineProperty(global, "window", {
+  value: { localStorage: localStorageMock },
+  writable: true,
+});
+Object.defineProperty(global, "localStorage", {
+  value: localStorageMock,
+  writable: true,
+});
 
-function metricSeries(
-  metricKey: string,
-  points: Array<{ time: string; value: number | null; count?: number }>,
-) {
-  return {
-    metric_key: metricKey,
-    entity_id: "node-a",
-    tags: TAGS,
-    interval_seconds: 60,
-    points,
-  };
-}
-
-function aggregatePayload(hasGap: boolean) {
-  const latency = hasGap
-    ? [
-        { time: "2026-07-15T03:43:00Z", value: 20, count: 1 },
-        { time: "2026-07-15T03:44:00Z", value: null, count: 0 },
-        { time: "2026-07-15T03:45:00Z", value: 30, count: 1 },
-      ]
-    : [
-        { time: "2026-07-15T03:43:00Z", value: 20, count: 1 },
-        { time: "2026-07-15T03:44:00Z", value: 25, count: 1 },
-        { time: "2026-07-15T03:45:00Z", value: 30, count: 1 },
-      ];
-  const loss = latency.map((point) => ({
-    ...point,
-    value: point.count === 0 ? null : 0,
-  }));
-  return {
-    start: START,
-    end: END,
-    series: [
-      metricSeries("ping.latency_ms", latency),
-      metricSeries("ping.loss", loss),
-    ],
-  };
-}
-
-function installRpcResponses({
-  hasGap,
-  rawFails = false,
-  rawCount,
-}: {
-  hasGap: boolean;
-  rawFails?: boolean;
-  rawCount?: number;
-}) {
-  rpcCallMock.mockImplementation((method: string, params: Record<string, unknown>) => {
-    if (method === "public:getPingMetricStats") {
-      return Promise.resolve({
-        stats: [
-          {
-            entity_id: "node-a",
-            task_id: 7,
-            name: "广州探测",
-            interval: 60,
-            total: hasGap ? 2 : 3,
-            valid: hasGap ? 2 : 3,
-            loss: 0,
-            avg: 25,
-            latest: 30,
-          },
-        ],
-      });
-    }
-    if (method === "public:getPublicPingTasks") {
-      return Promise.resolve([
-        {
-          id: 7,
-          interval: 60,
-          name: "广州探测",
-          clients: ["node-a"],
-        },
-      ]);
-    }
-    if (method === "public:queryMetrics" && params.downsample === false) {
-      if (rawFails) return Promise.reject(new Error("raw query failed"));
-      return Promise.resolve({
-        start: "2026-07-15T03:40:00Z",
-        end: "2026-07-15T03:46:00Z",
-        series: [
-          metricSeries("ping.latency_ms", [
-            {
-              time: "2026-07-15T03:44:15Z",
-              value: 50,
-              ...(rawCount == null ? {} : { count: rawCount }),
-            },
-          ]),
-          metricSeries("ping.loss", [
-            {
-              time: "2026-07-15T03:44:15Z",
-              value: 0,
-              ...(rawCount == null ? {} : { count: rawCount }),
-            },
-          ]),
-        ],
-      });
-    }
-    if (method === "public:queryMetrics") {
-      return Promise.resolve(aggregatePayload(hasGap));
-    }
-    return Promise.reject(new Error(`Unexpected RPC method: ${method}`));
-  });
-}
-
-function metricDataCalls() {
-  return rpcCallMock.mock.calls.filter(
-    ([method, params]) =>
-      method === "public:queryMetrics" &&
-      Array.isArray((params as Record<string, unknown>)?.metric_keys) &&
-      ((params as Record<string, unknown>).metric_keys as unknown[]).length > 0,
-  );
-}
-
-describe("metric boundary repair in the API adapter", () => {
+describe("Monitor API Service", () => {
   beforeEach(() => {
-    rpcCallMock.mockReset();
+    localStorageMock.clear();
+    vi.restoreAllMocks();
   });
 
-  it("does not request raw data when the aggregate boundary is continuous", async () => {
-    installRpcResponses({ hasGap: false });
-    const result = await getPingOverview(1, 7, { entityIds: ["node-a"] });
+  describe("Admin Nickname Storage", () => {
+    it("returns empty when no custom nickname set", () => {
+      expect(extractUsernameFromStorage()).toBe("");
+      expect(resolveAuthUsername(true)).toBe("Admin");
+      expect(resolveAuthUsername(false)).toBe("");
+    });
 
-    expect(result.records).toHaveLength(3);
-    const metricCalls = metricDataCalls();
-    expect(metricCalls).toHaveLength(1);
-  });
+    it("saves and resolves custom admin nickname", () => {
+      saveAdminUsername("jerry");
+      expect(extractUsernameFromStorage()).toBe("jerry");
+      expect(resolveAuthUsername(true)).toBe("jerry");
+    });
 
-  it("requests only the bounded raw window and fills the empty bucket", async () => {
-    installRpcResponses({ hasGap: true });
-    const result = await getPingOverview(1, 7, { entityIds: ["node-a"] });
-
-    expect(result.records).toHaveLength(3);
-    expect(result.records.find((record) => record.time === "2026-07-15T03:44:00Z"))
-      .toMatchObject({ value: 50, count: 1, loss: 0 });
-    expect(result.stats?.[0]).toMatchObject({ total: 3, valid: 3, loss: 0 });
-
-    const metricCalls = metricDataCalls();
-    expect(metricCalls).toHaveLength(2);
-    expect(metricCalls[1][1]).toMatchObject({
-      entity_ids: ["node-a"],
-      tags: TAGS,
-      downsample: false,
-      start: "2026-07-15T03:40:00.000Z",
-      end: "2026-07-15T03:46:00.000Z",
+    it("clears nickname when empty string provided", () => {
+      saveAdminUsername("jerry");
+      saveAdminUsername("");
+      expect(extractUsernameFromStorage()).toBe("");
+      expect(resolveAuthUsername(true)).toBe("Admin");
     });
   });
 
-  it("keeps the aggregate result when the optional raw repair fails", async () => {
-    installRpcResponses({ hasGap: true, rawFails: true });
-    const result = await getPingOverview(1, 7, { entityIds: ["node-a"] });
-
-    expect(result.records).toHaveLength(2);
-    expect(result.records.map((record) => record.time)).not.toContain(
-      "2026-07-15T03:44:00Z",
-    );
-  });
-
-  it("preserves hybrid rollup counts without requesting a backend version", async () => {
-    installRpcResponses({ hasGap: true, rawCount: 4 });
-    const result = await getPingOverview(1, 7, { entityIds: ["node-a"] });
-
-    expect(result.records.find((record) => record.time === "2026-07-15T03:44:00Z"))
-      .toMatchObject({ value: 50, count: 4, loss: 0 });
-    expect(rpcCallMock.mock.calls.some(([method]) => method === "public:getVersion")).toBe(false);
-  });
-
-  it("fetches stats in the same call chain on the ping detail path, without boundary repair", async () => {
-    installRpcResponses({ hasGap: true });
-
-    const result = await getPingRecords("node-a", 24);
-
-    expect(result.records).toHaveLength(2);
-    expect(result.stats).toHaveLength(1);
-    expect(result.stats?.[0]).toMatchObject({ total: 2, valid: 2 });
-    const metricCalls = metricDataCalls();
-    expect(metricCalls).toHaveLength(1);
-    expect(metricCalls[0][1]).toMatchObject({
-      entity_ids: ["node-a"],
-      fill_empty: false,
-    });
-    expect(rpcCallMock).toHaveBeenCalledWith(
-      "public:getPingMetricStats",
-      expect.objectContaining({ entity_ids: ["node-a"], hours: 24 }),
-      expect.anything(),
-    );
-  });
-
-  it("batches homepage Ping statistics by task id", async () => {
-    rpcCallMock.mockImplementation((method: string) => {
-      if (method === "public:queryMetrics") {
-        return Promise.reject(new MockRpcResponseError("metric_keys is required", -32602));
-      }
-      if (method === "public:getPingMetricStats") {
-        return Promise.resolve({ stats: [] });
-      }
-      return Promise.reject(new Error(`Unexpected RPC method: ${method}`));
-    });
-
-    await getPingOverviewStats(1, [9, 7, 9], {
-      entityIds: ["node-a", "node-b"],
-    });
-
-    const statsCalls = rpcCallMock.mock.calls.filter(
-      ([method]) => method === "public:getPingMetricStats",
-    );
-    expect(statsCalls).toHaveLength(1);
-    expect(rpcCallMock).toHaveBeenCalledWith(
-      "public:getPingMetricStats",
-      expect.objectContaining({
-        hours: 1,
-        task_ids: [7, 9],
-        entity_ids: ["node-a", "node-b"],
-      }),
-      expect.anything(),
-    );
-  });
-
-  it("skips the metric probe when the traffic compatibility path already failed it", async () => {
-    rpcCallMock.mockResolvedValue({ count: 0, records: [] });
-
-    const result = await getLoadRecords("node-a", 24, {
-      skipMetricQuery: true,
-      timeout: 8_000,
-    });
-
-    expect(result.records).toEqual([]);
-    expect(rpcCallMock).toHaveBeenCalledTimes(1);
-    expect(metricDataCalls()).toHaveLength(0);
-    expect(rpcCallMock).toHaveBeenCalledWith(
-      "common:getRecords",
-      expect.objectContaining({ uuid: "node-a", hours: 24, type: "load" }),
-      { signal: undefined, timeout: 8_000 },
-    );
-  });
-
-  it("does not send removed Komari 1.3.0 total metrics in load queries", async () => {
-    rpcCallMock.mockImplementation(() => {
-      return Promise.resolve({
-        start: START,
-        end: END,
-        series: [
-          metricSeries("memory.used", [
-            { time: "2026-07-15T03:30:00Z", value: 512, count: 1 },
-          ]),
-        ],
+  describe("getMe and getPublic", () => {
+    it("fetches /api/me and correctly maps auth and site name", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          authed: true,
+          github: false,
+          site_name: "SAO Monitor",
+          public_page: true,
+        }),
       });
+
+      saveAdminUsername("Kirito");
+      const me = await getMe();
+      expect(me.logged_in).toBe(true);
+      expect(me.username).toBe("Kirito");
+
+      const pub = await getPublic();
+      expect(pub.sitename).toBe("SAO Monitor");
+      expect(pub.private_site).toBe(false);
     });
-
-    const result = await getLoadRecords("node-a", 1);
-
-    expect(result.records).toHaveLength(1);
-    expect(result.records[0]).toMatchObject({ client: "node-a", ram: 512 });
-    expect(metricDataCalls()).toHaveLength(1);
-    expect(rpcCallMock).toHaveBeenCalledWith(
-      "public:queryMetrics",
-      expect.objectContaining({
-        entity_ids: ["node-a"],
-        metric_keys: expect.not.arrayContaining([
-          "memory.total",
-          "swap.total",
-          "disk.total",
-        ]),
-      }),
-      expect.anything(),
-    );
   });
 
-  it("uses a small point budget for traffic totals while preserving rate chart detail", async () => {
-    rpcCallMock.mockResolvedValue({ start: START, end: END, series: [] });
+  describe("getNodes", () => {
+    it("fetches and transforms nodes", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          nodes: [
+            {
+              id: 1,
+              name: "Node 1",
+              country: "US",
+              online: true,
+              metrics: {
+                uptime: 12345,
+                cpu: 15.5,
+                load: [0.1, 0.2, 0.3],
+                mem_total: 1000,
+                mem_used: 500,
+                swap_total: 0,
+                swap_used: 0,
+                disk_total: 2000,
+                disk_used: 1000,
+                net_rx: 100,
+                net_tx: 200,
+                total_rx: 300,
+                total_tx: 400,
+                tcp: 10,
+                udp: 5,
+                procs: 120,
+              },
+            },
+          ],
+        }),
+      });
 
-    await getTodayTrafficMetrics(
-      ["node-a"],
-      Date.parse("2026-07-15T00:00:00Z"),
-      Date.parse("2026-07-15T12:00:00Z"),
-    );
+      const nodes = await getNodes();
+      expect(nodes.length).toBe(1);
+      expect(nodes[0].uuid).toBe("1");
+      expect(nodes[0].name).toBe("Node 1");
+      expect(nodes[0].region).toBe("US");
+    });
+  });
 
-    expect(rpcCallMock).toHaveBeenCalledWith(
-      "public:queryMetrics",
-      expect.objectContaining({
-        max_points: 144,
-        max_points_by_metric: {
-          "traffic.up": 12,
-          "traffic.down": 12,
-          "net.out.rate": 144,
-          "net.in.rate": 144,
-        },
-      }),
-      expect.anything(),
-    );
+  describe("getLoadRecords & getPingRecords", () => {
+    it("fetches load metrics history", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          metrics: [
+            {
+              ts: 1700000000,
+              cpu: 25.5,
+              mem_used: 512,
+              disk_used: 1024,
+              net_rx: 50,
+              net_tx: 60,
+            },
+          ],
+        }),
+      });
+
+      const res = await getLoadRecords("1", 24);
+      expect(res.count).toBe(1);
+      expect(res.records[0].cpu).toBe(25.5);
+      expect(res.records[0].time).toBe(1700000000 * 1000);
+    });
+
+    it("fetches ping metrics history and probes", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          ping: [
+            {
+              task_id: 101,
+              ts: 1700000000,
+              latency: 45,
+              loss: 0,
+            },
+          ],
+          probes: {
+            "101": "Tokyo Probe",
+          },
+          loss: {
+            "101": 0.5,
+          },
+        }),
+      });
+
+      const res = await getPingRecords("1", 24);
+      expect(res.count).toBe(1);
+      expect(res.records[0].value).toBe(45);
+      expect(res.tasks.length).toBe(1);
+      expect(res.tasks[0].id).toBe(101);
+      expect(res.tasks[0].name).toBe("Tokyo Probe");
+    });
   });
 });

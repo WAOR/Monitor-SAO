@@ -21,7 +21,7 @@ export function AppShell() {
   const siteName =
     publicConfig.data?.sitename?.trim() ||
     cachedMeta.siteName ||
-    (publicConfig.isPending ? "" : "Komari");
+    (publicConfig.isPending ? "" : "Monitor");
   const normalizedPath = (pathname.replace(/\/+$/, "") || "/").toLowerCase();
   const isDataRoute =
     normalizedPath === "/" ||
@@ -124,9 +124,7 @@ function PrivateSiteGate() {
         </p>
       </div>
       <a
-        href="/admin"
-        target="_blank"
-        rel="noopener noreferrer"
+        href="/admin/"
         className="control-button px-4 py-2 text-[13px] font-medium"
       >
         前往登录

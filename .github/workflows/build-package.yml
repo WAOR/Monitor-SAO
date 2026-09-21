@@ -1,13 +1,10 @@
-name: Build theme package
+name: Build & Release Theme Package
 
 on:
   workflow_dispatch:
   push:
     tags:
       - "v*"
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -28,24 +25,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Code Quality & Type Check
+        run: |
+          npm run lint
+          npm run typecheck
 
-      - name: Test
+      - name: Run Tests
         run: npm test
 
-      - name: Build package
-        run: npm run package
+      - name: Build and Package Theme
+        run: |
+          npm run package
+          npm run package:zip
 
-      - name: Upload package artifact
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: theme-package
+          name: sao-theme-package
           path: |
+            theme.tar.gz
+            *.tar.gz
             *.zip
             preview.png
+            theme.json
 
-      - name: Resolve release notes
+      - name: Resolve Release Notes
         if: startsWith(github.ref, 'refs/tags/')
         id: release-notes
         shell: bash
@@ -54,15 +58,30 @@ jobs:
           if [[ -f "$notes" ]]; then
             echo "path=$notes" >> "$GITHUB_OUTPUT"
           else
-            echo "Release ${GITHUB_REF_NAME}" > default-notes.md
+            cat << 'EOF' > default-notes.md
+# SAO Theme Release
+
+极简立体仪表盘主题 · 适配 Monitor 探针，支持四种布局、流速图表、资产统计与动态背景。
+
+### 📦 安装方式
+1. **面板拖拽安装（推荐）**：下载 `theme.tar.gz`，直接拖拽上传至 Monitor 后台管理面板的「主题」页面即可一键安装并激活。
+2. **服务器目录安装**：将 `theme.tar.gz` 解压放置到 Monitor hub 的 `--themes` 目录下（如 `/opt/monitor/data/themes/sao`）。
+3. **一键在线更新**：若探针后台配置了本仓库地址，在主题卡片上点击 ⟳ 刷新按钮即可自动拉取最新 Release 的 `theme.tar.gz` 进行更新。
+EOF
             echo "path=default-notes.md" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish GitHub release
+      - name: Publish GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          name: "SAO Theme ${{ github.ref_name }}"
           files: |
+            theme.tar.gz
+            *.tar.gz
             *.zip
             preview.png
+            theme.json
           body_path: ${{ steps.release-notes.outputs.path }}
+          draft: false
+          prerelease: false

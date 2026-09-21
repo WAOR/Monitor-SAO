@@ -6,10 +6,13 @@ import zlib from "node:zlib";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
-const manifest = JSON.parse(readFileSync(resolve(root, "komari-theme.json"), "utf8"));
-const version = manifest.version ?? "0.0.0";
-const packageName = manifest.name ?? "Komari-Theme-SAO";
-const outPath = resolve(root, `${packageName}-v${version}.zip`);
+const manifestPath = existsSync(resolve(root, "theme.json"))
+  ? resolve(root, "theme.json")
+  : resolve(root, "komari-theme.json");
+const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+const version = manifest.version ?? "1.0.0";
+const packageName = manifest.short || manifest.name || "sao";
+const outPath = resolve(root, `${packageName}-theme-v${version}.zip`);
 const ZIP_VERSION = 20;
 const UTF8_FLAG = 0x0800;
 const DEFLATE_METHOD = 8;
@@ -59,7 +62,12 @@ for (const [path, hint] of [
 }
 
 const entries = [
-  { path: "komari-theme.json", full: resolve(root, "komari-theme.json") },
+  ...(existsSync(resolve(root, "theme.json"))
+    ? [{ path: "theme.json", full: resolve(root, "theme.json") }]
+    : []),
+  ...(existsSync(resolve(root, "komari-theme.json"))
+    ? [{ path: "komari-theme.json", full: resolve(root, "komari-theme.json") }]
+    : []),
   { path: "preview.png", full: previewPath },
   ...walk(distDir, root),
 ];

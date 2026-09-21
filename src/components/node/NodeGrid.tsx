@@ -3,15 +3,19 @@ import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
+  Check,
   CircleDollarSign,
   Cpu,
   HardDrive,
   Layers,
   Network,
+  Pencil,
   Server,
   Sparkles,
   TrendingUp,
+  X,
 } from "lucide-react";
+import { saveAdminUsername } from "@/services/api";
 import { Flag } from "@/components/ui/Flag";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -218,6 +222,7 @@ function HomeOverviewCards({
   dense,
   onWarmTraffic,
   username,
+  loggedIn,
   todayTrafficTotal,
   todayTrafficLoading,
 }: {
@@ -237,10 +242,30 @@ function HomeOverviewCards({
   renewalNodes: RenewalReminderSource[];
   onWarmTraffic: () => void;
   username: string;
+  loggedIn?: boolean;
   todayTrafficTotal: number | null;
   todayTrafficLoading: boolean;
 }) {
+  const queryClient = useQueryClient();
   const [renewalPopoverOpen, setRenewalPopoverOpen] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState("");
+
+  const handleStartEdit = () => {
+    if (!loggedIn) return;
+    setTempName(username === "Admin" ? "" : username);
+    setIsEditingName(true);
+  };
+
+  const handleSaveName = () => {
+    const finalName = tempName.trim().slice(0, 40);
+    if (finalName) {
+      saveAdminUsername(finalName);
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+    }
+    setIsEditingName(false);
+  };
+
   const todayTrafficBytes = todayTrafficTotal ?? 0;
   const [trafficValue, trafficUnit] = todayTrafficLoading && todayTrafficTotal === null
     ? ["—", ""]
@@ -325,7 +350,53 @@ function HomeOverviewCards({
           </div>
           <h1 className="mao-hero-greeting flex items-center gap-1.5 flex-wrap">
             <span>{greetingInfo.greeting}，</span>
-            <DiaTextReveal text={username || "Guest"} />
+            {isEditingName ? (
+              <span className="inline-flex items-center gap-1">
+                <input
+                  type="text"
+                  autoFocus
+                  maxLength={40}
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveName();
+                    if (e.key === "Escape") setIsEditingName(false);
+                  }}
+                  placeholder="输入昵称 (如 jerry)"
+                  className="px-2 py-0.5 text-base rounded bg-(--input-bg,rgba(0,0,0,0.3)) border border-(--accent) text-(--text-primary) focus:outline-none w-36"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveName}
+                  className="p-1 rounded bg-(--accent) text-white font-medium hover:opacity-90 transition-opacity"
+                  title="保存"
+                >
+                  <Check size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingName(false)}
+                  className="p-1 rounded bg-white/10 text-(--text-muted) hover:text-(--text-primary) transition-colors"
+                  title="取消"
+                >
+                  <X size={14} />
+                </button>
+              </span>
+            ) : (
+              <span
+                className={`inline-flex items-center gap-1.5 group ${loggedIn ? "cursor-pointer" : ""}`}
+                onClick={loggedIn ? handleStartEdit : undefined}
+                title={loggedIn ? "点击快速修改管理员昵称" : undefined}
+              >
+                <DiaTextReveal text={username || "Guest"} />
+                {loggedIn && (
+                  <Pencil
+                    size={13}
+                    className="text-(--text-muted) opacity-0 group-hover:opacity-80 hover:text-(--accent) transition-all"
+                  />
+                )}
+              </span>
+            )}
           </h1>
           <p className="mao-hero-subtitle">
             {greetingInfo.subtitle}
@@ -997,6 +1068,7 @@ export function NodeGrid() {
           assetRatingLabels={themeSettings.assetRatingLabels}
           onWarmTraffic={warmTrafficPage}
           username={me?.username || (me?.logged_in ? "Admin" : "Guest")}
+          loggedIn={Boolean(me?.logged_in)}
           todayTrafficTotal={todayTrafficTotal}
           todayTrafficLoading={todayTrafficQuery.isPending}
         />
