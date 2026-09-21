@@ -82,6 +82,7 @@ async function apiFetch<T>(path: string, options?: RequestOptions & RequestInit)
 
   try {
     const res = await fetch(path, {
+      credentials: "include",
       ...restInit,
       signal: controller.signal,
       headers: restInit.body
@@ -299,17 +300,75 @@ export async function getPingRecords(
   }
 }
 
-/** 兼容接口：获取首页 Ping 概览 */
+/** 获取首页 Ping 概览（兼容多线路与单线路探测展示） */
 export async function getPingOverview(
-  _hours = 1,
-  _taskId?: number,
-  _options?: { signal?: AbortSignal; entityIds?: string[]; includeStats?: boolean },
+  hours = 1,
+  taskId?: number,
+  options?: { signal?: AbortSignal; entityIds?: string[]; includeStats?: boolean },
 ): Promise<PingRecordsResponse> {
+  const queryHours = Math.max(1, Math.min(hours || 1, 24));
+  let nodeUuids = options?.entityIds ?? [];
+  if (nodeUuids.length === 0) {
+    try {
+      const nodes = await getNodes(options);
+      nodeUuids = nodes.map((n) => n.uuid);
+    } catch {
+      nodeUuids = [];
+    }
+  }
+
+  const allRecords: PingRecord[] = [];
+  const taskMap = new Map<number, PingTask>();
+  const statsList: PingTaskStats[] = [];
+
+  await Promise.all(
+    nodeUuids.map(async (uuid) => {
+      try {
+        const path = `/api/nodes/${encodeURIComponent(uuid)}/metrics?hours=${queryHours}&points=60&series=ping`;
+        const data = await apiFetch<MonitorMetricsHistoryResponse>(path, options);
+        if (data.probes) {
+          for (const [idStr, name] of Object.entries(data.probes)) {
+            const id = Number(idStr);
+            if (!taskMap.has(id)) {
+              taskMap.set(id, {
+                id,
+                name: name || `线路 #${id}`,
+                interval: 60,
+                loss: data.loss?.[idStr] ?? 0,
+                clients: [uuid],
+                type: "icmp",
+                target: "",
+                weight: 0,
+              });
+            } else {
+              const item = taskMap.get(id)!;
+              if (!item.clients.includes(uuid)) item.clients.push(uuid);
+            }
+          }
+        }
+
+        const pings = data.ping ?? [];
+        for (const p of pings) {
+          if (taskId != null && p.task_id !== taskId) continue;
+          allRecords.push({
+            task_id: p.task_id,
+            time: p.ts * 1000,
+            value: p.latency ?? 0,
+            client: uuid,
+            loss: p.loss != null ? p.loss : p.latency === null ? 100 : 0,
+          });
+        }
+      } catch {
+        // 忽略节点错误
+      }
+    }),
+  );
+
   return {
-    count: 0,
-    records: [],
-    tasks: [],
-    stats: [],
+    count: allRecords.length,
+    records: allRecords,
+    tasks: Array.from(taskMap.values()),
+    stats: statsList,
     intervalSeconds: 60,
   };
 }
@@ -364,7 +423,90 @@ export async function getAdminClients(_options?: RequestOptions): Promise<AdminC
   }));
 }
 
-/** 获取管理探测任务列表（兼容 ThemeManage 页面） */
+/** 获取管理探测任务列表（对接 Monitor /api/ping-tasks 及 /api/nodes/{id}/metrics fallback） */
 export async function getAdminPingTasks(_options?: RequestOptions): Promise<PingTask[]> {
+  // 1. 优先尝试管理员接口 GET /api/ping-tasks
+  try {
+    const res = await apiFetch<{ tasks?: Array<Record<string, unknown>> } | Array<Record<string, unknown>>>(
+      "/api/ping-tasks",
+      _options,
+    );
+    const rawList = Array.isArray(res) ? res : res?.tasks;
+    if (Array.isArray(rawList) && rawList.length > 0) {
+      return rawList
+        .map((t) => ({
+          id: Number(t.id),
+          name: typeof t.name === "string" && t.name ? t.name : `线路 #${t.id}`,
+          interval: typeof t.interval === "number" ? t.interval : 60,
+          loss: 0,
+          clients: Array.isArray(t.nodes)
+            ? t.nodes.map(String)
+            : Array.isArray(t.clients)
+              ? t.clients.map(String)
+              : [],
+          type: typeof t.type === "string" ? t.type : "icmp",
+          target: typeof t.target === "string" ? t.target : "",
+          weight: typeof t.weight === "number" ? t.weight : 0,
+        }))
+        .filter((t) => Number.isFinite(t.id) && t.id > 0)
+        .sort((a, b) => a.id - b.id);
+    }
+  } catch (_err) {
+    // 若非管理员会话或接口报错，继续尝试节点探测指标汇总回退
+  }
+
+  // 2. 回退机制：从节点列表中提取 metrics?series=ping 汇总 probes
+  try {
+    const nodes = await getNodes(_options);
+    if (nodes.length > 0) {
+      const probeMap = new Map<number, { id: number; name: string; clients: Set<string> }>();
+      const sampleNodes = nodes.slice(0, 15);
+      await Promise.all(
+        sampleNodes.map(async (node) => {
+          try {
+            const data = await apiFetch<MonitorMetricsHistoryResponse>(
+              `/api/nodes/${encodeURIComponent(node.uuid)}/metrics?hours=1&points=30&series=ping`,
+              _options,
+            );
+            if (data?.probes) {
+              for (const [idStr, name] of Object.entries(data.probes)) {
+                const id = Number(idStr);
+                if (!Number.isFinite(id) || id <= 0) continue;
+                if (!probeMap.has(id)) {
+                  probeMap.set(id, {
+                    id,
+                    name: name || `线路 #${id}`,
+                    clients: new Set(),
+                  });
+                }
+                probeMap.get(id)!.clients.add(node.uuid);
+              }
+            }
+          } catch {
+            // 忽略单个节点拉取失败
+          }
+        }),
+      );
+
+      if (probeMap.size > 0) {
+        return Array.from(probeMap.values())
+          .map((item) => ({
+            id: item.id,
+            name: item.name,
+            interval: 60,
+            loss: 0,
+            clients: Array.from(item.clients),
+            type: "icmp",
+            target: "",
+            weight: 0,
+          }))
+          .sort((a, b) => a.id - b.id);
+      }
+    }
+  } catch {
+    // 忽略错误
+  }
+
   return [];
 }
+

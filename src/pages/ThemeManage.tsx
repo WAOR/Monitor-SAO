@@ -994,11 +994,26 @@ export function ThemeManage() {
   const addMultiPingTask = useCallback(() => {
     commitMultiPingTaskIds((current) => {
       if (current.length >= HOMEPAGE_MULTI_PING_MAX_COUNT) return current;
-      const availableTask = sortedTasks.find((task) => !current.includes(task.id));
+      const availableTask =
+        sortedTasks.find((task) => !current.includes(task.id)) ?? sortedTasks[0];
       if (!availableTask) return current;
       return [...current, availableTask.id];
     });
   }, [commitMultiPingTaskIds, sortedTasks]);
+
+  // 当处于多线路模式但槽位为空时，若探测任务已加载，自动预填前若干条线路
+  useEffect(() => {
+    if (
+      draft.enableHomepageMultiPing &&
+      draft.homepageMultiPingTaskIds.length === 0 &&
+      sortedTasks.length > 0
+    ) {
+      const initialIds = sortedTasks
+        .slice(0, Math.min(sortedTasks.length, 3))
+        .map((t) => t.id);
+      patch("homepageMultiPingTaskIds", initialIds);
+    }
+  }, [draft.enableHomepageMultiPing, draft.homepageMultiPingTaskIds.length, sortedTasks, patch]);
 
   const visibleClients = useMemo(
     () => filterClients(sortedClients, nodeSearch),
@@ -2090,7 +2105,15 @@ export function ThemeManage() {
                       <button
                         type="button"
                         data-active={draft.enableHomepageMultiPing ? "true" : "false"}
-                        onClick={() => patch("enableHomepageMultiPing", true)}
+                        onClick={() => {
+                          patch("enableHomepageMultiPing", true);
+                          if (draft.homepageMultiPingTaskIds.length === 0 && sortedTasks.length > 0) {
+                            patch(
+                              "homepageMultiPingTaskIds",
+                              sortedTasks.slice(0, Math.min(sortedTasks.length, 3)).map((t) => t.id),
+                            );
+                          }
+                        }}
                       >
                         多线路模式 (并列展示三网/自定义线路)
                       </button>
@@ -2116,6 +2139,47 @@ export function ThemeManage() {
                           </button>
                         )}
                       </div>
+
+                      {tasksLoading && (
+                        <div className="flex items-center gap-2 py-4 text-[13px] text-(--text-secondary)">
+                          <Spinner size={16} />
+                          <span>正在读取极简探针延迟测试线路...</span>
+                        </div>
+                      )}
+
+                      {!tasksLoading && sortedTasks.length === 0 && (
+                        <div className="rounded-[10px] border border-dashed border-(--hairline) px-4 py-6 text-center text-[13px] text-(--text-secondary)">
+                          <span>未读取到延迟测试线路。请确保已在</span>
+                          <a href="/admin/#/ping" className="theme-manage-inline-link mx-1 font-medium">
+                            极简探针后台探测管理
+                          </a>
+                          <span>中添加测试线路。</span>
+                        </div>
+                      )}
+
+                      {!tasksLoading &&
+                        sortedTasks.length > 0 &&
+                        draft.homepageMultiPingTaskIds.length === 0 && (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-[10px] border border-dashed border-(--hairline) px-4 py-6 text-center">
+                            <p className="text-[13px] text-(--text-secondary)">
+                              已成功读取到后台 {sortedTasks.length} 条测试线路，请添加槽位展示线路。
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                patch(
+                                  "homepageMultiPingTaskIds",
+                                  sortedTasks
+                                    .slice(0, Math.min(sortedTasks.length, 3))
+                                    .map((t) => t.id),
+                                )
+                              }
+                              className="theme-manage-button is-compact is-primary"
+                            >
+                              一键填入前 {Math.min(sortedTasks.length, 3)} 条线路
+                            </button>
+                          </div>
+                        )}
 
                       <div className="grid gap-3 md:grid-cols-2">
                         {draft.homepageMultiPingTaskIds.map((taskId, slot) => (
@@ -2193,7 +2257,7 @@ export function ThemeManage() {
                       {noTasksYet && (
                         <div className="theme-manage-empty-state">
                           <span>当前还没有可用于首页展示的 Ping 任务。</span>
-                          <a href="/admin/ping" className="theme-manage-inline-link">
+                          <a href="/admin/#/ping" className="theme-manage-inline-link">
                             前往后台 Ping 管理创建任务
                           </a>
                         </div>

@@ -175,4 +175,65 @@ describe("Monitor API Service", () => {
       expect(res.tasks[0].name).toBe("Tokyo Probe");
     });
   });
+
+  describe("getAdminPingTasks", () => {
+    it("fetches ping tasks from Monitor /api/ping-tasks", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          tasks: [
+            { id: 1, name: "电信 5G", target: "1.1.1.1:443", interval: 60, nodes: [1, 2] },
+            { id: 2, name: "联通 4G", target: "8.8.8.8:443", interval: 30, nodes: [2] },
+          ],
+        }),
+      });
+
+      const { getAdminPingTasks } = await import("@/services/api");
+      const tasks = await getAdminPingTasks();
+      expect(tasks.length).toBe(2);
+      expect(tasks[0].id).toBe(1);
+      expect(tasks[0].name).toBe("电信 5G");
+      expect(tasks[0].clients).toEqual(["1", "2"]);
+      expect(tasks[1].id).toBe(2);
+      expect(tasks[1].name).toBe("联通 4G");
+    });
+
+    it("falls back to extracting probes when /api/ping-tasks fails", async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes("/api/ping-tasks")) {
+          return { ok: false, status: 403, statusText: "Forbidden", text: async () => "" };
+        }
+        if (url.includes("/api/nodes/1/metrics")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              ping: [],
+              probes: { "1": "上海移动", "2": "广州电信" },
+            }),
+          };
+        }
+        if (url.includes("/api/nodes")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              nodes: [{ id: 1, name: "Node 1", online: true, metrics: null }],
+            }),
+          };
+        }
+        return { ok: false, status: 404 };
+      });
+
+      const { getAdminPingTasks } = await import("@/services/api");
+      const tasks = await getAdminPingTasks();
+      expect(tasks.length).toBe(2);
+      expect(tasks[0].id).toBe(1);
+      expect(tasks[0].name).toBe("上海移动");
+      expect(tasks[1].id).toBe(2);
+      expect(tasks[1].name).toBe("广州电信");
+    });
+  });
 });
+
