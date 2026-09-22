@@ -164,7 +164,7 @@ export async function getMe(options?: RequestOptions): Promise<Me> {
 
 let staticThemeSettingsCache: Record<string, unknown> | null = null;
 
-/** 尝试拉取部署在站点根目录的静态全站主题配置 (sao-config.json) */
+/** 尝试拉取部署在站点根目录的静态全站主题配置 (sao-config.json) - 极速并行探测带超时 */
 export async function fetchStaticThemeSettings(): Promise<Record<string, unknown>> {
   if (staticThemeSettingsCache !== null) {
     return staticThemeSettingsCache;
@@ -172,36 +172,48 @@ export async function fetchStaticThemeSettings(): Promise<Record<string, unknown
   if (typeof window === "undefined" || typeof fetch === "undefined") {
     return {};
   }
+
   const candidateUrls = ["./sao-config.json", "/sao-config.json"];
-  for (const url of candidateUrls) {
-    try {
-      const res = await fetch(url, { cache: "no-cache" });
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), 1200) : null;
+
+  try {
+    const fetchPromises = candidateUrls.map(async (url) => {
+      const res = await fetch(url, {
+        cache: "no-cache",
+        signal: controller?.signal,
+      });
       const contentType = res.headers.get("content-type") ?? "";
-      if (
-        res.ok &&
-        !contentType.includes("text/html")
-      ) {
+      if (res.ok && !contentType.includes("text/html")) {
         const text = await res.text();
         if (text.trim().startsWith("{")) {
           const data: unknown = JSON.parse(text);
           if (data && typeof data === "object" && !Array.isArray(data)) {
-            staticThemeSettingsCache = data as Record<string, unknown>;
-            return staticThemeSettingsCache;
+            return data as Record<string, unknown>;
           }
         }
       }
-    } catch {
-      // 继续尝试下一个候选地址
-    }
+      throw new Error("Invalid config");
+    });
+
+    // 只要有一个成功解析即刻采用
+    const resolved = await Promise.any(fetchPromises);
+    staticThemeSettingsCache = resolved;
+    return staticThemeSettingsCache;
+  } catch {
+    staticThemeSettingsCache = {};
+    return staticThemeSettingsCache;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
-  staticThemeSettingsCache = {};
-  return staticThemeSettingsCache;
 }
 
-/** 获取站点全局配置 */
+/** 获取站点全局配置 - 并发请求优化 */
 export async function getPublic(options?: RequestOptions): Promise<PublicConfig> {
-  const me = await apiFetch<MonitorMe>("/api/me", options);
-  const staticSettings = await fetchStaticThemeSettings();
+  const [me, staticSettings] = await Promise.all([
+    apiFetch<MonitorMe>("/api/me", options),
+    fetchStaticThemeSettings(),
+  ]);
   const localSettings = getLocalThemeSettings();
 
   // 合并配置：静态全站配置 (sao-config.json) -> 本地存储个性化覆盖
@@ -214,7 +226,7 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
     sitename: me.site_name || "Monitor",
     description: "",
     theme: "sao",
-    version: "1.0.8",
+    version: "1.0.7",
     private_site: !me.public_page,
     theme_settings: mergedSettings as ThemeSettings,
     record_preserve_time: 168,
@@ -343,6 +355,46 @@ export async function getPingRecords(
   }
 }
 
+// 节点 Ping Metrics 共享请求池与短时内存缓存（彻底解决 N 节点 × M 线路重复并发轰炸）
+const nodePingMetricsCache = new Map<string, { data: MonitorMetricsHistoryResponse; expiresAt: number }>();
+const inFlightNodePingRequests = new Map<string, Promise<MonitorMetricsHistoryResponse>>();
+
+async function fetchNodePingMetricsShared(
+  uuid: string,
+  hours: number,
+  options?: RequestOptions,
+): Promise<MonitorMetricsHistoryResponse> {
+  const cacheKey = `${uuid}:${hours}`;
+  const now = Date.now();
+
+  const cached = nodePingMetricsCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.data;
+  }
+
+  const inFlight = inFlightNodePingRequests.get(cacheKey);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const promise = (async () => {
+    try {
+      const path = `/api/nodes/${encodeURIComponent(uuid)}/metrics?hours=${hours}&points=60&series=ping`;
+      const data = await apiFetch<MonitorMetricsHistoryResponse>(path, options);
+      nodePingMetricsCache.set(cacheKey, {
+        data,
+        expiresAt: Date.now() + 10_000,
+      });
+      return data;
+    } finally {
+      inFlightNodePingRequests.delete(cacheKey);
+    }
+  })();
+
+  inFlightNodePingRequests.set(cacheKey, promise);
+  return promise;
+}
+
 /** 获取首页 Ping 概览（兼容多线路与单线路探测展示） */
 export async function getPingOverview(
   hours = 1,
@@ -367,8 +419,7 @@ export async function getPingOverview(
   await Promise.all(
     nodeUuids.map(async (uuid) => {
       try {
-        const path = `/api/nodes/${encodeURIComponent(uuid)}/metrics?hours=${queryHours}&points=60&series=ping`;
-        const data = await apiFetch<MonitorMetricsHistoryResponse>(path, options);
+        const data = await fetchNodePingMetricsShared(uuid, queryHours, options);
         if (data.probes) {
           for (const [idStr, name] of Object.entries(data.probes)) {
             const id = Number(idStr);

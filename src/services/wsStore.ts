@@ -4,7 +4,6 @@ import {
   convertMonitorNodeToMetrics,
   safeMonitorNodes,
 } from "@/types/monitor";
-import { getNodes } from "@/services/api";
 
 type Listener = () => void;
 type RealtimePayload = Record<string, unknown>;
@@ -371,12 +370,15 @@ let isStarted = false;
 let refCount = 0;
 
 function fetchOnce() {
-  getNodes()
-    .then(() => {
-      fetch("/api/nodes")
-        .then((r) => r.json())
-        .then((d) => applyMonitorNodes(d.nodes))
-        .catch(() => {});
+  fetch("/api/nodes")
+    .then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then((d) => {
+      if (d && Array.isArray(d.nodes)) {
+        applyMonitorNodes(d.nodes);
+      }
     })
     .catch(() => {
       state.failureStreak += 1;
