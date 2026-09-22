@@ -21,7 +21,7 @@ import {
   type MonitorNode,
 } from "@/types/monitor";
 import { getLocalThemeSettings, saveLocalThemeSettings } from "@/services/themeSettingsStore";
-import { getLivePeak, getRawNode } from "@/services/wsStore";
+import { getRawNode } from "@/services/wsStore";
 import type { TrafficMetricSeries } from "@/utils/trafficStats";
 
 export const ADMIN_USERNAME_KEY = "sao_admin_username";
@@ -612,25 +612,6 @@ export async function getTodayTrafficMetrics(
             value: Math.max(0, p.net_rx),
             count: 1,
           });
-        }
-
-        // 融合 WebSocket 实时捕获的突发测速峰值（如 speedtest 瞬间流速）
-        const livePeak = getLivePeak(uuid);
-        if (livePeak) {
-          if (livePeak.peakUp > 0 && livePeak.peakUpAt != null) {
-            rateUpPoints.push({
-              time: new Date(livePeak.peakUpAt).toISOString(),
-              value: livePeak.peakUp,
-              count: 1,
-            });
-          }
-          if (livePeak.peakDown > 0 && livePeak.peakDownAt != null) {
-            rateDownPoints.push({
-              time: new Date(livePeak.peakDownAt).toISOString(),
-              value: livePeak.peakDown,
-              count: 1,
-            });
-          }
         }
 
         // 2. 流量累计计算（优先服务端权威原生统计 day_tx/day_rx，绝不使用采样推算）

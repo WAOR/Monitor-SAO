@@ -320,29 +320,6 @@ function applyMonitorNodes(rawList: unknown) {
     const upRes = updateTrafficTrendSeries(existingTrend.up, metrics.netUp, metrics.online);
     const downRes = updateTrafficTrendSeries(existingTrend.down, metrics.netDown, metrics.online);
 
-    // 实时峰值跟踪（实时捕获突发测速脉冲）
-    const existingPeak = livePeakMap.get(uuid) || {
-      peakUp: 0,
-      peakUpAt: null,
-      peakDown: 0,
-      peakDownAt: null,
-    };
-    const nowMs = Date.now();
-    let peakChanged = false;
-    if (metrics.netUp > existingPeak.peakUp) {
-      existingPeak.peakUp = metrics.netUp;
-      existingPeak.peakUpAt = nowMs;
-      peakChanged = true;
-    }
-    if (metrics.netDown > existingPeak.peakDown) {
-      existingPeak.peakDown = metrics.netDown;
-      existingPeak.peakDownAt = nowMs;
-      peakChanged = true;
-    }
-    if (peakChanged) {
-      livePeakMap.set(uuid, existingPeak);
-    }
-
     if (upRes.changed || downRes.changed) {
       nextTrends[uuid] = {
         up: upRes.series,
@@ -696,19 +673,6 @@ export function getRawNode(uuid: string): MonitorNode | undefined {
 
 export function getAllRawNodes(): Record<string, MonitorNode> {
   return state.rawNodesByUuid;
-}
-
-export interface LivePeakRecord {
-  peakUp: number;
-  peakUpAt: number | null;
-  peakDown: number;
-  peakDownAt: number | null;
-}
-
-const livePeakMap = new Map<string, LivePeakRecord>();
-
-export function getLivePeak(uuid: string): LivePeakRecord | undefined {
-  return livePeakMap.get(uuid);
 }
 
 
