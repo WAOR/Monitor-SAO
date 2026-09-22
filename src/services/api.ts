@@ -150,9 +150,27 @@ export function saveAdminUsername(nickname: string): void {
   } catch {}
 }
 
+/** 消费早期预取的 /api/me 请求 (若存在) */
+async function fetchMeWithEarlyData(options?: RequestOptions): Promise<MonitorMe> {
+  const early =
+    typeof window !== "undefined"
+      ? (window as unknown as { __EARLY_DATA__?: { me?: Promise<MonitorMe | null> | null } })
+          .__EARLY_DATA__?.me
+      : null;
+  if (early) {
+    try {
+      const data = await early;
+      if (data && typeof data === "object" && ("site_name" in data || "authed" in data)) {
+        return data;
+      }
+    } catch {}
+  }
+  return apiFetch<MonitorMe>("/api/me", options);
+}
+
 /** 获取当前登录态 /api/me */
 export async function getMe(options?: RequestOptions): Promise<Me> {
-  const data = await apiFetch<MonitorMe>("/api/me", options);
+  const data = await fetchMeWithEarlyData(options);
   const username = data.authed ? resolveAuthUsername(true) : "";
 
   return {
@@ -208,10 +226,10 @@ export async function fetchStaticThemeSettings(): Promise<Record<string, unknown
   }
 }
 
-/** 获取站点全局配置 - 并发请求优化 */
+/** 获取站点全局配置 - 并发请求与早期数据优化 */
 export async function getPublic(options?: RequestOptions): Promise<PublicConfig> {
   const [me, staticSettings] = await Promise.all([
-    apiFetch<MonitorMe>("/api/me", options),
+    fetchMeWithEarlyData(options),
     fetchStaticThemeSettings(),
   ]);
   const localSettings = getLocalThemeSettings();

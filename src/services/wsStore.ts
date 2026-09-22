@@ -370,14 +370,33 @@ let isStarted = false;
 let refCount = 0;
 
 function fetchOnce() {
-  fetch("/api/nodes")
-    .then((r) => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    })
+  const early =
+    typeof window !== "undefined"
+      ? (window as unknown as { __EARLY_DATA__?: { nodes?: Promise<{ nodes?: unknown[] } | null> | null } })
+          .__EARLY_DATA__?.nodes
+      : null;
+
+  const fetchPromise = early
+    ? early
+        .then((d) => {
+          if (d && Array.isArray(d.nodes)) return d;
+          throw new Error("No early nodes");
+        })
+        .catch(() =>
+          fetch("/api/nodes").then((r) => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          }),
+        )
+    : fetch("/api/nodes").then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      });
+
+  fetchPromise
     .then((d) => {
       if (d && Array.isArray(d.nodes)) {
-        applyMonitorNodes(d.nodes);
+        applyMonitorNodes(d.nodes as Parameters<typeof applyMonitorNodes>[0]);
       }
     })
     .catch(() => {

@@ -23,6 +23,19 @@
     <meta name="description" content="SAO Monitor Theme · 极简立体仪表盘主题" />
     <script>
       (() => {
+        // 超前核心 API 预加载：利用浏览器解析 HTML 与下载 React Bundle 的网络空档期，提前并发拉取关键数据
+        try {
+          if (typeof window !== "undefined" && typeof fetch === "function") {
+            const p = window.location.pathname || "/";
+            const dir = p.endsWith("/") ? p : p.substring(0, p.lastIndexOf("/") + 1);
+            const prefix = dir === "/" ? "" : dir.replace(/\/+$/, "");
+            window.__EARLY_DATA__ = {
+              me: fetch((prefix ? prefix : "") + "/api/me").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+              nodes: fetch((prefix ? prefix : "") + "/api/nodes").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+            };
+          }
+        } catch {}
+
         try {
           const cachedTitle = localStorage.getItem("komaritheme:sitename");
           if (cachedTitle && cachedTitle.trim()) {
