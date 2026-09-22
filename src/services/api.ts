@@ -162,10 +162,43 @@ export async function getMe(options?: RequestOptions): Promise<Me> {
   };
 }
 
+let staticThemeSettingsCache: Record<string, unknown> | null = null;
+
+/** 尝试拉取部署在站点根目录的静态全站主题配置 (sao-config.json) */
+export async function fetchStaticThemeSettings(): Promise<Record<string, unknown>> {
+  if (staticThemeSettingsCache !== null) {
+    return staticThemeSettingsCache;
+  }
+  if (typeof window === "undefined" || typeof fetch === "undefined") {
+    return {};
+  }
+  try {
+    const res = await fetch("/sao-config.json", { cache: "no-cache" });
+    if (res.ok) {
+      const data: unknown = await res.json();
+      if (data && typeof data === "object" && !Array.isArray(data)) {
+        staticThemeSettingsCache = data as Record<string, unknown>;
+        return staticThemeSettingsCache;
+      }
+    }
+  } catch {
+    // 忽略静态配置加载失败
+  }
+  staticThemeSettingsCache = {};
+  return staticThemeSettingsCache;
+}
+
 /** 获取站点全局配置 */
 export async function getPublic(options?: RequestOptions): Promise<PublicConfig> {
   const me = await apiFetch<MonitorMe>("/api/me", options);
+  const staticSettings = await fetchStaticThemeSettings();
   const localSettings = getLocalThemeSettings();
+
+  // 合并配置：静态全站配置 (sao-config.json) -> 本地存储个性化覆盖
+  const mergedSettings = {
+    ...staticSettings,
+    ...localSettings,
+  };
 
   return ({
     sitename: me.site_name || "Monitor",
@@ -173,7 +206,7 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
     theme: "sao",
     version: "1.0.8",
     private_site: !me.public_page,
-    theme_settings: localSettings as ThemeSettings,
+    theme_settings: mergedSettings as ThemeSettings,
     record_preserve_time: 168,
     ping_record_preserve_time: 24,
     allow_theme_switch: true,

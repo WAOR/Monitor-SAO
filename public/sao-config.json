@@ -1,0 +1,10 @@
+{
+  "showPriceForGuests": true,
+  "showCostSummary": true,
+  "showCostSummaryFloatingButton": true,
+  "enableHomeSort": true,
+  "showHomeOverview": true,
+  "showGroupTabs": true,
+  "showRegionBar": true,
+  "showCardGroup": true
+}

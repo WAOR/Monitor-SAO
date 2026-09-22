@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronUp,
   CircleDollarSign,
+  Download,
   Grid3x3,
   ImageIcon,
   LayoutTemplate,
@@ -21,6 +22,7 @@ import {
   Square,
   Sun,
   SunMoon,
+  Upload,
   Video,
   Wallpaper,
 } from "lucide-react";
@@ -1272,7 +1274,9 @@ export function ThemeManage() {
       await saveThemeSettings(config.theme, nextSettings);
       await queryClient.invalidateQueries({ queryKey: ["public"] });
       if (editVersionRef.current === submittedEditVersion) {
-        setMessage("主题设置已保存");
+        setMessage(
+          "主题设置已在当前浏览器保存生效。若需对所有访客永久生效，可点击【导出全站配置】将 sao-config.json 放置于探针主题根目录。",
+        );
       }
     } catch (saveError) {
       if (
@@ -1293,6 +1297,51 @@ export function ThemeManage() {
     seedDrafts(sourceThemeSettings);
     setMessage(null);
     setError(null);
+  };
+
+  const handleExportConfig = () => {
+    try {
+      const configToExport: Record<string, unknown> = {
+        ...(config?.theme_settings ?? {}),
+        ...draftThemeSettings,
+      };
+      delete configToExport.homepagePingTask;
+      const dataStr =
+        "data:text/json;charset=utf-8," +
+        encodeURIComponent(JSON.stringify(configToExport, null, 2));
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "sao-config.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      setMessage("已导出全站配置文件 sao-config.json，将其放入探针主题目录即可对所有访客生效。");
+    } catch {
+      setError("导出配置文件失败");
+    }
+  };
+
+  const handleImportConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result;
+        if (typeof text === "string") {
+          const parsed = JSON.parse(text);
+          if (parsed && typeof parsed === "object") {
+            seedDrafts(normalizeThemeSettings(parsed));
+            setMessage("已成功导入配置文件，请核对后点击【保存设置】。");
+            setError(null);
+          }
+        }
+      } catch {
+        setError("导入失败：配置文件格式不正确");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   if (configLoading) {
@@ -1372,6 +1421,28 @@ export function ThemeManage() {
         </Link>
         <h1 className="theme-topbar-title">SAO 主题设置</h1>
         <div className="theme-manage-toolbar-actions">
+          <button
+            type="button"
+            onClick={handleExportConfig}
+            title="导出当前配置为 sao-config.json，替换进探针主题目录即可对所有访客永久生效"
+            className="theme-manage-button is-compact"
+          >
+            <Download size={14} />
+            <span>导出全站配置</span>
+          </button>
+          <label
+            title="导入已有配置文件 (sao-config.json)"
+            className="theme-manage-button is-compact cursor-pointer"
+          >
+            <Upload size={14} />
+            <span>导入配置</span>
+            <input
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={handleImportConfig}
+            />
+          </label>
           <button
             type="button"
             onClick={handleReset}
@@ -1989,7 +2060,7 @@ export function ThemeManage() {
                     <ToggleRow
                       field="showPriceForGuests"
                       title="向访客公开价格与资产"
-                      desc="默认关闭。开启后，未登录访客也能查看节点续费价格标签与首页资产概览；关闭时对访客隐藏价格标签，资产概览显示为 保密。"
+                      desc="默认开启。开启后，未登录访客也能查看节点续费价格标签与首页资产概览；关闭时对访客隐藏价格标签，资产概览显示为 保密。"
                       checked={draft.showPriceForGuests}
                       onPatch={patch}
                     />

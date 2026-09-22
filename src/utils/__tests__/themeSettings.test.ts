@@ -114,11 +114,11 @@ describe("normalizeThemeSettings", () => {
     ).toBe(false);
   });
 
-  it("defaults showPriceForGuests to false unless explicitly enabled", () => {
-    expect(normalizeThemeSettings({}).showPriceForGuests).toBe(false);
+  it("defaults showPriceForGuests to true unless explicitly disabled", () => {
+    expect(normalizeThemeSettings({}).showPriceForGuests).toBe(true);
     expect(normalizeThemeSettings({ showPriceForGuests: true }).showPriceForGuests).toBe(true);
     expect(normalizeThemeSettings({ showPriceForGuests: false }).showPriceForGuests).toBe(false);
-    expect(normalizeThemeSettings({ showPriceForGuests: "yes" } as never).showPriceForGuests).toBe(false);
+    expect(normalizeThemeSettings({ showPriceForGuests: "no" } as never).showPriceForGuests).toBe(true);
   });
 
   it("parses hiddenNodes from a delimited string and dedupes", () => {
