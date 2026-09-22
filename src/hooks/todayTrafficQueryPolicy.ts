@@ -1,5 +1,5 @@
 const HOUR_MS = 60 * 60 * 1000;
-const TRAFFIC_STATS_REFRESH_MS = 5 * 60 * 1000;
+const TRAFFIC_STATS_REFRESH_MS = 60 * 1000;
 const TRAFFIC_STATS_ERROR_RETRY_MS = 60 * 1000;
 
 export function selectActiveTodayTrafficUuids(

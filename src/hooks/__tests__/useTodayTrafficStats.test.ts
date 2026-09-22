@@ -27,8 +27,8 @@ describe("today traffic query policy", () => {
   });
 
   it("keeps successful metrics and compatibility records refreshing", () => {
-    expect(getTodayTrafficRefreshInterval("metrics", false)).toBe(5 * 60 * 1000);
-    expect(getTodayTrafficRefreshInterval("records", false)).toBe(5 * 60 * 1000);
+    expect(getTodayTrafficRefreshInterval("metrics", false)).toBe(60 * 1000);
+    expect(getTodayTrafficRefreshInterval("records", false)).toBe(60 * 1000);
   });
 
   it("retries failed queries on a shorter interval without polling an idle query", () => {

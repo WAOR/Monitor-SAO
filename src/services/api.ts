@@ -21,7 +21,7 @@ import {
   type MonitorNode,
 } from "@/types/monitor";
 import { getLocalThemeSettings, saveLocalThemeSettings } from "@/services/themeSettingsStore";
-import { getRawNode } from "@/services/wsStore";
+import { getLivePeak, getRawNode } from "@/services/wsStore";
 import type { TrafficMetricSeries } from "@/utils/trafficStats";
 
 export const ADMIN_USERNAME_KEY = "sao_admin_username";
@@ -520,7 +520,8 @@ export async function fetchNodeMetricsHistoryShared(
 
   const promise = (async () => {
     try {
-      const path = `/api/nodes/${encodeURIComponent(uuid)}/metrics?hours=${hours}&points=120&series=metrics`;
+      // 不传 points 参数，获取 Hub 原生完整时序粒度，避免突发测速被强行降采样稀释
+      const path = `/api/nodes/${encodeURIComponent(uuid)}/metrics?hours=${hours}&series=metrics`;
       const data = await apiFetch<MonitorMetricsHistoryResponse>(path, options);
       nodeMetricsHistoryCache.set(cacheKey, {
         data,
@@ -611,6 +612,25 @@ export async function getTodayTrafficMetrics(
             value: Math.max(0, p.net_rx),
             count: 1,
           });
+        }
+
+        // 融合 WebSocket 实时捕获的突发测速峰值（如 speedtest 瞬间流速）
+        const livePeak = getLivePeak(uuid);
+        if (livePeak) {
+          if (livePeak.peakUp > 0 && livePeak.peakUpAt != null) {
+            rateUpPoints.push({
+              time: new Date(livePeak.peakUpAt).toISOString(),
+              value: livePeak.peakUp,
+              count: 1,
+            });
+          }
+          if (livePeak.peakDown > 0 && livePeak.peakDownAt != null) {
+            rateDownPoints.push({
+              time: new Date(livePeak.peakDownAt).toISOString(),
+              value: livePeak.peakDown,
+              count: 1,
+            });
+          }
         }
 
         // 2. 流量累计计算（优先服务端权威原生统计 day_tx/day_rx，绝不使用采样推算）

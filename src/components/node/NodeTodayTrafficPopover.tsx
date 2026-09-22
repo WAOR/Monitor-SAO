@@ -130,8 +130,11 @@ export function NodeTodayTrafficPopover({
   useEffect(() => {
     if (!trafficAvailable) return;
     setTrafficActive(open);
+    if (open && Date.now() - traffic.dataUpdatedAt > 15_000 && !traffic.isFetching) {
+      void traffic.refetch();
+    }
     return () => setTrafficActive(false);
-  }, [open, setTrafficActive, trafficAvailable]);
+  }, [open, setTrafficActive, traffic.dataUpdatedAt, traffic.isFetching, traffic.refetch, trafficAvailable]);
 
   useEffect(() => {
     if (!open || !focusPopoverOnOpenRef.current) return;
@@ -350,7 +353,24 @@ function TodayTrafficPopoverBody({ traffic }: { traffic: NodeTodayTrafficView })
         />
       </div>
       <div className="node-traffic-popover-foot">
-        <span>更新 {formatClockTime(dataUpdatedAt)}</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span>更新 {formatClockTime(dataUpdatedAt)}</span>
+          <button
+            type="button"
+            className={`node-traffic-popover-refresh p-0.5 rounded hover:bg-white/10 transition-colors inline-flex items-center justify-center ${
+              isFetching ? "animate-spin text-(--accent-500)" : "text-(--text-tertiary) hover:text-(--text-primary)"
+            }`}
+            title="刷新今日流量与峰值"
+            aria-label="刷新今日流量与峰值"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              void refetch();
+            }}
+          >
+            <RefreshCw size={11} />
+          </button>
+        </span>
         <Link to="/traffic" className="node-traffic-popover-link">
           明细
         </Link>
