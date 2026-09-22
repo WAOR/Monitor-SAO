@@ -3,6 +3,7 @@ import {
   convertMonitorNodeToInfo,
   convertMonitorNodeToMetrics,
   safeMonitorNodes,
+  type MonitorNode,
 } from "@/types/monitor";
 
 type Listener = () => void;
@@ -11,6 +12,7 @@ type RealtimePayload = Record<string, unknown>;
 interface State {
   metaByUuid: Record<string, NodeInfo>;
   metricsByUuid: Record<string, NodeMetrics>;
+  rawNodesByUuid: Record<string, MonitorNode>;
   trafficTrends: Record<string, NodeTrafficTrend>;
   order: string[];
   failureStreak: number;
@@ -109,6 +111,7 @@ function emptyState(): State {
   return {
     metaByUuid: {},
     metricsByUuid: {},
+    rawNodesByUuid: {},
     trafficTrends: {},
     order: [],
     failureStreak: 0,
@@ -283,6 +286,7 @@ function applyMonitorNodes(rawList: unknown) {
 
   const nextMeta: Record<string, NodeInfo> = {};
   const nextMetrics: Record<string, NodeMetrics> = {};
+  const nextRawNodes: Record<string, MonitorNode> = {};
   const nextTrends: Record<string, NodeTrafficTrend> = { ...state.trafficTrends };
   const order: string[] = [];
 
@@ -293,6 +297,7 @@ function applyMonitorNodes(rawList: unknown) {
   for (const node of safeList) {
     const uuid = String(node.id);
     order.push(uuid);
+    nextRawNodes[uuid] = node;
 
     const info = convertMonitorNodeToInfo(node);
     const metrics = convertMonitorNodeToMetrics(node);
@@ -335,6 +340,7 @@ function applyMonitorNodes(rawList: unknown) {
   const nextState: State = {
     metaByUuid: nextMeta,
     metricsByUuid: nextMetrics,
+    rawNodesByUuid: nextRawNodes,
     trafficTrends: nextTrends,
     order,
     failureStreak: 0,
@@ -660,3 +666,12 @@ export function getNodeOnlineSummariesSnapshot(): NodeOnlineSummary[] {
   nodeOnlineSummariesSnapshotVersion = storeVersion;
   return nodeOnlineSummariesSnapshot;
 }
+
+export function getRawNode(uuid: string): MonitorNode | undefined {
+  return state.rawNodesByUuid[uuid];
+}
+
+export function getAllRawNodes(): Record<string, MonitorNode> {
+  return state.rawNodesByUuid;
+}
+

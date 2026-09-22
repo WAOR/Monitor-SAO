@@ -235,5 +235,51 @@ describe("Monitor API Service", () => {
       expect(tasks[1].name).toBe("广州电信");
     });
   });
+
+  describe("getTodayTrafficMetrics", () => {
+    it("calculates traffic using trapezoidal integration from metrics history", async () => {
+      const nowMs = 1700003600 * 1000;
+      const startMs = 1700000000 * 1000;
+      const endMs = nowMs;
+
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes("/api/nodes/1/metrics")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              metrics: [
+                { ts: 1700000000, cpu: 10, mem_used: 100, disk_used: 100, net_rx: 1000, net_tx: 2000 },
+                { ts: 1700000060, cpu: 12, mem_used: 100, disk_used: 100, net_rx: 3000, net_tx: 4000 },
+              ],
+            }),
+          };
+        }
+        return { ok: false, status: 404 };
+      });
+
+      const { getTodayTrafficMetrics } = await import("@/services/api");
+      const res = await getTodayTrafficMetrics(["1"], startMs, endMs);
+
+      expect(res.series.length).toBe(4);
+      const upSeries = res.series.find((s) => s.metricKey === "traffic.up");
+      const downSeries = res.series.find((s) => s.metricKey === "traffic.down");
+      const rateUpSeries = res.series.find((s) => s.metricKey === "net.out.rate");
+
+      expect(upSeries).toBeDefined();
+      expect(downSeries).toBeDefined();
+      expect(rateUpSeries).toBeDefined();
+
+      // points 数目验证
+      expect(upSeries!.points.length).toBe(2);
+      // 第一个点 60s 估算 2000 * 60 = 120000
+      // 第二个点 dt=60s 4000 * 60 = 240000
+      const totalUp = upSeries!.points.reduce((sum, p) => sum + (p.value ?? 0), 0);
+      expect(totalUp).toBeGreaterThan(0);
+
+      // 速率峰值点验证
+      expect(rateUpSeries!.points.map((p) => p.value)).toEqual([2000, 4000]);
+    });
+  });
 });
 

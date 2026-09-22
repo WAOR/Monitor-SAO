@@ -21,6 +21,7 @@ import {
   type MonitorNode,
 } from "@/types/monitor";
 import { getLocalThemeSettings, saveLocalThemeSettings } from "@/services/themeSettingsStore";
+import { getRawNode } from "@/services/wsStore";
 import type { TrafficMetricSeries } from "@/utils/trafficStats";
 
 export const ADMIN_USERNAME_KEY = "sao_admin_username";
@@ -495,18 +496,209 @@ export async function getPingOverviewStats(
 
 export function prewarmPingOverviewDependencies(): void {}
 
-/** 兼容接口：获取今日流量聚合数据 */
+// 节点历史指标请求池与短时缓存（30s）
+const nodeMetricsHistoryCache = new Map<string, { data: MonitorMetricsHistoryResponse; expiresAt: number }>();
+const inFlightNodeMetricsRequests = new Map<string, Promise<MonitorMetricsHistoryResponse>>();
+
+export async function fetchNodeMetricsHistoryShared(
+  uuid: string,
+  hours: number,
+  options?: RequestOptions,
+): Promise<MonitorMetricsHistoryResponse> {
+  const cacheKey = `${uuid}:${hours}`;
+  const now = Date.now();
+
+  const cached = nodeMetricsHistoryCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.data;
+  }
+
+  const inFlight = inFlightNodeMetricsRequests.get(cacheKey);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const promise = (async () => {
+    try {
+      const path = `/api/nodes/${encodeURIComponent(uuid)}/metrics?hours=${hours}&points=120&series=metrics`;
+      const data = await apiFetch<MonitorMetricsHistoryResponse>(path, options);
+      nodeMetricsHistoryCache.set(cacheKey, {
+        data,
+        expiresAt: Date.now() + 30_000,
+      });
+      return data;
+    } finally {
+      inFlightNodeMetricsRequests.delete(cacheKey);
+    }
+  })();
+
+  inFlightNodeMetricsRequests.set(cacheKey, promise);
+  return promise;
+}
+
+/**
+ * 获取今日流量聚合数据
+ * 结合 Monitor 探针节点实时数据与 24h 历史指标，进行梯形数值积分统计与网络速率采样提取
+ */
 export async function getTodayTrafficMetrics(
-  _entityIds?: string[],
+  entityIds?: string[],
   startMs?: number,
   endMs?: number,
-  _options?: RequestOptions,
+  options?: RequestOptions,
 ): Promise<TodayTrafficMetricsResponse> {
   const now = Date.now();
+  const rangeStartMs = startMs ?? now - 86400000;
+  const rangeEndMs = endMs ?? now;
+
+  let uuids = entityIds && entityIds.length > 0 ? entityIds : [];
+  if (uuids.length === 0) {
+    try {
+      const nodes = await getNodes(options);
+      uuids = nodes.map((n) => n.uuid);
+    } catch {
+      uuids = [];
+    }
+  }
+
+  if (uuids.length === 0) {
+    return {
+      series: [],
+      rangeStartMs,
+      rangeEndMs,
+      intervalSeconds: 60,
+    };
+  }
+
+  const hoursDiff = (rangeEndMs - rangeStartMs) / (3600 * 1000);
+  const queryHours = Math.max(1, Math.min(24, Math.ceil(hoursDiff) + 1));
+
+  const series: TrafficMetricSeries[] = [];
+
+  await Promise.all(
+    uuids.map(async (uuid) => {
+      try {
+        const rawNode = getRawNode(uuid);
+        let historyData: MonitorMetricsHistoryResponse | null = null;
+        try {
+          historyData = await fetchNodeMetricsHistoryShared(uuid, queryHours, options);
+        } catch {
+          // 容错单个节点网络异常
+        }
+
+        const rawPoints = historyData?.metrics ?? [];
+        const todayPoints = rawPoints
+          .filter((p) => {
+            const pMs = p.ts * 1000;
+            return pMs >= rangeStartMs && pMs <= rangeEndMs;
+          })
+          .sort((a, b) => a.ts - b.ts);
+
+        const rateUpPoints: TrafficMetricSeries["points"] = [];
+        const rateDownPoints: TrafficMetricSeries["points"] = [];
+        const trafficUpPoints: TrafficMetricSeries["points"] = [];
+        const trafficDownPoints: TrafficMetricSeries["points"] = [];
+
+        // 1. 速率采样序列（用于峰值计算和曲线图）
+        for (const p of todayPoints) {
+          const isoTime = new Date(p.ts * 1000).toISOString();
+          rateUpPoints.push({
+            time: isoTime,
+            value: Math.max(0, p.net_tx),
+            count: 1,
+          });
+          rateDownPoints.push({
+            time: isoTime,
+            value: Math.max(0, p.net_rx),
+            count: 1,
+          });
+        }
+
+        // 2. 流量累计计算（优先服务端原生 day_tx/day_rx，否则进行梯形积分）
+        const hasServerDayTraffic =
+          rawNode != null &&
+          ((rawNode.day_tx != null && rawNode.day_tx > 0) ||
+            (rawNode.day_rx != null && rawNode.day_rx > 0));
+
+        if (hasServerDayTraffic) {
+          const nowIso = new Date(rangeEndMs).toISOString();
+          if (rawNode.day_tx != null && rawNode.day_tx > 0) {
+            trafficUpPoints.push({
+              time: nowIso,
+              value: rawNode.day_tx,
+              count: 1,
+            });
+          }
+          if (rawNode.day_rx != null && rawNode.day_rx > 0) {
+            trafficDownPoints.push({
+              time: nowIso,
+              value: rawNode.day_rx,
+              count: 1,
+            });
+          }
+        } else if (todayPoints.length > 0) {
+          // 梯形积分计算今日流量消耗
+          for (let i = 0; i < todayPoints.length; i++) {
+            const curr = todayPoints[i];
+            let dtSeconds = 60;
+            if (i > 0) {
+              const prev = todayPoints[i - 1];
+              dtSeconds = Math.max(1, Math.min(curr.ts - prev.ts, 600));
+            } else if (i < todayPoints.length - 1) {
+              const next = todayPoints[i + 1];
+              dtSeconds = Math.max(1, Math.min(next.ts - curr.ts, 600));
+            }
+
+            const upBytes = Math.round(Math.max(0, curr.net_tx) * dtSeconds);
+            const downBytes = Math.round(Math.max(0, curr.net_rx) * dtSeconds);
+            const isoTime = new Date(curr.ts * 1000).toISOString();
+
+            trafficUpPoints.push({
+              time: isoTime,
+              value: upBytes,
+              count: 1,
+            });
+            trafficDownPoints.push({
+              time: isoTime,
+              value: downBytes,
+              count: 1,
+            });
+          }
+        }
+
+        series.push({
+          metricKey: "traffic.up",
+          client: uuid,
+          intervalSeconds: 60,
+          points: trafficUpPoints,
+        });
+        series.push({
+          metricKey: "traffic.down",
+          client: uuid,
+          intervalSeconds: 60,
+          points: trafficDownPoints,
+        });
+        series.push({
+          metricKey: "net.out.rate",
+          client: uuid,
+          intervalSeconds: 60,
+          points: rateUpPoints,
+        });
+        series.push({
+          metricKey: "net.in.rate",
+          client: uuid,
+          intervalSeconds: 60,
+          points: rateDownPoints,
+        });
+      } catch {
+        // 节点异常防御
+      }
+    }),
+  );
+
   return {
-    series: [],
-    rangeStartMs: startMs ?? now - 86400000,
-    rangeEndMs: endMs ?? now,
+    series,
+    rangeStartMs,
+    rangeEndMs,
     intervalSeconds: 60,
   };
 }
