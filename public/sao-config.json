@@ -1,5 +1,5 @@
 {
-  "showPriceForGuests": true,
+  "showPriceForGuests": false,
   "showCostSummary": true,
   "showCostSummaryFloatingButton": true,
   "enableHomeSort": true,

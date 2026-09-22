@@ -264,7 +264,9 @@ function resolvePingAssignmentKey(
   const selectedTaskIds = new Set(
     Array.from(requestedTaskIdsByClient.values()).flat(),
   );
-  if (selectedTaskIds.size === 0) return "";
+  if (selectedTaskIds.size === 0) {
+    return normalizedUuids.length > 0 ? `auto:${normalizedUuids.join(",")}` : "";
+  }
   return [
     `single:${buildAssignmentKey(singleTaskIdsByClient)}`,
     `multi:${buildAssignmentKey(multiTaskIdsByClient)}`,
@@ -388,15 +390,82 @@ export async function buildPingOverviewMap(
   ].join("|");
 
   if (selectedTaskIds.length === 0) {
-    return {
-      assignmentKey: "",
-      intervalMs: DEFAULT_PING_REFRESH_INTERVAL,
-      singleItems: new Map<string, PingOverviewItem>(),
-      multiLines: new Map<string, HomepagePingLine[]>(),
-      successfulTaskIds: [],
-      failedTaskIds: [],
-      pendingTaskIds: [],
-    };
+    try {
+      const overview = await withTimeoutSignal(
+        (requestSignal) =>
+          loadOverview(hours, undefined, {
+            signal: requestSignal,
+            entityIds: normalizedUuids,
+            includeStats: true,
+          }),
+        PING_REQUEST_TIMEOUT_MS,
+        signal,
+      );
+
+      const autoItems = new Map<string, PingOverviewItem>();
+      const changedUuids = new Set<string>();
+      const successfulTaskIds = new Set<number>();
+
+      for (const uuid of normalizedUuids) {
+        const clientRecords = overview.records.filter((r) => r.client === uuid);
+        if (clientRecords.length === 0) continue;
+
+        const countByTask = new Map<number, number>();
+        for (const rec of clientRecords) {
+          countByTask.set(rec.task_id, (countByTask.get(rec.task_id) ?? 0) + 1);
+        }
+        let chosenTaskId: number | undefined;
+        let maxCount = -1;
+        for (const [tId, cnt] of countByTask.entries()) {
+          if (cnt > maxCount) {
+            maxCount = cnt;
+            chosenTaskId = tId;
+          }
+        }
+        if (chosenTaskId == null) continue;
+
+        const taskItems = buildPingOverviewItems(
+          chosenTaskId,
+          clientRecords,
+          overview.stats,
+          overview.intervalSeconds,
+        );
+        const item = taskItems.get(uuid);
+        if (item) {
+          autoItems.set(uuid, {
+            ...item,
+            isAssigned: true,
+            loadState: "ready",
+          });
+          successfulTaskIds.add(chosenTaskId);
+          changedUuids.add(uuid);
+        }
+      }
+
+      return {
+        assignmentKey: `auto:${normalizedUuids.join(",")}`,
+        intervalMs:
+          typeof overview.intervalSeconds === "number" && overview.intervalSeconds > 0
+            ? overview.intervalSeconds * 1000
+            : DEFAULT_PING_REFRESH_INTERVAL,
+        singleItems: autoItems,
+        multiLines: new Map<string, HomepagePingLine[]>(),
+        successfulTaskIds: [...successfulTaskIds],
+        failedTaskIds: [],
+        pendingTaskIds: [],
+        changedUuids: [...changedUuids],
+      };
+    } catch {
+      return {
+        assignmentKey: `auto:${normalizedUuids.join(",")}`,
+        intervalMs: DEFAULT_PING_REFRESH_INTERVAL,
+        singleItems: new Map<string, PingOverviewItem>(),
+        multiLines: new Map<string, HomepagePingLine[]>(),
+        successfulTaskIds: [],
+        failedTaskIds: [],
+        pendingTaskIds: [],
+      };
+    }
   }
 
   type LoadedPingOverviewTask = {

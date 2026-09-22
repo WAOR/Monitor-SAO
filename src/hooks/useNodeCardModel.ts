@@ -77,8 +77,10 @@ export function useNodeCardModel(
 
   const hasRealHomepagePingBinding = useMemo(
     () =>
-      multiPingConfigured || hasHomepagePingTaskBinding(uuid, homepagePingBindings),
-    [homepagePingBindings, multiPingConfigured, uuid],
+      multiPingConfigured ||
+      hasHomepagePingTaskBinding(uuid, homepagePingBindings) ||
+      Boolean(realPing?.isAssigned),
+    [homepagePingBindings, multiPingConfigured, realPing?.isAssigned, uuid],
   );
   const now = useHourlyClock();
   const ping = useFakePingFallback(

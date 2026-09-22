@@ -101,7 +101,7 @@ export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   homeSortDirection: HOME_SORT_NATURAL_DIRECTION.default,
   showCostSummary: true,
   showCostSummaryFloatingButton: true,
-  showPriceForGuests: true,
+  showPriceForGuests: false,
   showOverviewRatings: true,
   showTrafficRating: true,
   showBandwidthRating: true,
@@ -221,8 +221,8 @@ export function normalizeThemeSettings(
     ...normalizeHomeSortDefault(settings?.homeSortField, settings?.homeSortDirection),
     showCostSummary: enabledUnlessFalse(settings?.showCostSummary),
     showCostSummaryFloatingButton: enabledUnlessFalse(settings?.showCostSummaryFloatingButton),
-    // 默认开启:向访客展示价格与资产（探针后台填写价格即默认向访客展示，若站长显式设为 false 则隐藏）。
-    showPriceForGuests: enabledUnlessFalse(settings?.showPriceForGuests),
+    // 默认关闭(向访客保密):需站长在主题设置中显式开启，未开启时向访客显示为保密。
+    showPriceForGuests: settings?.showPriceForGuests === true,
     showOverviewRatings: enabledUnlessFalse(settings?.showOverviewRatings),
     showTrafficRating: enabledUnlessFalse(settings?.showTrafficRating),
     showBandwidthRating: enabledUnlessFalse(settings?.showBandwidthRating),
