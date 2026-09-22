@@ -403,6 +403,7 @@ export async function buildPingOverviewMap(
       );
 
       const autoItems = new Map<string, PingOverviewItem>();
+      const autoMultiLines = new Map<string, HomepagePingLine[]>();
       const changedUuids = new Set<string>();
       const successfulTaskIds = new Set<number>();
 
@@ -414,30 +415,36 @@ export async function buildPingOverviewMap(
         for (const rec of clientRecords) {
           countByTask.set(rec.task_id, (countByTask.get(rec.task_id) ?? 0) + 1);
         }
-        let chosenTaskId: number | undefined;
-        let maxCount = -1;
-        for (const [tId, cnt] of countByTask.entries()) {
-          if (cnt > maxCount) {
-            maxCount = cnt;
-            chosenTaskId = tId;
+
+        const sortedTaskIds = Array.from(countByTask.keys()).sort((a, b) => a - b);
+        const nodeLines: HomepagePingLine[] = [];
+
+        for (const tId of sortedTaskIds) {
+          const taskRecords = clientRecords.filter((r) => r.task_id === tId);
+          const taskItems = buildPingOverviewItems(
+            tId,
+            taskRecords,
+            overview.stats,
+            overview.intervalSeconds,
+          );
+          const item = taskItems.get(uuid);
+          if (item) {
+            const taskObj = overview.tasks.find((t) => t.id === tId);
+            const taskName = taskObj?.name || `线路 #${tId}`;
+            nodeLines.push({
+              ...item,
+              taskId: tId,
+              taskName,
+              isAssigned: true,
+              loadState: "ready",
+            });
+            successfulTaskIds.add(tId);
           }
         }
-        if (chosenTaskId == null) continue;
 
-        const taskItems = buildPingOverviewItems(
-          chosenTaskId,
-          clientRecords,
-          overview.stats,
-          overview.intervalSeconds,
-        );
-        const item = taskItems.get(uuid);
-        if (item) {
-          autoItems.set(uuid, {
-            ...item,
-            isAssigned: true,
-            loadState: "ready",
-          });
-          successfulTaskIds.add(chosenTaskId);
+        if (nodeLines.length > 0) {
+          autoMultiLines.set(uuid, nodeLines);
+          autoItems.set(uuid, nodeLines[0]);
           changedUuids.add(uuid);
         }
       }
@@ -449,7 +456,7 @@ export async function buildPingOverviewMap(
             ? overview.intervalSeconds * 1000
             : DEFAULT_PING_REFRESH_INTERVAL,
         singleItems: autoItems,
-        multiLines: new Map<string, HomepagePingLine[]>(),
+        multiLines: autoMultiLines,
         successfulTaskIds: [...successfulTaskIds],
         failedTaskIds: [],
         pendingTaskIds: [],

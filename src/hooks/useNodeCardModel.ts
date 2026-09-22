@@ -64,13 +64,17 @@ export function useNodeCardModel(
   const multiPingConfigured =
     enableHomepageMultiPing &&
     isHomepageMultiPingConfigured(homepageMultiPingTaskIds);
-  const multiPingActive = includeMultiPing && multiPingConfigured;
-  const singlePingOverview = useNodePingOverview(uuid, !multiPingConfigured);
-  const realPingLines = useNodePingOverviewLines(uuid, multiPingConfigured);
+  const realPingLines = useNodePingOverviewLines(uuid, true);
+  const hasAutoMultiPing = !multiPingConfigured && realPingLines.length >= 2;
+  const multiPingActive = includeMultiPing && (multiPingConfigured || hasAutoMultiPing);
+  const singlePingOverview = useNodePingOverview(uuid, !multiPingActive);
   const primaryMultiPingLine = useMemo(() => {
-    if (!multiPingConfigured || multiPingActive) return undefined;
-    const primaryTaskId = homepageMultiPingTaskIds[0];
-    return realPingLines.find((line) => line.taskId === primaryTaskId);
+    if (!multiPingActive) return undefined;
+    if (multiPingConfigured) {
+      const primaryTaskId = homepageMultiPingTaskIds[0];
+      return realPingLines.find((line) => line.taskId === primaryTaskId);
+    }
+    return realPingLines[0];
   }, [homepageMultiPingTaskIds, multiPingActive, multiPingConfigured, realPingLines]);
 
   const realPing = primaryMultiPingLine ?? singlePingOverview;
@@ -78,9 +82,10 @@ export function useNodeCardModel(
   const hasRealHomepagePingBinding = useMemo(
     () =>
       multiPingConfigured ||
+      hasAutoMultiPing ||
       hasHomepagePingTaskBinding(uuid, homepagePingBindings) ||
       Boolean(realPing?.isAssigned),
-    [homepagePingBindings, multiPingConfigured, realPing?.isAssigned, uuid],
+    [homepagePingBindings, multiPingConfigured, hasAutoMultiPing, realPing?.isAssigned, uuid],
   );
   const now = useHourlyClock();
   const ping = useFakePingFallback(
@@ -108,34 +113,37 @@ export function useNodeCardModel(
   // 与 usePingBuckets 同理:窗口按分钟前移,不依赖数据刷新才滑动。
   const bucketNow = useMinuteClock(multiPingActive);
   const homepagePingLines = useMemo<HomepagePingDisplayLine[]>(() => {
-    if (
-      !multiPingActive
-    ) {
+    if (!multiPingActive) {
       return [];
     }
-    return homepageMultiPingTaskIds.map((taskId) => {
-      const loaded = realPingLines.find((line) => line.taskId === taskId);
-      const line: HomepagePingLine =
-        loaded ?? {
-          taskId,
-          taskName: `任务 #${taskId}`,
-          client: uuid,
-          isAssigned: true,
-          loadState: "pending",
-          lastValue: null,
-          samples: [],
-          max: 1,
-          loss: null,
-        };
-      return {
-        ...line,
-        buckets: buildPingBuckets(line, pingBucketCount, bucketNow),
-      };
-    });
+    const sourceLines = multiPingConfigured
+      ? homepageMultiPingTaskIds.map((taskId) => {
+          const loaded = realPingLines.find((line) => line.taskId === taskId);
+          const line: HomepagePingLine =
+            loaded ?? {
+              taskId,
+              taskName: `任务 #${taskId}`,
+              client: uuid,
+              isAssigned: true,
+              loadState: "pending",
+              lastValue: null,
+              samples: [],
+              max: 1,
+              loss: null,
+            };
+          return line;
+        })
+      : realPingLines;
+
+    return sourceLines.map((line) => ({
+      ...line,
+      buckets: buildPingBuckets(line, pingBucketCount, bucketNow),
+    }));
   }, [
     bucketNow,
     homepageMultiPingTaskIds,
     multiPingActive,
+    multiPingConfigured,
     pingBucketCount,
     realPingLines,
     uuid,
