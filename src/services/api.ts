@@ -172,17 +172,27 @@ export async function fetchStaticThemeSettings(): Promise<Record<string, unknown
   if (typeof window === "undefined" || typeof fetch === "undefined") {
     return {};
   }
-  try {
-    const res = await fetch("/sao-config.json", { cache: "no-cache" });
-    if (res.ok) {
-      const data: unknown = await res.json();
-      if (data && typeof data === "object" && !Array.isArray(data)) {
-        staticThemeSettingsCache = data as Record<string, unknown>;
-        return staticThemeSettingsCache;
+  const candidateUrls = ["./sao-config.json", "/sao-config.json"];
+  for (const url of candidateUrls) {
+    try {
+      const res = await fetch(url, { cache: "no-cache" });
+      const contentType = res.headers.get("content-type") ?? "";
+      if (
+        res.ok &&
+        !contentType.includes("text/html")
+      ) {
+        const text = await res.text();
+        if (text.trim().startsWith("{")) {
+          const data: unknown = JSON.parse(text);
+          if (data && typeof data === "object" && !Array.isArray(data)) {
+            staticThemeSettingsCache = data as Record<string, unknown>;
+            return staticThemeSettingsCache;
+          }
+        }
       }
+    } catch {
+      // 继续尝试下一个候选地址
     }
-  } catch {
-    // 忽略静态配置加载失败
   }
   staticThemeSettingsCache = {};
   return staticThemeSettingsCache;
