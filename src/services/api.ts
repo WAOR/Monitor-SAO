@@ -613,28 +613,23 @@ export async function getTodayTrafficMetrics(
           });
         }
 
-        // 2. 流量累计计算（优先服务端原生 day_tx/day_rx，否则进行梯形积分）
+        // 2. 流量累计计算（优先服务端权威原生统计 day_tx/day_rx，绝不使用采样推算）
         const hasServerDayTraffic =
           rawNode != null &&
-          ((rawNode.day_tx != null && rawNode.day_tx > 0) ||
-            (rawNode.day_rx != null && rawNode.day_rx > 0));
+          (typeof rawNode.day_tx === "number" || typeof rawNode.day_rx === "number");
 
         if (hasServerDayTraffic) {
           const nowIso = new Date(rangeEndMs).toISOString();
-          if (rawNode.day_tx != null && rawNode.day_tx > 0) {
-            trafficUpPoints.push({
-              time: nowIso,
-              value: rawNode.day_tx,
-              count: 1,
-            });
-          }
-          if (rawNode.day_rx != null && rawNode.day_rx > 0) {
-            trafficDownPoints.push({
-              time: nowIso,
-              value: rawNode.day_rx,
-              count: 1,
-            });
-          }
+          trafficUpPoints.push({
+            time: nowIso,
+            value: Math.max(0, rawNode.day_tx ?? 0),
+            count: 1,
+          });
+          trafficDownPoints.push({
+            time: nowIso,
+            value: Math.max(0, rawNode.day_rx ?? 0),
+            count: 1,
+          });
         } else if (todayPoints.length > 0) {
           // 梯形积分计算今日流量消耗
           for (let i = 0; i < todayPoints.length; i++) {

@@ -51,6 +51,7 @@ import {
   TodayTrafficStatsProvider,
   useTodayTrafficStats,
 } from "@/hooks/useTodayTrafficStats";
+import { getRawNode } from "@/services/wsStore";
 import { HomeSortControl } from "./HomeSortControl";
 import {
   getOverviewRating,
@@ -755,12 +756,28 @@ export function NodeGrid() {
   const todayTrafficClock = useMinuteClock();
   const todayTrafficQuery = useTodayTrafficStats(trafficUuids, todayTrafficClock, "summary");
   const todayTrafficTotal = useMemo(() => {
+    // 优先：若后台已完成 query 查询且拿到 rows，直接从 query.data 获取
+    if (todayTrafficQuery.data && todayTrafficQuery.data.rows.length > 0) {
+      return todayTrafficQuery.data.rows.reduce(
+        (sum, row) => sum + row.trafficUp + row.trafficDown,
+        0,
+      );
+    }
+    // 0ms 即时权威计算：直接从各可见节点权威状态 rawNode (day_rx + day_tx) 汇总
+    let rawSum = 0;
+    let hasRawData = false;
+    for (const node of visibleMeta) {
+      const raw = getRawNode(node.uuid);
+      if (raw && (typeof raw.day_rx === "number" || typeof raw.day_tx === "number")) {
+        hasRawData = true;
+        rawSum += (raw.day_rx || 0) + (raw.day_tx || 0);
+      }
+    }
+    if (hasRawData) return rawSum;
+
     if (!todayTrafficQuery.data) return null;
-    return todayTrafficQuery.data.rows.reduce(
-      (sum, row) => sum + row.trafficUp + row.trafficDown,
-      0,
-    );
-  }, [todayTrafficQuery.data]);
+    return 0;
+  }, [todayTrafficQuery.data, visibleMeta]);
   // 「名称」排序需要展示名(摘要无 name),从 meta 注入。
   const nameByUuid = useMemo(() => {
     const map = new Map<string, string>();
