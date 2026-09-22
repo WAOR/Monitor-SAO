@@ -41,7 +41,7 @@
 3. **[Komari-Theme-SAO](https://github.com/WAOR/Komari-Theme-SAO)**：`@WAOR` 基于 LuminaPlus 进行的个人二次开发分支，确立了极简立体仪表盘与护眼暗色设计体系。
 4. **[monitor-probe/monitor](https://github.com/monitor-probe/monitor)**：高性能极简 Rust 探针服务端。
 5. **[guboysky/LuminaPlus](https://github.com/guboysky/LuminaPlus)**：社区将 LuminaPlus 引入 Monitor 探针的基础参考版本。
-6. **[Monitor-SAO](https://github.com/WAOR/Monitor-SAO)**：**本项目**，将 SAO 极简立体主题全量特性完整移植至 Monitor 探针体系，并解决了一系列上游遗留的多线路显示与未登录适配痛点。
+6. **[Monitor-SAO](https://github.com/WAOR/Monitor-SAO)**：**本项目**，将 SAO 极简立体主题全量特性完整移植至 Monitor 探针体系。
 
 ---
 
