@@ -16,7 +16,8 @@ import {
   type NodeTodayTrafficView,
 } from "@/hooks/useTodayTrafficStats";
 import { useFineHover } from "@/hooks/useMediaQuery";
-import { formatBytes, formatByteRateLabel, formatClockTime } from "@/utils/format";
+import { formatBytes, formatByteRateLabel, formatClockTime, formatClockTimeDetailed } from "@/utils/format";
+import { clearNodeMetricsHistoryCache } from "@/services/api";
 import {
   consumeTriggerFocusSuppression,
   INITIAL_NODE_TODAY_TRAFFIC_POPOVER_STATE,
@@ -256,7 +257,7 @@ export function NodeTodayTrafficPopover({
             onPointerEnter={fineHover ? openOnHover : undefined}
             onPointerLeave={fineHover ? scheduleClose : undefined}
           >
-            <TodayTrafficPopoverBody traffic={traffic} />
+            <TodayTrafficPopoverBody traffic={traffic} uuid={uuid} />
           </div>,
           document.body,
         )}
@@ -264,7 +265,7 @@ export function NodeTodayTrafficPopover({
   );
 }
 
-function TodayTrafficPopoverBody({ traffic }: { traffic: NodeTodayTrafficView }) {
+function TodayTrafficPopoverBody({ traffic, uuid }: { traffic: NodeTodayTrafficView; uuid: string }) {
   const {
     stat,
     isPending,
@@ -273,6 +274,24 @@ function TodayTrafficPopoverBody({ traffic }: { traffic: NodeTodayTrafficView })
     dataUpdatedAt,
     refetch,
   } = traffic;
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const isSpinning = isFetching || isManualRefreshing;
+
+  const handleRefresh = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (isManualRefreshing) return;
+    setIsManualRefreshing(true);
+    // 强制清除该节点底层 30s 请求缓存，保证真实向服务端拉取
+    clearNodeMetricsHistoryCache(uuid);
+    try {
+      await refetch();
+    } finally {
+      setTimeout(() => {
+        setIsManualRefreshing(false);
+      }, 600);
+    }
+  };
 
   if (isPending && !stat) {
     return <div className="node-traffic-popover-empty">正在加载今日流量…</div>;
@@ -284,12 +303,10 @@ function TodayTrafficPopoverBody({ traffic }: { traffic: NodeTodayTrafficView })
         <span>今日流量加载失败</span>
         <button
           type="button"
-          className={`node-traffic-popover-retry${isFetching ? " is-spinning" : ""}`}
-          onClick={() => void refetch()}
-          disabled={isFetching}
-          aria-busy={isFetching}
+          className={`node-traffic-popover-retry${isSpinning ? " is-spinning" : ""}`}
+          onClick={handleRefresh}
+          disabled={isSpinning}
         >
-          <RefreshCw size={11} strokeWidth={2.3} />
           重试
         </button>
       </div>
@@ -300,7 +317,7 @@ function TodayTrafficPopoverBody({ traffic }: { traffic: NodeTodayTrafficView })
     return (
       <>
         {isError && (
-          <TrafficRefreshError isFetching={isFetching} refetch={refetch} />
+          <TrafficRefreshError isFetching={isSpinning} refetch={handleRefresh} />
         )}
         <div className="node-traffic-popover-empty">今日暂无采样数据</div>
       </>
@@ -310,7 +327,7 @@ function TodayTrafficPopoverBody({ traffic }: { traffic: NodeTodayTrafficView })
   return (
     <>
       {isError && (
-        <TrafficRefreshError isFetching={isFetching} refetch={refetch} />
+        <TrafficRefreshError isFetching={isSpinning} refetch={handleRefresh} />
       )}
       <div className="node-traffic-popover-head">
         <span>今日流量</span>
@@ -354,21 +371,17 @@ function TodayTrafficPopoverBody({ traffic }: { traffic: NodeTodayTrafficView })
       </div>
       <div className="node-traffic-popover-foot">
         <span className="inline-flex items-center gap-1.5">
-          <span>更新 {formatClockTime(dataUpdatedAt)}</span>
+          <span>更新 {formatClockTimeDetailed(dataUpdatedAt)}</span>
           <button
             type="button"
-            className={`node-traffic-popover-refresh p-0.5 rounded hover:bg-white/10 transition-colors inline-flex items-center justify-center ${
-              isFetching ? "animate-spin text-(--accent-500)" : "text-(--text-tertiary) hover:text-(--text-primary)"
-            }`}
-            title="刷新今日流量与峰值"
-            aria-label="刷新今日流量与峰值"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              void refetch();
-            }}
+            className={`node-traffic-popover-refresh${isSpinning ? " is-spinning" : ""}`}
+            onClick={handleRefresh}
+            disabled={isSpinning}
+            aria-busy={isSpinning}
+            aria-label="立即刷新今日流量"
+            title="立即刷新"
           >
-            <RefreshCw size={11} />
+            <RefreshCw size={11} strokeWidth={2.2} />
           </button>
         </span>
         <Link to="/traffic" className="node-traffic-popover-link">
@@ -384,7 +397,7 @@ function TrafficRefreshError({
   refetch,
 }: {
   isFetching: boolean;
-  refetch: () => Promise<unknown>;
+  refetch: (e?: React.MouseEvent) => Promise<unknown> | void;
 }) {
   return (
     <div className="node-traffic-popover-error is-stale" role="alert">
@@ -392,7 +405,7 @@ function TrafficRefreshError({
       <button
         type="button"
         className={`node-traffic-popover-retry${isFetching ? " is-spinning" : ""}`}
-        onClick={() => void refetch()}
+        onClick={(e) => void refetch(e)}
         disabled={isFetching}
         aria-busy={isFetching}
         aria-label="重试更新今日流量"

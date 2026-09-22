@@ -54,6 +54,7 @@ export interface RequestOptions {
   timeoutMs?: number;
   timeout?: number;
   skipMetricQuery?: boolean;
+  forceRefresh?: boolean;
 }
 
 export interface TodayTrafficMetricsResponse {
@@ -500,6 +501,18 @@ export function prewarmPingOverviewDependencies(): void {}
 const nodeMetricsHistoryCache = new Map<string, { data: MonitorMetricsHistoryResponse; expiresAt: number }>();
 const inFlightNodeMetricsRequests = new Map<string, Promise<MonitorMetricsHistoryResponse>>();
 
+export function clearNodeMetricsHistoryCache(uuid?: string): void {
+  if (uuid) {
+    for (const key of nodeMetricsHistoryCache.keys()) {
+      if (key.startsWith(`${uuid}:`)) {
+        nodeMetricsHistoryCache.delete(key);
+      }
+    }
+  } else {
+    nodeMetricsHistoryCache.clear();
+  }
+}
+
 export async function fetchNodeMetricsHistoryShared(
   uuid: string,
   hours: number,
@@ -508,9 +521,11 @@ export async function fetchNodeMetricsHistoryShared(
   const cacheKey = `${uuid}:${hours}`;
   const now = Date.now();
 
-  const cached = nodeMetricsHistoryCache.get(cacheKey);
-  if (cached && cached.expiresAt > now) {
-    return cached.data;
+  if (!options?.forceRefresh) {
+    const cached = nodeMetricsHistoryCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+      return cached.data;
+    }
   }
 
   const inFlight = inFlightNodeMetricsRequests.get(cacheKey);

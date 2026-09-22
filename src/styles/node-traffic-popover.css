@@ -269,6 +269,42 @@
   animation: node-traffic-popover-spin 900ms linear infinite;
 }
 
+.node-traffic-popover-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  line-height: 1;
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    transform 100ms ease;
+}
+
+.node-traffic-popover-refresh:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--fill-tertiary);
+}
+
+.node-traffic-popover-refresh:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+.node-traffic-popover-refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.node-traffic-popover-refresh.is-spinning svg {
+  animation: node-traffic-popover-spin 900ms linear infinite;
+  color: var(--progress-cpu);
+}
+
 @keyframes node-traffic-popover-spin {
   to {
     transform: rotate(360deg);
@@ -277,7 +313,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .node-traffic-popover,
-  .node-traffic-popover-retry.is-spinning svg {
+  .node-traffic-popover-retry.is-spinning svg,
+  .node-traffic-popover-refresh.is-spinning svg {
     animation: none;
   }
 }

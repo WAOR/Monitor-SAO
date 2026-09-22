@@ -4,6 +4,12 @@ const CLOCK_TIME_FORMATTER = new Intl.DateTimeFormat("zh-CN", {
   minute: "2-digit",
   hour12: false,
 });
+const CLOCK_TIME_DETAILED_FORMATTER = new Intl.DateTimeFormat("zh-CN", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
 const TRAFFIC_RATE_THRESHOLDS: Array<{ unit: Exclude<TrafficRateUnit, "bps">; divisor: number }> = [
   { unit: "Tbps", divisor: 1_000_000_000_000 },
   { unit: "Gbps", divisor: 1_000_000_000 },
@@ -52,6 +58,12 @@ export function formatBytes(n: number | undefined | null): string {
 export function formatClockTime(timeMs: number | null | undefined): string {
   if (timeMs == null || !Number.isFinite(timeMs)) return "—";
   return CLOCK_TIME_FORMATTER.format(timeMs);
+}
+
+/** 显示时分秒（本地时区），用于精确展示刷新时间点。 */
+export function formatClockTimeDetailed(timeMs: number | null | undefined): string {
+  if (timeMs == null || !Number.isFinite(timeMs)) return "—";
+  return CLOCK_TIME_DETAILED_FORMATTER.format(timeMs);
 }
 
 function formatRateValue(value: number): string {
