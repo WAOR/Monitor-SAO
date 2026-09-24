@@ -283,12 +283,14 @@ function commit(next: State, touches: CommitTouches = {}) {
 
 function applyMonitorNodes(rawList: unknown) {
   const safeList = safeMonitorNodes(rawList);
+  if (safeList.length === 0) return;
 
-  const nextMeta: Record<string, NodeInfo> = {};
-  const nextMetrics: Record<string, NodeMetrics> = {};
-  const nextRawNodes: Record<string, MonitorNode> = {};
+  const isPartial = safeList.length < state.order.length && state.order.length > 0;
+  const nextMeta: Record<string, NodeInfo> = isPartial ? { ...state.metaByUuid } : {};
+  const nextMetrics: Record<string, NodeMetrics> = isPartial ? { ...state.metricsByUuid } : {};
+  const nextRawNodes: Record<string, MonitorNode> = isPartial ? { ...state.rawNodesByUuid } : {};
   const nextTrends: Record<string, NodeTrafficTrend> = { ...state.trafficTrends };
-  const order: string[] = [];
+  const order: string[] = isPartial ? [...state.order] : [];
 
   const touchedMeta: string[] = [];
   const touchedMetrics: string[] = [];
@@ -296,7 +298,9 @@ function applyMonitorNodes(rawList: unknown) {
 
   for (const node of safeList) {
     const uuid = String(node.id);
-    order.push(uuid);
+    if (!order.includes(uuid)) {
+      order.push(uuid);
+    }
     nextRawNodes[uuid] = node;
 
     const info = convertMonitorNodeToInfo(node);
@@ -401,8 +405,8 @@ function fetchOnce() {
 
   fetchPromise
     .then((d) => {
-      if (d && Array.isArray(d.nodes)) {
-        applyMonitorNodes(d.nodes as Parameters<typeof applyMonitorNodes>[0]);
+      if (d) {
+        applyMonitorNodes(d);
       }
     })
     .catch(() => {
@@ -425,15 +429,15 @@ function startWsConnection() {
   try {
     wsSocket = new WebSocket(wsUrl);
   } catch {
-    if (!pollTimer) pollTimer = setInterval(fetchOnce, 5000);
+    if (!pollTimer) pollTimer = setInterval(fetchOnce, 2000);
     return;
   }
 
   wsSocket.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      if (data && Array.isArray(data.nodes)) {
-        applyMonitorNodes(data.nodes);
+      if (data) {
+        applyMonitorNodes(data);
         if (pollTimer) {
           clearInterval(pollTimer);
           pollTimer = null;
@@ -448,8 +452,8 @@ function startWsConnection() {
 
   wsSocket.onclose = () => {
     if (!isStarted) return;
-    if (!pollTimer) pollTimer = setInterval(fetchOnce, 5000);
-    reconnectTimer = setTimeout(startWsConnection, 5000);
+    if (!pollTimer) pollTimer = setInterval(fetchOnce, 2000);
+    reconnectTimer = setTimeout(startWsConnection, 3000);
   };
 }
 

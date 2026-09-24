@@ -18,7 +18,6 @@ import {
   type MonitorHistoryPoint,
   type MonitorMe,
   type MonitorMetricsHistoryResponse,
-  type MonitorNode,
 } from "@/types/monitor";
 import { getLocalThemeSettings, saveLocalThemeSettings } from "@/services/themeSettingsStore";
 import { getRawNode } from "@/services/wsStore";
@@ -320,15 +319,15 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
 
 /** 获取节点列表 */
 export async function getNodes(options?: RequestOptions): Promise<NodeInfo[]> {
-  const data = await apiFetch<{ nodes: MonitorNode[] }>("/api/nodes", options);
-  const safeList = safeMonitorNodes(data?.nodes ?? []);
+  const data = await apiFetch<unknown>("/api/nodes", options);
+  const safeList = safeMonitorNodes(data);
   return safeList.map(convertMonitorNodeToInfo);
 }
 
 /** 获取所有节点最新状态字典 */
 export async function getNodesLatestStatus(options?: RequestOptions): Promise<Record<string, unknown>> {
-  const data = await apiFetch<{ nodes: MonitorNode[] }>("/api/nodes", options);
-  const safeList = safeMonitorNodes(data?.nodes ?? []);
+  const data = await apiFetch<unknown>("/api/nodes", options);
+  const safeList = safeMonitorNodes(data);
   const result: Record<string, unknown> = {};
 
   for (const node of safeList) {
@@ -690,6 +689,25 @@ export async function getTodayTrafficMetrics(
             value: Math.max(0, p.net_rx),
             count: 1,
           });
+        }
+
+        // 把实时的当前流速也计入采样，确保测速时的高峰第一时间被计入峰值
+        if (rawNode?.metrics) {
+          const nowIso = new Date().toISOString();
+          const liveTx = Math.max(0, rawNode.metrics.net_tx);
+          const liveRx = Math.max(0, rawNode.metrics.net_rx);
+          if (liveTx > 0 || liveRx > 0) {
+            rateUpPoints.push({
+              time: nowIso,
+              value: liveTx,
+              count: 1,
+            });
+            rateDownPoints.push({
+              time: nowIso,
+              value: liveRx,
+              count: 1,
+            });
+          }
         }
 
         // 2. 流量累计计算（优先服务端权威原生统计 day_tx/day_rx，绝不使用采样推算）

@@ -91,40 +91,101 @@ export interface MonitorMetricsHistoryResponse {
 }
 
 /** 检查并防御性修复畸形或缺失的 metrics 数据，防止单节点异常引发全屏报错 */
-export function safeMonitorNodes(nodes: unknown): MonitorNode[] {
-  if (!Array.isArray(nodes)) return [];
-  const isNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0;
-  const metricFields = [
-    "uptime",
-    "cpu",
-    "mem_total",
-    "mem_used",
-    "swap_total",
-    "swap_used",
-    "disk_total",
-    "disk_used",
-    "net_rx",
-    "net_tx",
-    "total_rx",
-    "total_tx",
-    "tcp",
-    "udp",
-    "procs",
-  ] as const;
+export function safeMonitorNodes(raw: unknown): MonitorNode[] {
+  if (!raw) return [];
+  const list = Array.isArray(raw)
+    ? raw
+    : (raw as { nodes?: unknown[]; data?: unknown[] })?.nodes ??
+      (raw as { data?: unknown[] })?.data ??
+      (raw && typeof raw === "object" && "id" in (raw as Record<string, unknown>) ? [raw] : []);
+  if (!Array.isArray(list)) return [];
 
-  return nodes.map((raw): MonitorNode => {
-    const node = raw as MonitorNode;
-    const m = node.metrics;
-    if (!m) {
+  const toSafeNum = (v: unknown, fallback = 0): number => {
+    if (typeof v === "number" && Number.isFinite(v) && v >= 0) return v;
+    if (typeof v === "string") {
+      const parsed = parseFloat(v);
+      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+    }
+    return fallback;
+  };
+
+  return list.map((item): MonitorNode => {
+    if (!item || typeof item !== "object") return item as MonitorNode;
+    const node = { ...(item as MonitorNode) };
+    const m = node.metrics as Record<string, unknown> | null | undefined;
+    if (!m || typeof m !== "object") {
       return { ...node, metrics: null };
     }
-    const isValid =
-      metricFields.every((field) => isNumber(m[field])) &&
-      Array.isArray(m.load) &&
-      m.load.length === 3 &&
-      m.load.every((v) => typeof v === "number" && Number.isFinite(v));
 
-    return isValid ? node : { ...node, metrics: null };
+    const safeLoad: [number, number, number] = Array.isArray(m.load)
+      ? [toSafeNum(m.load[0]), toSafeNum(m.load[1]), toSafeNum(m.load[2])]
+      : [0, 0, 0];
+
+    const rawMetrics = m;
+    const rawNodeObj = node as unknown as Record<string, unknown>;
+
+    const safeNetRx = toSafeNum(
+      rawMetrics.net_rx ?? rawMetrics.rx ?? rawNodeObj.net_rx ?? rawNodeObj.rx
+    );
+    const safeNetTx = toSafeNum(
+      rawMetrics.net_tx ?? rawMetrics.tx ?? rawNodeObj.net_tx ?? rawNodeObj.tx
+    );
+
+    const safeTotalRx = toSafeNum(
+      rawMetrics.total_rx ??
+        rawMetrics.net_rx_total ??
+        rawMetrics.rx_total ??
+        node.total_rx ??
+        rawNodeObj.net_rx_total ??
+        rawNodeObj.rx_total
+    );
+    const safeTotalTx = toSafeNum(
+      rawMetrics.total_tx ??
+        rawMetrics.net_tx_total ??
+        rawMetrics.tx_total ??
+        node.total_tx ??
+        rawNodeObj.net_tx_total ??
+        rawNodeObj.tx_total
+    );
+
+    const safeDayRx = toSafeNum(
+      rawMetrics.day_rx ?? rawMetrics.today_rx ?? node.day_rx ?? rawNodeObj.today_rx,
+      -1
+    );
+    const safeDayTx = toSafeNum(
+      rawMetrics.day_tx ?? rawMetrics.today_tx ?? node.day_tx ?? rawNodeObj.today_tx,
+      -1
+    );
+
+    const sanitizedMetrics: MonitorMetrics = {
+      uptime: toSafeNum(m.uptime),
+      cpu: toSafeNum(m.cpu),
+      load: safeLoad,
+      mem_total: toSafeNum(m.mem_total, toSafeNum(node.mem_total)),
+      mem_used: toSafeNum(m.mem_used),
+      swap_total: toSafeNum(m.swap_total, toSafeNum(node.swap_total)),
+      swap_used: toSafeNum(m.swap_used),
+      disk_total: toSafeNum(m.disk_total, toSafeNum(node.disk_total)),
+      disk_used: toSafeNum(m.disk_used),
+      net_rx: safeNetRx,
+      net_tx: safeNetTx,
+      total_rx: safeTotalRx,
+      total_tx: safeTotalTx,
+      tcp: toSafeNum(m.tcp),
+      udp: toSafeNum(m.udp),
+      procs: toSafeNum(m.procs),
+      month_rx: typeof m.month_rx === "number" ? m.month_rx : node.month_rx,
+      month_tx: typeof m.month_tx === "number" ? m.month_tx : node.month_tx,
+    };
+
+    return {
+      ...node,
+      total_rx: safeTotalRx > 0 ? safeTotalRx : node.total_rx,
+      total_tx: safeTotalTx > 0 ? safeTotalTx : node.total_tx,
+      day_rx: safeDayRx >= 0 ? safeDayRx : node.day_rx,
+      day_tx: safeDayTx >= 0 ? safeDayTx : node.day_tx,
+      metrics: sanitizedMetrics,
+    };
   });
 }
 
@@ -175,7 +236,11 @@ export function convertMonitorNodeToInfo(node: MonitorNode): NodeInfo {
  */
 export function convertMonitorNodeToMetrics(node: MonitorNode): NodeMetrics {
   const m = node.metrics;
-  const isOnline = Boolean(node.online);
+  const isOnline =
+    node.online === true ||
+    (node.online as unknown) === 1 ||
+    (node.online as unknown) === "true" ||
+    (node.online == null && m !== null);
 
   if (!m || !isOnline) {
     return {

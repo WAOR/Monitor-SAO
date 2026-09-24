@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -759,29 +759,59 @@ export function NodeGrid() {
   }, [queryClient, trafficUuids]);
   const todayTrafficClock = useMinuteClock();
   const todayTrafficQuery = useTodayTrafficStats(trafficUuids, todayTrafficClock, "summary");
-  const todayTrafficTotal = useMemo(() => {
-    // 优先：若后台已完成 query 查询且拿到 rows，直接从 query.data 获取
-    if (todayTrafficQuery.data && todayTrafficQuery.data.rows.length > 0) {
-      return todayTrafficQuery.data.rows.reduce(
-        (sum, row) => sum + row.trafficUp + row.trafficDown,
-        0,
-      );
+  const initialTrafficRef = useRef<Map<string, number>>(new Map());
+
+  // 跟踪节点初始累计流量，用于捕获当前会话中的测速与实时流量增量
+  useEffect(() => {
+    for (const node of visibleNodes) {
+      const currentTotal = (node.trafficUp || 0) + (node.trafficDown || 0);
+      if (currentTotal > 0 && !initialTrafficRef.current.has(node.uuid)) {
+        initialTrafficRef.current.set(node.uuid, currentTotal);
+      }
     }
-    // 0ms 即时权威计算：直接从各可见节点权威状态 rawNode (day_rx + day_tx) 汇总
-    let rawSum = 0;
-    let hasRawData = false;
+  }, [visibleNodes]);
+
+  const todayTrafficTotal = useMemo(() => {
+    // 1. 服务端原生权威日流量 (day_rx + day_tx) 汇总
+    let rawDaySum = 0;
+    let hasServerDayTraffic = false;
     for (const node of visibleMeta) {
       const raw = getRawNode(node.uuid);
       if (raw && (typeof raw.day_rx === "number" || typeof raw.day_tx === "number")) {
-        hasRawData = true;
-        rawSum += (raw.day_rx || 0) + (raw.day_tx || 0);
+        hasServerDayTraffic = true;
+        rawDaySum += Math.max(0, raw.day_rx || 0) + Math.max(0, raw.day_tx || 0);
       }
     }
-    if (hasRawData) return rawSum;
+    if (hasServerDayTraffic) {
+      return rawDaySum;
+    }
+
+    // 2. 计算当前会话测速增量 (通过实时 WS 节点累计流量的 delta)
+    let liveSessionDelta = 0;
+    for (const node of visibleNodes) {
+      const currentTotal = (node.trafficUp || 0) + (node.trafficDown || 0);
+      const initialTotal = initialTrafficRef.current.get(node.uuid) ?? currentTotal;
+      if (currentTotal > initialTotal) {
+        liveSessionDelta += currentTotal - initialTotal;
+      }
+    }
+
+    // 3. 基于历史查询基准值 + 实时测速增量
+    if (todayTrafficQuery.data && todayTrafficQuery.data.rows.length > 0) {
+      const querySum = todayTrafficQuery.data.rows.reduce(
+        (sum, row) => sum + row.trafficUp + row.trafficDown,
+        0,
+      );
+      return querySum + liveSessionDelta;
+    }
+
+    if (liveSessionDelta > 0) {
+      return liveSessionDelta;
+    }
 
     if (!todayTrafficQuery.data) return null;
     return 0;
-  }, [todayTrafficQuery.data, visibleMeta]);
+  }, [todayTrafficQuery.data, visibleMeta, visibleNodes]);
   // 「名称」排序需要展示名(摘要无 name),从 meta 注入。
   const nameByUuid = useMemo(() => {
     const map = new Map<string, string>();

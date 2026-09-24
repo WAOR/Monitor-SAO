@@ -15,6 +15,8 @@ import {
   useNodeTodayTraffic,
   type NodeTodayTrafficView,
 } from "@/hooks/useTodayTrafficStats";
+import { useNodeMetrics } from "@/hooks/useNode";
+import { getRawNode } from "@/services/wsStore";
 import { useFineHover } from "@/hooks/useMediaQuery";
 import { formatBytes, formatByteRateLabel, formatClockTime, formatClockTimeDetailed } from "@/utils/format";
 import { clearNodeMetricsHistoryCache } from "@/services/api";
@@ -274,6 +276,9 @@ function TodayTrafficPopoverBody({ traffic, uuid }: { traffic: NodeTodayTrafficV
     dataUpdatedAt,
     refetch,
   } = traffic;
+  const liveMetrics = useNodeMetrics(uuid);
+  const rawNode = getRawNode(uuid);
+
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const isSpinning = isFetching || isManualRefreshing;
 
@@ -293,11 +298,39 @@ function TodayTrafficPopoverBody({ traffic, uuid }: { traffic: NodeTodayTrafficV
     }
   };
 
-  if (isPending && !stat) {
+  // 综合判断是否有有效数据（包含历史采样或当前实时流速/流量）
+  const liveNetUp = liveMetrics?.netUp ?? 0;
+  const liveNetDown = liveMetrics?.netDown ?? 0;
+  const hasServerDayTraffic =
+    rawNode != null &&
+    (typeof rawNode.day_tx === "number" || typeof rawNode.day_rx === "number");
+  const displayTrafficUp = hasServerDayTraffic
+    ? Math.max(0, rawNode.day_tx ?? 0)
+    : (stat?.trafficUp ?? 0);
+  const displayTrafficDown = hasServerDayTraffic
+    ? Math.max(0, rawNode.day_rx ?? 0)
+    : (stat?.trafficDown ?? 0);
+
+  const displayPeakUp = Math.max(stat?.peakUp ?? 0, liveNetUp);
+  const displayPeakDown = Math.max(stat?.peakDown ?? 0, liveNetDown);
+  const displayPeakUpAt =
+    liveNetUp >= (stat?.peakUp ?? 0) && liveNetUp > 0 ? Date.now() : stat?.peakUpAt;
+  const displayPeakDownAt =
+    liveNetDown >= (stat?.peakDown ?? 0) && liveNetDown > 0 ? Date.now() : stat?.peakDownAt;
+
+  const hasAnyData =
+    Boolean(stat?.hasSamples) ||
+    hasServerDayTraffic ||
+    displayTrafficUp > 0 ||
+    displayTrafficDown > 0 ||
+    displayPeakUp > 0 ||
+    displayPeakDown > 0;
+
+  if (isPending && !hasAnyData) {
     return <div className="node-traffic-popover-empty">正在加载今日流量…</div>;
   }
 
-  if (isError && !stat) {
+  if (isError && !hasAnyData) {
     return (
       <div className="node-traffic-popover-error">
         <span>今日流量加载失败</span>
@@ -313,7 +346,7 @@ function TodayTrafficPopoverBody({ traffic, uuid }: { traffic: NodeTodayTrafficV
     );
   }
 
-  if (!stat || !stat.hasSamples) {
+  if (!hasAnyData) {
     return (
       <>
         {isError && (
@@ -336,12 +369,12 @@ function TodayTrafficPopoverBody({ traffic, uuid }: { traffic: NodeTodayTrafficV
         <PopoverRow
           icon={<span className="node-traffic-icon is-up"><ArrowUp size={12} strokeWidth={2.4} /></span>}
           label="上行流量"
-          value={formatBytes(stat.trafficUp)}
+          value={formatBytes(displayTrafficUp)}
         />
         <PopoverRow
           icon={<span className="node-traffic-icon is-down"><ArrowDown size={12} strokeWidth={2.4} /></span>}
           label="下行流量"
-          value={formatBytes(stat.trafficDown)}
+          value={formatBytes(displayTrafficDown)}
         />
       </div>
       <div className="node-traffic-popover-head is-peak">
@@ -351,20 +384,20 @@ function TodayTrafficPopoverBody({ traffic, uuid }: { traffic: NodeTodayTrafficV
         <PopoverRow
           icon={<span className="node-traffic-icon is-up"><ArrowUp size={12} strokeWidth={2.4} /></span>}
           label="最高上行"
-          value={formatByteRateLabel(stat.peakUp)}
+          value={formatByteRateLabel(displayPeakUp)}
           note={
-            stat.peakUp > 0 && stat.peakUpAt != null
-              ? formatClockTime(stat.peakUpAt)
+            displayPeakUp > 0 && displayPeakUpAt != null
+              ? formatClockTime(displayPeakUpAt)
               : undefined
           }
         />
         <PopoverRow
           icon={<span className="node-traffic-icon is-down"><ArrowDown size={12} strokeWidth={2.4} /></span>}
           label="最高下行"
-          value={formatByteRateLabel(stat.peakDown)}
+          value={formatByteRateLabel(displayPeakDown)}
           note={
-            stat.peakDown > 0 && stat.peakDownAt != null
-              ? formatClockTime(stat.peakDownAt)
+            displayPeakDown > 0 && displayPeakDownAt != null
+              ? formatClockTime(displayPeakDownAt)
               : undefined
           }
         />
