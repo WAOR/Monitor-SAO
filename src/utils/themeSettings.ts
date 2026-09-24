@@ -82,6 +82,46 @@ export interface ResolvedThemeSettings {
   adminNickname: string;
 }
 
+/** 后端 theme.json 中声明的官方配置字段清单 (共 34 项) */
+export const THEME_CONFIG_KEYS = [
+  "defaultAppearance",
+  "desktopNodeViewMode",
+  "mobileNodeViewMode",
+  "showGroupTabs",
+  "showRegionBar",
+  "showCardGroup",
+  "enableHomeSort",
+  "showHomeOverview",
+  "enableHomepageMultiPing",
+  "showTodayTrafficPopover",
+  "showConnections",
+  "compactShowTrafficTotal",
+  "compactShowBilling",
+  "compactShowUptime",
+  "enableBackgroundImage",
+  "backgroundMediaType",
+  "backgroundImage",
+  "backgroundImageMobile",
+  "backgroundVideo",
+  "backgroundVideoDark",
+  "surfaceOpacity",
+  "showCostSummary",
+  "showCostSummaryFloatingButton",
+  "showPriceForGuests",
+  "costRateApiUrl",
+  "showTrafficRating",
+  "trafficRatingLabels",
+  "showAssetRating",
+  "assetRatingLabels",
+  "showBandwidthRating",
+  "bandwidthRatingLabels",
+  "enableAdminButton",
+  "adminNickname",
+  "notice",
+] as const;
+
+export const THEME_CONFIG_KEYS_SET: ReadonlySet<string> = new Set<string>(THEME_CONFIG_KEYS);
+
 export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   defaultAppearance: "system",
   desktopNodeViewMode: "large",

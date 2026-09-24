@@ -19,8 +19,17 @@ import {
   type MonitorMe,
   type MonitorMetricsHistoryResponse,
 } from "@/types/monitor";
-import { getLocalThemeSettings, saveLocalThemeSettings } from "@/services/themeSettingsStore";
+import {
+  getLocalThemeSettings,
+  replaceLocalThemeSettings,
+  saveLocalThemeSettings,
+} from "@/services/themeSettingsStore";
 import { getRawNode } from "@/services/wsStore";
+import {
+  THEME_CONFIG_KEYS,
+  THEME_CONFIG_KEYS_SET,
+  normalizeThemeSettings,
+} from "@/utils/themeSettings";
 import type { TrafficMetricSeries } from "@/utils/trafficStats";
 
 export const ADMIN_USERNAME_KEY = "sao_admin_username";
@@ -203,9 +212,11 @@ export async function getMe(options?: RequestOptions): Promise<Me> {
 }
 
 let serverThemeSettingsCache: Record<string, unknown> | null = null;
+let serverThemeConfigFetched = false;
 
 export function clearServerThemeSettingsCache(): void {
   serverThemeSettingsCache = null;
+  serverThemeConfigFetched = false;
 }
 
 /**
@@ -232,6 +243,7 @@ export async function fetchServerThemeConfig(options?: RequestOptions): Promise<
         const data: unknown = await res.json();
         if (data && typeof data === "object" && !Array.isArray(data)) {
           serverThemeSettingsCache = data as Record<string, unknown>;
+          serverThemeConfigFetched = true;
           return serverThemeSettingsCache;
         }
       }
@@ -264,9 +276,11 @@ export async function fetchServerThemeConfig(options?: RequestOptions): Promise<
 
     const resolved = await Promise.any(fetchPromises);
     serverThemeSettingsCache = resolved;
+    serverThemeConfigFetched = true;
     return serverThemeSettingsCache;
   } catch {
     serverThemeSettingsCache = {};
+    serverThemeConfigFetched = false;
     return serverThemeSettingsCache;
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
@@ -287,36 +301,61 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
   ]);
   const localSettings = getLocalThemeSettings();
 
-  // 若服务端存在已配置的 adminNickname，服务端为唯一权威源，同步刷新本地 Storage 缓存，避免历史旧缓存覆盖新配置
-  if (serverSettings && typeof serverSettings.adminNickname === "string") {
-    const sName = serverSettings.adminNickname.trim();
+  let mergedSettings: Record<string, unknown>;
+
+  if (serverThemeConfigFetched) {
+    // 服务端官方配置成功获取，服务端为绝对唯一权威源：
+    // 1. 服务端配置完整继承
+    // 2. 本地存储仅保留非 schema 的复杂扩展数据（如 costPremiums/homepagePingBindings 等，若服务端未存储）
+    // 3. 官方 schema 字段一律以服务端为准；若服务端未返回或已清空（如 notice），绝不允许本地旧缓存死灰复燃！
+    mergedSettings = { ...serverSettings };
+
+    for (const [key, val] of Object.entries(localSettings)) {
+      if (!THEME_CONFIG_KEYS_SET.has(key) && !(key in mergedSettings)) {
+        mergedSettings[key] = val;
+      }
+    }
+
+    // 同步刷新本地存储，清理掉已被服务端删除或修改的 schema 字段（如已清空的公告 notice、昵称等）
     if (typeof window !== "undefined" && window.localStorage) {
       try {
+        let localDirty = false;
+        const nextLocal = { ...localSettings };
+
+        for (const key of THEME_CONFIG_KEYS) {
+          if (key in serverSettings) {
+            if (nextLocal[key] !== serverSettings[key]) {
+              nextLocal[key] = serverSettings[key];
+              localDirty = true;
+            }
+          } else if (key in nextLocal) {
+            delete nextLocal[key];
+            localDirty = true;
+          }
+        }
+
+        const sName =
+          typeof serverSettings.adminNickname === "string"
+            ? serverSettings.adminNickname.trim()
+            : "";
         if (sName) {
           window.localStorage.setItem(ADMIN_USERNAME_KEY, sName);
         } else {
           window.localStorage.removeItem(ADMIN_USERNAME_KEY);
         }
-        const local = getLocalThemeSettings();
-        if (local.adminNickname !== sName) {
-          if (sName) {
-            saveLocalThemeSettings({ ...local, adminNickname: sName });
-          } else {
-            const next = { ...local };
-            delete next.adminNickname;
-            saveLocalThemeSettings(next);
-          }
+
+        if (localDirty) {
+          replaceLocalThemeSettings(nextLocal);
         }
       } catch {}
     }
+  } else {
+    // 离线或服务端接口异常时：以本地快照垫底兜底
+    mergedSettings = {
+      ...localSettings,
+      ...serverSettings,
+    };
   }
-
-  // 服务端权威设置优先：服务端官方配置（包括公告 notice、昵称、布局等所有字段）覆盖本地旧缓存快照；
-  // 本地快照仅作为离线或服务端未返回时的兜底垫底
-  const mergedSettings = {
-    ...localSettings,
-    ...serverSettings,
-  };
 
   return ({
     sitename: me.site_name || "Monitor",
@@ -324,7 +363,7 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
     theme: THEME_SHORT,
     version: "1.0.12",
     private_site: !me.public_page,
-    theme_settings: mergedSettings as ThemeSettings,
+    theme_settings: normalizeThemeSettings(mergedSettings) as ThemeSettings,
     record_preserve_time: 168,
     ping_record_preserve_time: 24,
     allow_theme_switch: true,

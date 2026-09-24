@@ -35,7 +35,7 @@ export function getLocalThemeSettings(): Record<string, unknown> {
   return readStorage();
 }
 
-/** 保存主题设置覆盖项到本地 */
+/** 保存主题设置覆盖项到本地（增量合并） */
 export function saveLocalThemeSettings(
   settings: (ThemeSettings & Record<string, unknown>) | Record<string, unknown>,
 ): void {
@@ -45,6 +45,21 @@ export function saveLocalThemeSettings(
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
     } catch (error) {
       console.warn("[Monitor-SAO] 主题设置写入本地失败", error);
+    }
+  }
+  emit();
+}
+
+/** 完整替换本地主题设置（用于与服务端权威源同步或清理已删除字段） */
+export function replaceLocalThemeSettings(
+  settings: (ThemeSettings & Record<string, unknown>) | Record<string, unknown>,
+): void {
+  cache = { ...settings };
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
+    } catch (error) {
+      console.warn("[Monitor-SAO] 主题设置替换本地失败", error);
     }
   }
   emit();

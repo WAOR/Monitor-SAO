@@ -13,6 +13,7 @@ import {
   saveThemeSettings,
   THEME_SHORT,
 } from "@/services/api";
+import { getLocalThemeSettings, saveLocalThemeSettings } from "@/services/themeSettingsStore";
 
 const storageMap = new Map<string, string>();
 const localStorageMock = {
@@ -123,6 +124,38 @@ describe("Monitor API Service", () => {
       const parsed = JSON.parse(putBody!);
       expect(parsed.notice).toBe("New Notice");
       expect(parsed.surfaceOpacity).toBe(0.9);
+    });
+
+    it("clears stale local notice when notice is cleared or omitted on server", async () => {
+      saveLocalThemeSettings({ notice: "Old Stale Notice", defaultAppearance: "dark" });
+      expect(getLocalThemeSettings().notice).toBe("Old Stale Notice");
+
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url === "/api/me") {
+          return {
+            ok: true,
+            status: 200,
+            headers: new Headers({ "content-type": "application/json" }),
+            json: async () => ({ site_name: "SAO Monitor", public_page: true }),
+          };
+        }
+        if (url.includes(`/api/themes/${THEME_SHORT}/config`)) {
+          return {
+            ok: true,
+            status: 200,
+            headers: new Headers({ "content-type": "application/json" }),
+            // Notice is omitted or empty on server
+            json: async () => ({ defaultAppearance: "dark" }),
+          };
+        }
+        return { ok: false, status: 404 };
+      });
+
+      const pub = await getPublic();
+      // Server is authoritative: notice must be empty string
+      expect(pub.theme_settings.notice).toBe("");
+      // Local storage must also be pruned to prevent zombie notice
+      expect(getLocalThemeSettings().notice).toBeUndefined();
     });
   });
 
