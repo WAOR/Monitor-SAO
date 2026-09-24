@@ -24,6 +24,7 @@ export interface MonitorMetrics {
 export interface MonitorNode {
   id: number;
   name: string;
+  group?: string;
   sort: number;
   public: boolean;
   online: boolean;
@@ -111,7 +112,11 @@ export function safeMonitorNodes(raw: unknown): MonitorNode[] {
 
   return list.map((item): MonitorNode => {
     if (!item || typeof item !== "object") return item as MonitorNode;
-    const node = { ...(item as MonitorNode) };
+    const rawNodeObj = item as Record<string, unknown>;
+    const rawGroup = rawNodeObj.group ?? rawNodeObj.group_name;
+    const safeGroup = typeof rawGroup === "string" ? rawGroup.trim() : "";
+    const node = { ...(item as MonitorNode), group: safeGroup };
+
     const m = node.metrics as Record<string, unknown> | null | undefined;
     if (!m || typeof m !== "object") {
       return { ...node, metrics: null };
@@ -122,7 +127,6 @@ export function safeMonitorNodes(raw: unknown): MonitorNode[] {
       : [0, 0, 0];
 
     const rawMetrics = m;
-    const rawNodeObj = node as unknown as Record<string, unknown>;
 
     const safeNetRx = toSafeNum(
       rawMetrics.net_rx ?? rawMetrics.rx ?? rawNodeObj.net_rx ?? rawNodeObj.rx
@@ -201,7 +205,7 @@ export function convertMonitorNodeToInfo(node: MonitorNode): NodeInfo {
   return {
     uuid,
     name: node.name || `Node ${node.id}`,
-    group: "", // Monitor 无原生 group 字段，留空或由主题配置接管
+    group: node.group?.trim() || "",
     region: (node.country || "").toUpperCase(),
     hidden: false,
     cpu_name: node.cpu_name || "",
