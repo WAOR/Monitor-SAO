@@ -2011,7 +2011,7 @@ export function ThemeManage() {
                 />
                 <ToggleRow
                   field="showTodayTrafficPopover"
-                  title="悬浮显示当日流量气泡 (SAO 特色)"
+                  title="悬浮显示当日流量/峰值带宽"
                   desc="鼠标悬停在卡片或小卡片流量指标时，弹出精致的今日已用流量透视窗。"
                   checked={draft.showTodayTrafficPopover}
                   onPatch={patch}

@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "极简立体仪表盘主题 · 适配 Monitor 探针，支持四种布局、流速图表、资产统计与动态背景",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "author": "jerry",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -96,7 +96,7 @@
     {
       "key": "showTodayTrafficPopover",
       "type": "boolean",
-      "label": "悬浮显示当日流量气泡 (SAO 特色)",
+      "label": "悬浮显示当日流量/峰值带宽",
       "help": "鼠标悬停在卡片或小卡片流量指标时，弹出当日已用流量透视窗",
       "default": true
     },
@@ -236,13 +236,13 @@
       "type": "string",
       "label": "今日流量评级用词",
       "default": "",
-      "help": "4 级评级用词以逗号隔开（≤10GB、≤50GB、≤200GB、>200GB），留空默认：LOW,MED,HIGH,ULTRA"
+      "help": "4 级评级用词以逗号隔开，留空默认：LOW,MED,HIGH,ULTRA"
     },
     {
       "key": "showAssetRating",
       "type": "boolean",
       "label": "显示资产总值评级",
-      "help": "在首页资产总值卡片底部显示剩余价值评级标签",
+      "help": "在资产总值卡片底部显示总价值评级标签",
       "default": true
     },
     {
@@ -250,13 +250,13 @@
       "type": "string",
       "label": "资产总值评级用词",
       "default": "",
-      "help": "4 级评级用词以逗号隔开（≤500元、≤1500元、≤3000元、>3000元），留空默认：Nano,Micro,Medium,High-Spec"
+      "help": "4 级评级用词以逗号隔开，留空默认：Nano,Micro,Medium,High-Spec"
     },
     {
       "key": "showBandwidthRating",
       "type": "boolean",
       "label": "显示集群实时带宽评级",
-      "help": "在首页右侧集群状态中显示实时吞吐评级徽章",
+      "help": "在集群状态中显示实时吞吐评级徽章",
       "default": true
     },
     {
@@ -264,7 +264,7 @@
       "type": "string",
       "label": "集群实时带宽评级用词",
       "default": "",
-      "help": "4 级评级用词以逗号隔开（≤1Mbps、≤10Mbps、≤100Mbps、>100Mbps），留空默认：IDLE,LIGHT,ACTIVE,SURGE"
+      "help": "4 级评级用词以逗号隔开，留空默认：IDLE,LIGHT,ACTIVE,SURGE"
     },
 
     { "type": "title", "label": "管理与安全" },

@@ -320,7 +320,7 @@ function HomeOverviewCards({
     isPriceVisible && showOverviewRatings && showAssetRating && costSummary
       ? getOverviewRating({
         kind: "asset",
-        value: costSummary.remainingCny,
+        value: costSummary.totalOriginalPriceCny ?? 0,
         customLabels: assetRatingLabels,
       })
       : null;
