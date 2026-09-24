@@ -1991,7 +1991,7 @@ export function ThemeManage() {
                 <ToggleRow
                   field="showTodayTrafficPopover"
                   title="显示当日流量与峰值按钮"
-                  desc="在节点卡片上显示流量统计图表快捷按钮，点击或悬停可查看当日出入站流量与峰值带宽。"
+                  desc="在节点卡片上显示扩展统计按钮，点击或悬停可查看当日出入站流量与峰值带宽。"
                   checked={draft.showTodayTrafficPopover}
                   onPatch={patch}
                 />
