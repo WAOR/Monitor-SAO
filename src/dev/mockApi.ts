@@ -547,7 +547,6 @@ export function installDevMockApi() {
           showTrafficRating: true,
           showBandwidthRating: true,
           showAssetRating: true,
-          showPingChart: true,
           // 单任务刻意和三网首项不同，便于回归验证列表没有误读全局三网数据。
           homepagePingBindings: { "2": nodes.map((node) => node.uuid) },
           enableHomepageMultiPing:

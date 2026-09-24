@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "极简立体仪表盘主题 · 适配 Monitor 探针，支持四种布局、流速图表、资产统计与动态背景",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "author": "jerry",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -79,13 +79,7 @@
       "help": "在首页顶部展示服务器数、在线率、内存、硬盘、流量及资产卡片",
       "default": true
     },
-    {
-      "key": "showPingChart",
-      "type": "boolean",
-      "label": "详情页显示 Ping 延迟走势图",
-      "help": "在节点详情页中提供切换查看 Ping 延迟与丢包率历史图表（位于负载图表旁）",
-      "default": true
-    },
+
     {
       "key": "enableHomepageMultiPing",
       "type": "boolean",

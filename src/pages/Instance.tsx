@@ -12,7 +12,6 @@ import {
 } from "@/components/instance/chartShared";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
 import { useNodeMeta, useNodeStoreStatus } from "@/hooks/useNode";
-import { useThemeSettings } from "@/hooks/useThemeSettings";
 
 const DEFAULT_PING_HOURS = 4;
 type TimeRangeOption = ReturnType<typeof buildLoadTimeRangeOptions>[number];
@@ -46,7 +45,6 @@ function RangeSelector({
 export function Instance() {
   const { uuid } = useParams<{ uuid: string }>();
   const { data: config } = usePublicConfig();
-  const themeSettings = useThemeSettings();
   const meta = useNodeMeta(uuid ?? "");
   const storeStatus = useNodeStoreStatus(Boolean(uuid));
   const [chartType, setChartType] = useState<"load" | "ping">("load");
@@ -67,7 +65,6 @@ export function Instance() {
     () => buildPingTimeRangeOptions(metricRetentionHours ?? config?.ping_record_preserve_time),
     [config?.ping_record_preserve_time, metricRetentionHours],
   );
-  const showPingChart = themeSettings.isReady && themeSettings.showPingChart;
 
   const alignCharts = useCallback(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -95,12 +92,6 @@ export function Instance() {
       );
     }
   }, [pingHours, pingRanges]);
-
-  useEffect(() => {
-    if (!showPingChart && chartType === "ping") {
-      setChartType("load");
-    }
-  }, [chartType, showPingChart]);
 
   if (!uuid) return null;
 
@@ -154,18 +145,16 @@ export function Instance() {
           >
             负载
           </button>
-          {showPingChart && (
-            <button
-              type="button"
-              data-active={chartType === "ping" ? "true" : "false"}
-              aria-pressed={chartType === "ping"}
-              onClick={() => {
-                startTransition(() => setChartType("ping"));
-              }}
-            >
-              Ping
-            </button>
-          )}
+          <button
+            type="button"
+            data-active={chartType === "ping" ? "true" : "false"}
+            aria-pressed={chartType === "ping"}
+            onClick={() => {
+              startTransition(() => setChartType("ping"));
+            }}
+          >
+            Ping
+          </button>
         </div>
         {chartType === "load" && (
           <RangeSelector
@@ -174,7 +163,7 @@ export function Instance() {
             onChange={(value) => startTransition(() => setLoadHours(value))}
           />
         )}
-        {chartType === "ping" && showPingChart && (
+        {chartType === "ping" && (
           <RangeSelector
             ranges={pingRanges}
             value={pingHours}
@@ -195,13 +184,11 @@ export function Instance() {
           hidden={chartType !== "ping"}
           aria-hidden={chartType !== "ping"}
         >
-          {showPingChart ? (
-            <PingChart
-              uuid={uuid}
-              hours={pingHours}
-              active={chartType === "ping"}
-            />
-          ) : null}
+          <PingChart
+            uuid={uuid}
+            hours={pingHours}
+            active={chartType === "ping"}
+          />
         </div>
       </div>
     </div>

@@ -1212,7 +1212,7 @@ export function ThemeManage() {
     sourceThemeSettings.backgroundVideoDark,
   ]);
 
-  // 只比较本页实际管理的设置。enableAdminButton/showPingChart 这类隐藏设置会通过
+  // 只比较本页实际管理的设置。enableAdminButton 这类隐藏设置会通过
   // baseSettings 在保存时保留,但不该让表单永远显示为 dirty。
   const draftSignature = useMemo(
     () => managedSettingsSignature(draftThemeSettings as ThemeSettings & Record<string, unknown>),
