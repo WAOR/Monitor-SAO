@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   List,
   ListFilter,
+  Megaphone,
   Moon,
   RefreshCw,
   Rows3,
@@ -338,6 +339,7 @@ function pickManagedThemeSettings(settings: ResolvedThemeSettings) {
     backgroundVideoDark: settings.backgroundVideoDark,
     backgroundAlignment: settings.backgroundAlignment,
     surfaceOpacity: settings.surfaceOpacity,
+    notice: settings.notice,
   };
 }
 
@@ -1716,6 +1718,28 @@ export function ThemeManage() {
 
           {activeTab === "home" && (
             <>
+              <InstancePanel
+                kicker="公告"
+                title="全站置顶公告"
+                aside={<Megaphone size={16} />}
+              >
+                <div className="surface-inset flex flex-col gap-2 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <span className="setting-subhead-title">公告内容</span>
+                    <span className="text-[11px] text-(--text-tertiary)">
+                      支持多行文本，置顶展示在首页顶部，留空则不显示
+                    </span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={draft.notice}
+                    onChange={(event) => patch("notice", event.target.value)}
+                    placeholder="输入全站置顶公告内容，留空不显示..."
+                    className="mao-input w-full resize-y rounded-lg p-2.5 text-[13px] leading-relaxed text-(--text-primary)"
+                  />
+                </div>
+              </InstancePanel>
+
               <InstancePanel
                 kicker="总览"
                 title="首页顶部组件"

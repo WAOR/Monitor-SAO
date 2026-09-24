@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { saveAdminUsername } from "@/services/api";
 import { Flag } from "@/components/ui/Flag";
+import { NoticeBanner } from "@/components/ui/NoticeBanner";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useAllNodeMeta,
@@ -1067,6 +1068,7 @@ export function NodeGrid() {
         </Link>
       )}
       <HomeBrand siteName={siteName} />
+      <NoticeBanner notice={themeSettings.notice} />
       {showHomeOverview && (
         <HomeOverviewCards
           overview={overview}

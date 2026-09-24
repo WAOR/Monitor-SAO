@@ -158,6 +158,7 @@ export interface ThemeSettings {
   backgroundVideoDark?: string;
   backgroundAlignment?: string;
   surfaceOpacity?: number;
+  notice?: string;
 }
 
 export const PublicConfigSchema = z

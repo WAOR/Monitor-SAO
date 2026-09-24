@@ -79,6 +79,7 @@ export interface ResolvedThemeSettings {
   backgroundVideoDark: string;
   backgroundAlignment: string;
   surfaceOpacity: number;
+  notice: string;
 }
 
 export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
@@ -126,6 +127,7 @@ export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   backgroundVideoDark: "",
   backgroundAlignment: DEFAULT_BACKGROUND_ALIGNMENT,
   surfaceOpacity: DEFAULT_SURFACE_OPACITY,
+  notice: "",
 };
 
 export function isAppearance(value: unknown): value is Appearance {
@@ -250,5 +252,6 @@ export function normalizeThemeSettings(
     backgroundVideoDark: normalizeBackgroundVideoUrl(settings?.backgroundVideoDark),
     backgroundAlignment: normalizeBackgroundAlignment(settings?.backgroundAlignment),
     surfaceOpacity: normalizeSurfaceOpacity(settings?.surfaceOpacity),
+    notice: typeof settings?.notice === "string" ? settings.notice.trim() : "",
   };
 }

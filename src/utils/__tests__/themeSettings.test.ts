@@ -127,4 +127,10 @@ describe("normalizeThemeSettings", () => {
       normalizeThemeSettings({ hiddenNodes: "节点A, 节点A\nuuid-1；节点B" } as never).hiddenNodes,
     ).toEqual(["节点A", "uuid-1", "节点B"]);
   });
+
+  it("normalizes notice string and trims whitespace", () => {
+    expect(normalizeThemeSettings({}).notice).toBe("");
+    expect(normalizeThemeSettings({ notice: "  重要维护公告  " }).notice).toBe("重要维护公告");
+    expect(normalizeThemeSettings({ notice: 123 } as never).notice).toBe("");
+  });
 });
