@@ -291,7 +291,7 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
     sitename: me.site_name || "Monitor",
     description: "",
     theme: THEME_SHORT,
-    version: "1.0.7",
+    version: "1.0.8",
     private_site: !me.public_page,
     theme_settings: mergedSettings as ThemeSettings,
     record_preserve_time: 168,
