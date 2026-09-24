@@ -16,7 +16,7 @@ import {
   type NodeTodayTrafficView,
 } from "@/hooks/useTodayTrafficStats";
 import { useNodeMetrics } from "@/hooks/useNode";
-import { getRawNode } from "@/services/wsStore";
+import { getRawNode, getStoredNodePeak } from "@/services/wsStore";
 import { useFineHover } from "@/hooks/useMediaQuery";
 import { formatBytes, formatByteRateLabel, formatClockTime, formatClockTimeDetailed } from "@/utils/format";
 import { clearNodeMetricsHistoryCache } from "@/services/api";
@@ -311,12 +311,23 @@ function TodayTrafficPopoverBody({ traffic, uuid }: { traffic: NodeTodayTrafficV
     ? Math.max(0, rawNode.day_rx ?? 0)
     : (stat?.trafficDown ?? 0);
 
-  const displayPeakUp = Math.max(stat?.peakUp ?? 0, liveNetUp);
-  const displayPeakDown = Math.max(stat?.peakDown ?? 0, liveNetDown);
-  const displayPeakUpAt =
-    liveNetUp >= (stat?.peakUp ?? 0) && liveNetUp > 0 ? Date.now() : stat?.peakUpAt;
-  const displayPeakDownAt =
-    liveNetDown >= (stat?.peakDown ?? 0) && liveNetDown > 0 ? Date.now() : stat?.peakDownAt;
+  const storedPeak = getStoredNodePeak(uuid);
+  const displayPeakUp = Math.max(stat?.peakUp ?? 0, storedPeak.peakUp, liveNetUp);
+  const displayPeakDown = Math.max(stat?.peakDown ?? 0, storedPeak.peakDown, liveNetDown);
+
+  let displayPeakUpAt = stat?.peakUpAt;
+  if (displayPeakUp === liveNetUp && liveNetUp > 0) {
+    displayPeakUpAt = Date.now();
+  } else if (displayPeakUp === storedPeak.peakUp && storedPeak.peakUp > 0) {
+    displayPeakUpAt = storedPeak.peakUpAt;
+  }
+
+  let displayPeakDownAt = stat?.peakDownAt;
+  if (displayPeakDown === liveNetDown && liveNetDown > 0) {
+    displayPeakDownAt = Date.now();
+  } else if (displayPeakDown === storedPeak.peakDown && storedPeak.peakDown > 0) {
+    displayPeakDownAt = storedPeak.peakDownAt;
+  }
 
   const hasAnyData =
     Boolean(stat?.hasSamples) ||

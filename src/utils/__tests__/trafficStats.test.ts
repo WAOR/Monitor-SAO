@@ -10,6 +10,8 @@ import {
   TRAFFIC_DOWN_METRIC,
   TRAFFIC_UP_METRIC,
   type TrafficMetricSeries,
+  getStoredNodePeak,
+  updateStoredNodePeak,
 } from "@/utils/trafficStats";
 
 function metricSeries(
@@ -177,4 +179,63 @@ describe("today traffic stats", () => {
       { timeMs: Date.parse("2026-07-16T00:05:00Z"), up: 3, down: 4 },
     ]);
   });
+
+  it("stores and locks in daily highest peaks in localStorage", () => {
+    const store = new Map<string, string>();
+    const storageMock = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, val: string) => store.set(key, val),
+      removeItem: (key: string) => store.delete(key),
+      clear: () => store.clear(),
+      length: 0,
+      key: () => null,
+    };
+    const original = globalThis.localStorage;
+    Object.defineProperty(globalThis, "localStorage", {
+      value: storageMock,
+      configurable: true,
+      writable: true,
+    });
+
+    try {
+      const testUuid = "test-node-uuid";
+      const t1 = 1790000000000;
+      const t2 = 1790000005000;
+      const t3 = 1790000010000;
+
+      // 初始状态应为空
+      const init = getStoredNodePeak(testUuid, t1);
+      expect(init.peakUp).toBe(0);
+      expect(init.peakDown).toBe(0);
+
+      // 测速高峰发生
+      updateStoredNodePeak(testUuid, 100 * 1024 * 1024, 300 * 1024 * 1024, t1);
+      const peak1 = getStoredNodePeak(testUuid, t1);
+      expect(peak1.peakUp).toBe(100 * 1024 * 1024);
+      expect(peak1.peakUpAt).toBe(t1);
+      expect(peak1.peakDown).toBe(300 * 1024 * 1024);
+      expect(peak1.peakDownAt).toBe(t1);
+
+      // 测速结束，速率归零或变低，峰值绝不回落
+      updateStoredNodePeak(testUuid, 1024, 2048, t2);
+      const peak2 = getStoredNodePeak(testUuid, t2);
+      expect(peak2.peakUp).toBe(100 * 1024 * 1024);
+      expect(peak2.peakDown).toBe(300 * 1024 * 1024);
+
+      // 出现更高峰值，更新并更新时间戳
+      updateStoredNodePeak(testUuid, 150 * 1024 * 1024, 200 * 1024 * 1024, t3);
+      const peak3 = getStoredNodePeak(testUuid, t3);
+      expect(peak3.peakUp).toBe(150 * 1024 * 1024);
+      expect(peak3.peakUpAt).toBe(t3);
+      expect(peak3.peakDown).toBe(300 * 1024 * 1024); // 下行未被打破，保持 300M
+      expect(peak3.peakDownAt).toBe(t1);
+    } finally {
+      Object.defineProperty(globalThis, "localStorage", {
+        value: original,
+        configurable: true,
+        writable: true,
+      });
+    }
+  });
 });
+

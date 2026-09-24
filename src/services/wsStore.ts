@@ -5,6 +5,7 @@ import {
   safeMonitorNodes,
   type MonitorNode,
 } from "@/types/monitor";
+import { updateStoredNodePeak, getStoredNodePeak } from "@/utils/trafficStats";
 
 type Listener = () => void;
 type RealtimePayload = Record<string, unknown>;
@@ -317,6 +318,11 @@ function applyMonitorNodes(rawList: unknown) {
     const prevMetrics = state.metricsByUuid[uuid];
     if (!prevMetrics || JSON.stringify(prevMetrics) !== JSON.stringify(metrics)) {
       touchedMetrics.push(uuid);
+    }
+
+    // 锁存今日观测到的瞬时网络峰值（秒级捕获，防止测速后被历史采样平均值拉低）
+    if (metrics.netUp > 0 || metrics.netDown > 0) {
+      updateStoredNodePeak(uuid, metrics.netUp, metrics.netDown);
     }
 
     // 更新流速趋势
@@ -678,5 +684,7 @@ export function getRawNode(uuid: string): MonitorNode | undefined {
 export function getAllRawNodes(): Record<string, MonitorNode> {
   return state.rawNodesByUuid;
 }
+
+export { getStoredNodePeak };
 
 

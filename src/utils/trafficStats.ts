@@ -206,3 +206,69 @@ export function buildTodayTrafficRecordSamples(
     }))
     .sort((left, right) => right.timeMs - left.timeMs);
 }
+
+export interface StoredNodePeak {
+  peakUp: number;
+  peakUpAt: number | null;
+  peakDown: number;
+  peakDownAt: number | null;
+}
+
+const PEAK_STORAGE_PREFIX = "sao_day_peak_";
+
+function getPeakStorage(): Storage | null {
+  if (typeof window !== "undefined" && window.localStorage) return window.localStorage;
+  if (typeof localStorage !== "undefined") return localStorage;
+  return null;
+}
+
+export function getStoredNodePeak(uuid: string, nowMs = Date.now()): StoredNodePeak {
+  const storage = getPeakStorage();
+  if (!storage || !uuid) {
+    return { peakUp: 0, peakUpAt: null, peakDown: 0, peakDownAt: null };
+  }
+  const dayStr = new Date(nowMs).toLocaleDateString("en-CA");
+  const key = `${PEAK_STORAGE_PREFIX}${uuid}_${dayStr}`;
+  try {
+    const raw = storage.getItem(key);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { peakUp: 0, peakUpAt: null, peakDown: 0, peakDownAt: null };
+}
+
+export function updateStoredNodePeak(
+  uuid: string,
+  netUp: number,
+  netDown: number,
+  nowMs = Date.now(),
+): StoredNodePeak {
+  const storage = getPeakStorage();
+  if (!storage || !uuid) {
+    return { peakUp: 0, peakUpAt: null, peakDown: 0, peakDownAt: null };
+  }
+  const dayStr = new Date(nowMs).toLocaleDateString("en-CA");
+  const key = `${PEAK_STORAGE_PREFIX}${uuid}_${dayStr}`;
+  const current = getStoredNodePeak(uuid, nowMs);
+  let changed = false;
+
+  const validUp = Number.isFinite(netUp) ? Math.max(0, netUp) : 0;
+  const validDown = Number.isFinite(netDown) ? Math.max(0, netDown) : 0;
+
+  if (validUp > current.peakUp) {
+    current.peakUp = validUp;
+    current.peakUpAt = nowMs;
+    changed = true;
+  }
+  if (validDown > current.peakDown) {
+    current.peakDown = validDown;
+    current.peakDownAt = nowMs;
+    changed = true;
+  }
+
+  if (changed) {
+    try {
+      storage.setItem(key, JSON.stringify(current));
+    } catch {}
+  }
+  return current;
+}
