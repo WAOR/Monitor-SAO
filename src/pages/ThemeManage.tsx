@@ -22,6 +22,7 @@ import {
   Square,
   Sun,
   SunMoon,
+  User,
   Video,
   Wallpaper,
 } from "lucide-react";
@@ -340,6 +341,7 @@ function pickManagedThemeSettings(settings: ResolvedThemeSettings) {
     backgroundAlignment: settings.backgroundAlignment,
     surfaceOpacity: settings.surfaceOpacity,
     notice: settings.notice,
+    adminNickname: settings.adminNickname,
   };
 }
 
@@ -1736,6 +1738,29 @@ export function ThemeManage() {
                     onChange={(event) => patch("notice", event.target.value)}
                     placeholder="输入全站置顶公告内容，留空不显示..."
                     className="mao-input w-full resize-y rounded-lg p-2.5 text-[13px] leading-relaxed text-(--text-primary)"
+                  />
+                </div>
+              </InstancePanel>
+
+              <InstancePanel
+                kicker="个性化"
+                title="管理员显示昵称"
+                aside={<User size={16} />}
+              >
+                <div className="surface-inset flex flex-col gap-2 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <span className="setting-subhead-title">管理员昵称</span>
+                    <span className="text-[11px] text-(--text-tertiary)">
+                      登录后在首页总览问候语处展示（如：早上好，jerry），留空默认为 Admin
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={40}
+                    value={draft.adminNickname}
+                    onChange={(event) => patch("adminNickname", event.target.value)}
+                    placeholder="输入自定义昵称，例如：jerry..."
+                    className="mao-input w-full rounded-lg p-2.5 text-[13px] leading-relaxed text-(--text-primary)"
                   />
                 </div>
               </InstancePanel>

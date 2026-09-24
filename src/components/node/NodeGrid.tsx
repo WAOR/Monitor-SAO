@@ -259,11 +259,14 @@ function HomeOverviewCards({
     setIsEditingName(true);
   };
 
-  const handleSaveName = () => {
+  const handleSaveName = async () => {
     const finalName = tempName.trim().slice(0, 40);
     if (finalName) {
-      saveAdminUsername(finalName);
-      queryClient.invalidateQueries({ queryKey: ["me"] });
+      void saveAdminUsername(finalName);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["me"] }),
+        queryClient.invalidateQueries({ queryKey: ["public"] }),
+      ]);
     }
     setIsEditingName(false);
   };
@@ -1086,8 +1089,8 @@ export function NodeGrid() {
           bandwidthRatingLabels={themeSettings.bandwidthRatingLabels}
           assetRatingLabels={themeSettings.assetRatingLabels}
           onWarmTraffic={warmTrafficPage}
-          username={me?.username || (me?.logged_in ? "Admin" : "Guest")}
-          loggedIn={Boolean(me?.logged_in)}
+          username={loggedIn ? (themeSettings.adminNickname || me?.username || "Admin") : "Guest"}
+          loggedIn={loggedIn}
           todayTrafficTotal={todayTrafficTotal}
           todayTrafficLoading={todayTrafficQuery.isPending}
         />

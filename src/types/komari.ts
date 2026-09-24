@@ -159,6 +159,7 @@ export interface ThemeSettings {
   backgroundAlignment?: string;
   surfaceOpacity?: number;
   notice?: string;
+  adminNickname?: string;
 }
 
 export const PublicConfigSchema = z

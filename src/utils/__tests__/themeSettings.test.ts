@@ -133,4 +133,10 @@ describe("normalizeThemeSettings", () => {
     expect(normalizeThemeSettings({ notice: "  重要维护公告  " }).notice).toBe("重要维护公告");
     expect(normalizeThemeSettings({ notice: 123 } as never).notice).toBe("");
   });
+
+  it("normalizes adminNickname string, trims whitespace and limits length", () => {
+    expect(normalizeThemeSettings({}).adminNickname).toBe("");
+    expect(normalizeThemeSettings({ adminNickname: "  jerry  " }).adminNickname).toBe("jerry");
+    expect(normalizeThemeSettings({ adminNickname: 123 } as never).adminNickname).toBe("");
+  });
 });

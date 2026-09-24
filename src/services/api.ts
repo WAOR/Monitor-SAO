@@ -129,22 +129,22 @@ export function extractUsernameFromStorage(): string {
 
 export const THEME_SHORT = "sao";
 
-/** 解析当前登录用户的显示名称，优先级：Storage 自定义昵称 -> 服务端主题配置 -> 保底 "Admin" */
+/** 解析当前登录用户的显示名称，优先级：服务端主题配置 -> Storage 自定义昵称 -> 保底 "Admin" */
 export function resolveAuthUsername(authed = true): string {
   if (!authed) return "";
-  const fromStorage = extractUsernameFromStorage();
-  if (fromStorage) return fromStorage;
   if (serverThemeSettingsCache && typeof serverThemeSettingsCache.adminNickname === "string") {
     const fromServer = serverThemeSettingsCache.adminNickname.trim();
     if (fromServer && fromServer.toLowerCase() !== "admin") {
       return fromServer;
     }
   }
+  const fromStorage = extractUsernameFromStorage();
+  if (fromStorage) return fromStorage;
   return "Admin";
 }
 
 /** 保存自定义昵称：本地即时响应 + 服务端官方接口持久化 */
-export function saveAdminUsername(nickname: string): void {
+export function saveAdminUsername(nickname: string): Promise<void> {
   const sanitized = nickname.replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 40);
   if (typeof window !== "undefined" && window.localStorage) {
     try {
@@ -159,14 +159,18 @@ export function saveAdminUsername(nickname: string): void {
       }
     } catch {}
   }
+  if (serverThemeSettingsCache) {
+    serverThemeSettingsCache.adminNickname = sanitized;
+  }
   // 仅在真实浏览器运行环境下异步同步到服务端数据库持久化
   if (
     typeof window !== "undefined" &&
     typeof window.location !== "undefined" &&
     Boolean(window.location.origin)
   ) {
-    void saveThemeSettings({ adminNickname: sanitized }).catch(() => {});
+    return saveThemeSettings({ adminNickname: sanitized }).catch(() => {});
   }
+  return Promise.resolve();
 }
 
 /** 消费早期预取的 /api/me 请求 (若存在) */
@@ -286,6 +290,20 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
     ...serverSettings,
     ...localSettings,
   };
+
+  // 若服务端存在已配置的 adminNickname，同步刷新本地 Storage 缓存，避免历史旧缓存覆盖新配置
+  if (
+    serverSettings &&
+    typeof serverSettings.adminNickname === "string" &&
+    serverSettings.adminNickname.trim()
+  ) {
+    const sName = serverSettings.adminNickname.trim();
+    if (typeof window !== "undefined" && window.localStorage) {
+      try {
+        window.localStorage.setItem(ADMIN_USERNAME_KEY, sName);
+      } catch {}
+    }
+  }
 
   return ({
     sitename: me.site_name || "Monitor",

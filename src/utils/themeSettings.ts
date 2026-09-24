@@ -80,6 +80,7 @@ export interface ResolvedThemeSettings {
   backgroundAlignment: string;
   surfaceOpacity: number;
   notice: string;
+  adminNickname: string;
 }
 
 export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
@@ -128,6 +129,7 @@ export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   backgroundAlignment: DEFAULT_BACKGROUND_ALIGNMENT,
   surfaceOpacity: DEFAULT_SURFACE_OPACITY,
   notice: "",
+  adminNickname: "",
 };
 
 export function isAppearance(value: unknown): value is Appearance {
@@ -253,5 +255,9 @@ export function normalizeThemeSettings(
     backgroundAlignment: normalizeBackgroundAlignment(settings?.backgroundAlignment),
     surfaceOpacity: normalizeSurfaceOpacity(settings?.surfaceOpacity),
     notice: typeof settings?.notice === "string" ? settings.notice.trim() : "",
+    adminNickname:
+      typeof settings?.adminNickname === "string"
+        ? settings.adminNickname.replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 40)
+        : "",
   };
 }
