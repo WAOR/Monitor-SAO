@@ -309,7 +309,7 @@ function HomeOverviewCards({
       })
       : null;
   const bandwidthRating =
-    showOverviewRatings && showBandwidthRating
+    showBandwidthRating
       ? getOverviewRating({
         kind: "bandwidth",
         value: overview.netUp + overview.netDown,

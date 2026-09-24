@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "极简立体仪表盘主题 · 适配 Monitor 探针，支持四种布局、流速图表、资产统计与动态背景",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "author": "jerry",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -21,7 +21,7 @@
     {
       "key": "desktopNodeViewMode",
       "type": "select",
-      "label": "桌面端布局",
+      "label": "桌面端默认卡片视图",
       "default": "large",
       "options": [
         { "value": "large", "label": "标准网格 (Large)" },
@@ -33,7 +33,7 @@
     {
       "key": "mobileNodeViewMode",
       "type": "select",
-      "label": "移动端布局",
+      "label": "移动端默认卡片视图",
       "default": "compact",
       "options": [
         { "value": "compact", "label": "紧凑网格 (Compact)" },
@@ -45,25 +45,29 @@
     {
       "key": "showGroupTabs",
       "type": "boolean",
-      "label": "显示节点分组标签栏",
+      "label": "显示分组筛选栏",
+      "help": "在卡片列表上方展示分组 Tab 快速筛选",
       "default": true
     },
     {
       "key": "showRegionBar",
       "type": "boolean",
       "label": "显示地区筛选栏",
+      "help": "在卡片列表上方展示国旗地区快捷标签",
       "default": true
     },
     {
       "key": "showCardGroup",
       "type": "boolean",
-      "label": "按分组折叠聚合展示",
+      "label": "在卡片上显示节点分组标签",
+      "help": "在卡片副标题处标明其所属分组",
       "default": true
     },
     {
       "key": "enableHomeSort",
       "type": "boolean",
-      "label": "启用首页节点排序",
+      "label": "允许前台切换节点排序",
+      "help": "在首页卡片上方提供按名称、延迟、流量等排序下拉菜单",
       "default": true
     },
 
@@ -71,49 +75,57 @@
     {
       "key": "showHomeOverview",
       "type": "boolean",
-      "label": "显示首页概览统计卡片",
+      "label": "显示首页顶部总览栏",
+      "help": "在首页顶部展示服务器数、在线率、内存、硬盘、流量及资产卡片",
       "default": true
     },
     {
       "key": "showPingChart",
       "type": "boolean",
-      "label": "显示网络延迟与丢包图表",
+      "label": "显示单线路 Ping 延迟走势图",
+      "help": "在卡片中展示网络延迟与丢包率图表",
       "default": true
     },
     {
       "key": "enableHomepageMultiPing",
       "type": "boolean",
       "label": "首页展示多线路 Ping 矩阵",
+      "help": "在节点卡片上直接呈现多个探测点的实时连通性网格",
       "default": false
     },
     {
       "key": "showTodayTrafficPopover",
       "type": "boolean",
-      "label": "显示今日流量与峰值弹窗",
+      "label": "悬浮显示当日流量气泡 (SAO 特色)",
+      "help": "鼠标悬停在卡片或小卡片流量指标时，弹出当日已用流量透视窗",
       "default": true
     },
     {
       "key": "showConnections",
       "type": "boolean",
       "label": "显示 TCP/UDP 连接数",
+      "help": "在卡片网络区域标注实时活跃连接统计",
       "default": false
     },
     {
       "key": "compactShowTrafficTotal",
       "type": "boolean",
-      "label": "紧凑模式显示总流量",
+      "label": "小卡片显示累计流量",
+      "help": "在紧凑视图中展示月度或累计出入站流量",
       "default": true
     },
     {
       "key": "compactShowBilling",
       "type": "boolean",
-      "label": "紧凑模式显示账单周期",
+      "label": "小卡片显示计费周期",
+      "help": "在紧凑视图中保留周期标注",
       "default": true
     },
     {
       "key": "compactShowUptime",
       "type": "boolean",
-      "label": "紧凑模式显示在线时长",
+      "label": "小卡片显示在线时长",
+      "help": "在紧凑视图中展示系统运行时间",
       "default": true
     },
 
@@ -121,127 +133,161 @@
     {
       "key": "enableBackgroundImage",
       "type": "boolean",
-      "label": "启用全站动态背景",
+      "label": "启用自定义背景媒体",
+      "help": "开启后将覆盖站点默认背景，优先应用下方配置的壁纸或视频",
       "default": true
     },
     {
       "key": "backgroundMediaType",
       "type": "select",
-      "label": "背景媒体类型",
+      "label": "背景媒体形式",
       "default": "image",
       "options": [
-        { "value": "image", "label": "静态图片背景" },
+        { "value": "image", "label": "静态壁纸图片" },
         { "value": "video", "label": "动态视频背景" }
       ]
     },
     {
       "key": "backgroundImage",
       "type": "string",
-      "label": "桌面端背景图片 URL",
+      "label": "桌面端背景图 URL",
       "default": "",
-      "help": "支持静态图片或 GIF 动画 URL"
+      "help": "宽屏与桌面端加载的背景图，支持静态图片或 GIF"
     },
     {
       "key": "backgroundImageMobile",
       "type": "string",
-      "label": "移动端背景图片 URL",
+      "label": "移动端背景图 URL",
       "default": "",
-      "help": "留空则自动共用桌面端背景"
+      "help": "竖屏手机加载，留空则沿用桌面端背景"
     },
     {
       "key": "backgroundVideo",
       "type": "string",
-      "label": "浅色模式视频背景 URL",
+      "label": "浅色模式视频 URL (MP4)",
       "default": "https://assets.waor.cc/videos/sao_bg.mp4",
-      "help": "MP4/WebM 格式直链"
+      "help": "留空使用 SAO 默认主题动态视频"
     },
     {
       "key": "backgroundVideoDark",
       "type": "string",
-      "label": "深色模式视频背景 URL",
+      "label": "深色模式视频 URL (MP4)",
       "default": "",
-      "help": "留空则与浅色模式共用视频"
+      "help": "留空则在深色下自动叠加暗场滤镜"
     },
     {
       "key": "surfaceOpacity",
       "type": "number",
-      "label": "卡片表面不透明度",
+      "label": "卡片表面不透明度 (0–1)",
       "default": 0.85,
       "min": 0,
       "max": 1,
-      "help": "取值 0 到 1，0 为全透明，1 为纯色"
+      "step": 0.01,
+      "help": "取值 0 到 1（对应 0% 到 100%），数值越低卡片越通透"
     },
 
-    { "type": "title", "label": "资产与评级" },
+    { "type": "title", "label": "资产与财务" },
     {
       "key": "showCostSummary",
       "type": "boolean",
-      "label": "显示资产费用概览",
+      "label": "显示资产统计页入口按钮",
+      "help": "在首页资产概览卡右上角显示进入资产统计页的钱币图标按钮",
       "default": true
     },
     {
       "key": "showCostSummaryFloatingButton",
       "type": "boolean",
-      "label": "显示悬浮资产看板入口",
+      "label": "显示资产看板悬浮按钮",
+      "help": "卡片入口关闭或无资产卡片时，在右下角提供快捷悬浮入口",
       "default": true
     },
     {
       "key": "showPriceForGuests",
       "type": "boolean",
-      "label": "对访客公开服务器价格",
+      "label": "向访客公开价格与资产",
+      "help": "开启后访客可见价格标签；关闭后对访客隐藏价格并将资产显示为保密",
       "default": false
     },
     {
+      "key": "costRateApiUrl",
+      "type": "string",
+      "label": "实时汇率 API 接口 URL",
+      "default": "https://open.er-api.com/v6/latest/CNY",
+      "help": "留空使用官方默认免费公共汇率接口"
+    },
+
+    { "type": "title", "label": "文字评级配置" },
+    {
       "key": "showOverviewRatings",
       "type": "boolean",
-      "label": "显示综合指标评级",
+      "label": "启用指标卡片文字评级",
+      "help": "控制今日流量与资产概览综合指标卡片底部的文字评级标签",
       "default": true
     },
     {
       "key": "showTrafficRating",
       "type": "boolean",
-      "label": "显示流量评级",
+      "label": "显示今日流量评级",
+      "help": "在首页今日流量卡片底部显示用量评级标签",
       "default": true
     },
     {
-      "key": "showBandwidthRating",
-      "type": "boolean",
-      "label": "显示带宽评级",
-      "default": true
+      "key": "trafficRatingLabels",
+      "type": "string",
+      "label": "今日流量评级用词",
+      "default": "",
+      "help": "4 级评级用词以逗号隔开（≤10GB、≤50GB、≤200GB、>200GB），留空默认：休闲,起步,活跃,暴走"
     },
     {
       "key": "showAssetRating",
       "type": "boolean",
-      "label": "显示资产评级",
+      "label": "显示资产总值评级",
+      "help": "在首页资产总值卡片底部显示剩余价值评级标签",
       "default": true
     },
     {
-      "key": "costRateApiUrl",
+      "key": "assetRatingLabels",
       "type": "string",
-      "label": "实时汇率 API 接口",
-      "default": "https://open.er-api.com/v6/latest/CNY"
+      "label": "资产总值评级用词",
+      "default": "",
+      "help": "4 级评级用词以逗号隔开（≤500元、≤1500元、≤3000元、>3000元），留空默认：入门,进阶,丰盛,传家宝"
+    },
+    {
+      "key": "showBandwidthRating",
+      "type": "boolean",
+      "label": "显示集群实时带宽评级",
+      "help": "在首页右侧集群状态中显示实时吞吐评级徽章（独立控制，不受指标卡片开关影响）",
+      "default": true
+    },
+    {
+      "key": "bandwidthRatingLabels",
+      "type": "string",
+      "label": "集群实时带宽评级用词",
+      "default": "",
+      "help": "4 级评级用词以逗号隔开（≤1Mbps、≤10Mbps、≤100Mbps、>100Mbps），留空默认：空闲,平稳,高速,爆表"
     },
 
     { "type": "title", "label": "管理与安全" },
     {
       "key": "enableAdminButton",
       "type": "boolean",
-      "label": "显示前台管理员入口",
+      "label": "显示前台管理员登录入口",
+      "help": "在页面右上角展示登录/管理面板快捷入口",
       "default": true
     },
     {
       "key": "adminNickname",
       "type": "string",
-      "label": "管理员自定义显示昵称",
+      "label": "管理员显示昵称",
       "default": "",
-      "help": "登录后在页面顶栏展示的个性化昵称"
+      "help": "登录后在页面顶部总览问候语处展示（如：早上好，jerry），留空默认为 Admin"
     },
     {
       "key": "notice",
       "type": "text",
-      "label": "全站置顶公告",
+      "label": "全站置顶横幅公告",
       "default": "",
-      "help": "显示在页面顶部，留空不显示"
+      "help": "显示在首页顶部，支持多行文本，留空则不显示"
     }
   ]
 }

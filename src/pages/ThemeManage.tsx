@@ -138,19 +138,19 @@ const OVERVIEW_RATING_LABEL_FIELDS: Array<{
 }> = [
   {
     key: "traffic",
-    title: "今日流量",
+    title: "今日流量评级",
     toggleKey: "showTrafficRating",
     tierHint: "对应阶梯：≤10GB、≤50GB、≤200GB、>200GB",
   },
   {
     key: "bandwidth",
-    title: "实时带宽",
+    title: "集群实时带宽评级",
     toggleKey: "showBandwidthRating",
     tierHint: "对应阶梯：≤1Mbps、≤10Mbps、≤100Mbps、>100Mbps",
   },
   {
     key: "asset",
-    title: "资产概览",
+    title: "资产总值评级",
     toggleKey: "showAssetRating",
     tierHint: "对应阶梯：≤500元、≤1500元、≤3000元、>3000元",
   },
@@ -1894,9 +1894,9 @@ export function ThemeManage() {
                 <div className="flex flex-col gap-4">
                   <div className="surface-inset flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                     <span className="min-w-0">
-                      <span className="block setting-subhead-title">启用总览评级</span>
+                      <span className="block setting-subhead-title">启用指标卡片文字评级</span>
                       <span className="setting-desc">
-                        在今日流量、资产概览及集群网络状态中显示评级标识。
+                        控制今日流量与资产概览综合指标卡片底部的文字评级标签（集群实时带宽评级独立控制，不受此项影响）。
                       </span>
                     </span>
                     <input
@@ -1910,7 +1910,10 @@ export function ThemeManage() {
                   <div className="grid gap-3 md:grid-cols-3">
                     {OVERVIEW_RATING_LABEL_FIELDS.map((field) => {
                       const defaultLabel = getDefaultOverviewRatingLabelText(field.key);
-                      const ratingEnabled = draft.showOverviewRatings && draft[field.toggleKey];
+                      const isIndependent = field.toggleKey === "showBandwidthRating";
+                      const ratingEnabled = isIndependent
+                        ? draft[field.toggleKey]
+                        : (draft.showOverviewRatings && draft[field.toggleKey]);
                       return (
                         <div key={field.key} className="surface-inset flex min-w-0 flex-col gap-2 px-4 py-3">
                           <label className="flex items-center justify-between gap-2">
@@ -1918,7 +1921,7 @@ export function ThemeManage() {
                             <input
                               type="checkbox"
                               checked={draft[field.toggleKey]}
-                              disabled={!draft.showOverviewRatings}
+                              disabled={!isIndependent && !draft.showOverviewRatings}
                               onChange={(event) => patch(field.toggleKey, event.target.checked)}
                               className="h-4 w-4 shrink-0 accent-(--accent-500)"
                             />
@@ -1928,7 +1931,7 @@ export function ThemeManage() {
                             disabled={!ratingEnabled}
                             onChange={(event) => setRatingLabelDraft(field.key, event.target.value)}
                             placeholder={defaultLabel}
-                            aria-label={`${field.title}评级名称`}
+                            aria-label={`${field.title}名称`}
                             className="surface-inset w-full px-3 py-2 text-[13px] outline-none disabled:opacity-60"
                           />
                           <span className="setting-hint">
