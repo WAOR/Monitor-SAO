@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  clearServerThemeSettingsCache,
   extractUsernameFromStorage,
+  fetchServerThemeConfig,
   getLoadRecords,
   getMe,
   getNodes,
@@ -8,6 +10,8 @@ import {
   getPublic,
   resolveAuthUsername,
   saveAdminUsername,
+  saveThemeSettings,
+  THEME_SHORT,
 } from "@/services/api";
 
 const storageMap = new Map<string, string>();
@@ -29,6 +33,7 @@ Object.defineProperty(global, "localStorage", {
 describe("Monitor API Service", () => {
   beforeEach(() => {
     localStorageMock.clear();
+    clearServerThemeSettingsCache();
     vi.restoreAllMocks();
   });
 
@@ -55,15 +60,26 @@ describe("Monitor API Service", () => {
 
   describe("getMe and getPublic", () => {
     it("fetches /api/me and correctly maps auth and site name", async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          authed: true,
-          github: false,
-          site_name: "SAO Monitor",
-          public_page: true,
-        }),
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes(`/api/themes/${THEME_SHORT}/config`)) {
+          return {
+            ok: true,
+            status: 200,
+            headers: new Headers({ "content-type": "application/json" }),
+            json: async () => ({ defaultAppearance: "dark", adminNickname: "Kirito" }),
+          };
+        }
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({ "content-type": "application/json" }),
+          json: async () => ({
+            authed: true,
+            github: false,
+            site_name: "SAO Monitor",
+            public_page: true,
+          }),
+        };
       });
 
       saveAdminUsername("Kirito");
@@ -74,6 +90,39 @@ describe("Monitor API Service", () => {
       const pub = await getPublic();
       expect(pub.sitename).toBe("SAO Monitor");
       expect(pub.private_site).toBe(false);
+      expect(pub.theme_settings.defaultAppearance).toBe("dark");
+
+      const serverConfig = await fetchServerThemeConfig();
+      expect(serverConfig.adminNickname).toBe("Kirito");
+    });
+
+    it("persists theme settings via PUT /api/themes/sao/config", async () => {
+      let putBody: string | null = null;
+      global.fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        if (url.includes(`/api/themes/${THEME_SHORT}/config`)) {
+          if (init?.method === "PUT") {
+            putBody = String(init.body);
+            return {
+              ok: true,
+              status: 200,
+              text: async () => "OK",
+            };
+          }
+          return {
+            ok: true,
+            status: 200,
+            headers: new Headers({ "content-type": "application/json" }),
+            text: async () => JSON.stringify({ notice: "Old Notice" }),
+          };
+        }
+        return { ok: false, status: 404 };
+      });
+
+      await saveThemeSettings({ notice: "New Notice", surfaceOpacity: 0.9 });
+      expect(putBody).not.toBeNull();
+      const parsed = JSON.parse(putBody!);
+      expect(parsed.notice).toBe("New Notice");
+      expect(parsed.surfaceOpacity).toBe(0.9);
     });
   });
 

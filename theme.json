@@ -4,5 +4,244 @@
   "description": "极简立体仪表盘主题 · 适配 Monitor 探针，支持四种布局、流速图表、资产统计与动态背景",
   "version": "1.0.7",
   "author": "jerry",
-  "url": "https://github.com/monitor-probe/monitor"
+  "url": "https://github.com/WAOR/Monitor-SAO",
+  "config": [
+    { "type": "title", "label": "外观与布局" },
+    {
+      "key": "defaultAppearance",
+      "type": "select",
+      "label": "默认色彩模式",
+      "default": "system",
+      "options": [
+        { "value": "system", "label": "跟随系统" },
+        { "value": "dark", "label": "深色护眼" },
+        { "value": "light", "label": "浅色明亮" }
+      ]
+    },
+    {
+      "key": "desktopNodeViewMode",
+      "type": "select",
+      "label": "桌面端布局",
+      "default": "large",
+      "options": [
+        { "value": "large", "label": "标准网格 (Large)" },
+        { "value": "compact", "label": "紧凑网格 (Compact)" },
+        { "value": "mini", "label": "极简胶囊 (Mini)" },
+        { "value": "list", "label": "清单列表 (List)" }
+      ]
+    },
+    {
+      "key": "mobileNodeViewMode",
+      "type": "select",
+      "label": "移动端布局",
+      "default": "compact",
+      "options": [
+        { "value": "compact", "label": "紧凑网格 (Compact)" },
+        { "value": "large", "label": "标准网格 (Large)" },
+        { "value": "mini", "label": "极简胶囊 (Mini)" },
+        { "value": "list", "label": "清单列表 (List)" }
+      ]
+    },
+    {
+      "key": "showGroupTabs",
+      "type": "boolean",
+      "label": "显示节点分组标签栏",
+      "default": true
+    },
+    {
+      "key": "showRegionBar",
+      "type": "boolean",
+      "label": "显示地区筛选栏",
+      "default": true
+    },
+    {
+      "key": "showCardGroup",
+      "type": "boolean",
+      "label": "按分组折叠聚合展示",
+      "default": true
+    },
+    {
+      "key": "enableHomeSort",
+      "type": "boolean",
+      "label": "启用首页节点排序",
+      "default": true
+    },
+
+    { "type": "title", "label": "监控与组件" },
+    {
+      "key": "showHomeOverview",
+      "type": "boolean",
+      "label": "显示首页概览统计卡片",
+      "default": true
+    },
+    {
+      "key": "showPingChart",
+      "type": "boolean",
+      "label": "显示网络延迟与丢包图表",
+      "default": true
+    },
+    {
+      "key": "enableHomepageMultiPing",
+      "type": "boolean",
+      "label": "首页展示多线路 Ping 矩阵",
+      "default": false
+    },
+    {
+      "key": "showTodayTrafficPopover",
+      "type": "boolean",
+      "label": "显示今日流量与峰值弹窗",
+      "default": true
+    },
+    {
+      "key": "showConnections",
+      "type": "boolean",
+      "label": "显示 TCP/UDP 连接数",
+      "default": false
+    },
+    {
+      "key": "compactShowTrafficTotal",
+      "type": "boolean",
+      "label": "紧凑模式显示总流量",
+      "default": true
+    },
+    {
+      "key": "compactShowBilling",
+      "type": "boolean",
+      "label": "紧凑模式显示账单周期",
+      "default": true
+    },
+    {
+      "key": "compactShowUptime",
+      "type": "boolean",
+      "label": "紧凑模式显示在线时长",
+      "default": true
+    },
+
+    { "type": "title", "label": "背景与多媒体" },
+    {
+      "key": "enableBackgroundImage",
+      "type": "boolean",
+      "label": "启用全站动态背景",
+      "default": true
+    },
+    {
+      "key": "backgroundMediaType",
+      "type": "select",
+      "label": "背景媒体类型",
+      "default": "image",
+      "options": [
+        { "value": "image", "label": "静态图片背景" },
+        { "value": "video", "label": "动态视频背景" }
+      ]
+    },
+    {
+      "key": "backgroundImage",
+      "type": "string",
+      "label": "桌面端背景图片 URL",
+      "default": "",
+      "help": "支持静态图片或 GIF 动画 URL"
+    },
+    {
+      "key": "backgroundImageMobile",
+      "type": "string",
+      "label": "移动端背景图片 URL",
+      "default": "",
+      "help": "留空则自动共用桌面端背景"
+    },
+    {
+      "key": "backgroundVideo",
+      "type": "string",
+      "label": "浅色模式视频背景 URL",
+      "default": "https://assets.waor.cc/videos/sao_bg.mp4",
+      "help": "MP4/WebM 格式直链"
+    },
+    {
+      "key": "backgroundVideoDark",
+      "type": "string",
+      "label": "深色模式视频背景 URL",
+      "default": "",
+      "help": "留空则与浅色模式共用视频"
+    },
+    {
+      "key": "surfaceOpacity",
+      "type": "number",
+      "label": "卡片表面不透明度",
+      "default": 0.85,
+      "min": 0,
+      "max": 1,
+      "help": "取值 0 到 1，0 为全透明，1 为纯色"
+    },
+
+    { "type": "title", "label": "资产与评级" },
+    {
+      "key": "showCostSummary",
+      "type": "boolean",
+      "label": "显示资产费用概览",
+      "default": true
+    },
+    {
+      "key": "showCostSummaryFloatingButton",
+      "type": "boolean",
+      "label": "显示悬浮资产看板入口",
+      "default": true
+    },
+    {
+      "key": "showPriceForGuests",
+      "type": "boolean",
+      "label": "对访客公开服务器价格",
+      "default": false
+    },
+    {
+      "key": "showOverviewRatings",
+      "type": "boolean",
+      "label": "显示综合指标评级",
+      "default": true
+    },
+    {
+      "key": "showTrafficRating",
+      "type": "boolean",
+      "label": "显示流量评级",
+      "default": true
+    },
+    {
+      "key": "showBandwidthRating",
+      "type": "boolean",
+      "label": "显示带宽评级",
+      "default": true
+    },
+    {
+      "key": "showAssetRating",
+      "type": "boolean",
+      "label": "显示资产评级",
+      "default": true
+    },
+    {
+      "key": "costRateApiUrl",
+      "type": "string",
+      "label": "实时汇率 API 接口",
+      "default": "https://open.er-api.com/v6/latest/CNY"
+    },
+
+    { "type": "title", "label": "管理与安全" },
+    {
+      "key": "enableAdminButton",
+      "type": "boolean",
+      "label": "显示前台管理员入口",
+      "default": true
+    },
+    {
+      "key": "adminNickname",
+      "type": "string",
+      "label": "管理员自定义显示昵称",
+      "default": "",
+      "help": "登录后在页面顶栏展示的个性化昵称"
+    },
+    {
+      "key": "notice",
+      "type": "text",
+      "label": "全站置顶公告",
+      "default": "",
+      "help": "显示在页面顶部，留空不显示"
+    }
+  ]
 }

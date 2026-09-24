@@ -1275,7 +1275,7 @@ export function ThemeManage() {
       await queryClient.invalidateQueries({ queryKey: ["public"] });
       if (editVersionRef.current === submittedEditVersion) {
         setMessage(
-          "主题设置已在当前浏览器保存生效。若需对所有访客永久生效，可点击【导出全站配置】将 sao-config.json 放置于探针主题根目录。",
+          "主题设置已成功保存至服务端，全站及所有访客立即生效！",
         );
       }
     } catch (saveError) {

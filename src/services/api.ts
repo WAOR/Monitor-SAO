@@ -127,29 +127,46 @@ export function extractUsernameFromStorage(): string {
   return "";
 }
 
-/** 解析当前登录用户的显示名称，优先级：Storage 自定义昵称 -> 保底 "Admin" */
+export const THEME_SHORT = "sao";
+
+/** 解析当前登录用户的显示名称，优先级：Storage 自定义昵称 -> 服务端主题配置 -> 保底 "Admin" */
 export function resolveAuthUsername(authed = true): string {
   if (!authed) return "";
   const fromStorage = extractUsernameFromStorage();
   if (fromStorage) return fromStorage;
+  if (serverThemeSettingsCache && typeof serverThemeSettingsCache.adminNickname === "string") {
+    const fromServer = serverThemeSettingsCache.adminNickname.trim();
+    if (fromServer && fromServer.toLowerCase() !== "admin") {
+      return fromServer;
+    }
+  }
   return "Admin";
 }
 
-/** 保存自定义昵称 */
+/** 保存自定义昵称：本地即时响应 + 服务端官方接口持久化 */
 export function saveAdminUsername(nickname: string): void {
-  if (typeof window === "undefined" || !window.localStorage) return;
   const sanitized = nickname.replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 40);
-  try {
-    if (sanitized) {
-      window.localStorage.setItem(ADMIN_USERNAME_KEY, sanitized);
-      saveLocalThemeSettings({ ...getLocalThemeSettings(), adminNickname: sanitized });
-    } else {
-      window.localStorage.removeItem(ADMIN_USERNAME_KEY);
-      const next = { ...getLocalThemeSettings() };
-      delete next.adminNickname;
-      saveLocalThemeSettings(next);
-    }
-  } catch {}
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      if (sanitized) {
+        window.localStorage.setItem(ADMIN_USERNAME_KEY, sanitized);
+        saveLocalThemeSettings({ ...getLocalThemeSettings(), adminNickname: sanitized });
+      } else {
+        window.localStorage.removeItem(ADMIN_USERNAME_KEY);
+        const next = { ...getLocalThemeSettings() };
+        delete next.adminNickname;
+        saveLocalThemeSettings(next);
+      }
+    } catch {}
+  }
+  // 仅在真实浏览器运行环境下异步同步到服务端数据库持久化
+  if (
+    typeof window !== "undefined" &&
+    typeof window.location !== "undefined" &&
+    Boolean(window.location.origin)
+  ) {
+    void saveThemeSettings({ adminNickname: sanitized }).catch(() => {});
+  }
 }
 
 /** 消费早期预取的 /api/me 请求 (若存在) */
@@ -182,20 +199,46 @@ export async function getMe(options?: RequestOptions): Promise<Me> {
   };
 }
 
-let staticThemeSettingsCache: Record<string, unknown> | null = null;
+let serverThemeSettingsCache: Record<string, unknown> | null = null;
 
-/** 尝试拉取部署在站点根目录的静态全站主题配置 (sao-config.json) - 极速并行探测带超时 */
-export async function fetchStaticThemeSettings(): Promise<Record<string, unknown>> {
-  if (staticThemeSettingsCache !== null) {
-    return staticThemeSettingsCache;
+export function clearServerThemeSettingsCache(): void {
+  serverThemeSettingsCache = null;
+}
+
+/**
+ * 获取服务端持久化的主题配置 GET /api/themes/{short}/config
+ * 官方标准：401、404 与网络错误一律按默认值兜底，平滑降级，不抛出异常破坏页面渲染
+ */
+export async function fetchServerThemeConfig(options?: RequestOptions): Promise<Record<string, unknown>> {
+  if (serverThemeSettingsCache !== null) {
+    return serverThemeSettingsCache;
   }
   if (typeof window === "undefined" || typeof fetch === "undefined") {
     return {};
   }
 
+  // 1. 优先请求官方标准接口 GET /api/themes/{short}/config
+  try {
+    const res = await fetch(`/api/themes/${THEME_SHORT}/config`, {
+      cache: "no-cache",
+      signal: options?.signal,
+    });
+    if (res.ok) {
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("application/json") || !contentType.includes("text/html")) {
+        const data: unknown = await res.json();
+        if (data && typeof data === "object" && !Array.isArray(data)) {
+          serverThemeSettingsCache = data as Record<string, unknown>;
+          return serverThemeSettingsCache;
+        }
+      }
+    }
+  } catch {}
+
+  // 2. 兼容回退：探测部署根目录历史遗留的静态全站配置 (sao-config.json)
   const candidateUrls = ["./sao-config.json", "/sao-config.json"];
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-  const timeoutId = controller ? setTimeout(() => controller.abort(), 1200) : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), 800) : null;
 
   try {
     const fetchPromises = candidateUrls.map(async (url) => {
@@ -216,36 +259,38 @@ export async function fetchStaticThemeSettings(): Promise<Record<string, unknown
       throw new Error("Invalid config");
     });
 
-    // 只要有一个成功解析即刻采用
     const resolved = await Promise.any(fetchPromises);
-    staticThemeSettingsCache = resolved;
-    return staticThemeSettingsCache;
+    serverThemeSettingsCache = resolved;
+    return serverThemeSettingsCache;
   } catch {
-    staticThemeSettingsCache = {};
-    return staticThemeSettingsCache;
+    serverThemeSettingsCache = {};
+    return serverThemeSettingsCache;
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
 }
 
+/** 兼容旧命名导出 */
+export const fetchStaticThemeSettings = fetchServerThemeConfig;
+
 /** 获取站点全局配置 - 并发请求与早期数据优化 */
 export async function getPublic(options?: RequestOptions): Promise<PublicConfig> {
-  const [me, staticSettings] = await Promise.all([
+  const [me, serverSettings] = await Promise.all([
     fetchMeWithEarlyData(options),
-    fetchStaticThemeSettings(),
+    fetchServerThemeConfig(options),
   ]);
   const localSettings = getLocalThemeSettings();
 
-  // 合并配置：静态全站配置 (sao-config.json) -> 本地存储个性化覆盖
+  // 合并配置：服务端官方存储 (GET /api/themes/sao/config) -> 本地存储个性化覆盖
   const mergedSettings = {
-    ...staticSettings,
+    ...serverSettings,
     ...localSettings,
   };
 
   return ({
     sitename: me.site_name || "Monitor",
     description: "",
-    theme: "sao",
+    theme: THEME_SHORT,
     version: "1.0.7",
     private_site: !me.public_page,
     theme_settings: mergedSettings as ThemeSettings,
@@ -714,15 +759,66 @@ export async function getTodayTrafficMetrics(
   };
 }
 
-/** 保存主题设置（持久化至本地存储） */
+/** 保存主题设置（持久化至服务端官方配置接口 PUT /api/themes/{short}/config 与本地缓存） */
 export async function saveThemeSettings(
-  themeOrSettings: string | ThemeSettings,
-  maybeSettings?: ThemeSettings,
+  themeOrSettings: string | (ThemeSettings & Record<string, unknown>) | Record<string, unknown>,
+  maybeSettings?: (ThemeSettings & Record<string, unknown>) | Record<string, unknown>,
 ): Promise<void> {
-  const settings =
-    typeof themeOrSettings === "string" ? maybeSettings : themeOrSettings;
-  if (settings) {
-    saveLocalThemeSettings(settings as Record<string, unknown>);
+  const settings = (
+    typeof themeOrSettings === "string" ? maybeSettings : themeOrSettings
+  ) as Record<string, unknown> | undefined;
+
+  if (!settings) return;
+
+  // 1. 同步保存至本地存储，保证本地离线或断网时的高容错与即时反馈
+  saveLocalThemeSettings(settings);
+
+  if (typeof window === "undefined" || typeof fetch === "undefined") {
+    return;
+  }
+
+  // 2. 官方标准持久化存储：PUT /api/themes/{short}/config
+  const url = `/api/themes/${THEME_SHORT}/config`;
+  let original: Record<string, unknown> = {};
+
+  try {
+    const read = await fetch(url);
+    if (read.ok) {
+      const contentType = read.headers.get("content-type") ?? "";
+      if (contentType.includes("application/json") || !contentType.includes("text/html")) {
+        const text = await read.text();
+        if (text.trim().startsWith("{")) {
+          original = JSON.parse(text);
+        }
+      }
+    }
+  } catch {}
+
+  const next: Record<string, unknown> = { ...original };
+  for (const [key, value] of Object.entries(settings)) {
+    if (value === undefined) {
+      delete next[key];
+    } else {
+      next[key] = value;
+    }
+  }
+
+  try {
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(next),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(errText || `保存主题配置至服务端失败 (HTTP ${res.status})`);
+    }
+
+    serverThemeSettingsCache = next;
+  } catch (err) {
+    // 若服务端不支持 PUT（例如旧版 Hub 404），已有本地存储兜底，向控制台记录调试信息
+    console.warn("保存到服务端主题配置接口未成功，已使用本地存储兜底:", err);
   }
 }
 
