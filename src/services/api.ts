@@ -284,25 +284,38 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
   ]);
   const localSettings = getLocalThemeSettings();
 
-  // 合并配置：服务端官方存储 (GET /api/themes/sao/config) -> 本地存储个性化覆盖
-  const mergedSettings = {
-    ...serverSettings,
-    ...localSettings,
-  };
-
-  // 若服务端存在已配置的 adminNickname，同步刷新本地 Storage 缓存，避免历史旧缓存覆盖新配置
-  if (
-    serverSettings &&
-    typeof serverSettings.adminNickname === "string" &&
-    serverSettings.adminNickname.trim()
-  ) {
+  // 若服务端存在已配置的 adminNickname，服务端为唯一权威源，同步刷新本地 Storage 缓存，避免历史旧缓存覆盖新配置
+  if (serverSettings && typeof serverSettings.adminNickname === "string") {
     const sName = serverSettings.adminNickname.trim();
     if (typeof window !== "undefined" && window.localStorage) {
       try {
-        window.localStorage.setItem(ADMIN_USERNAME_KEY, sName);
+        if (sName) {
+          window.localStorage.setItem(ADMIN_USERNAME_KEY, sName);
+        } else {
+          window.localStorage.removeItem(ADMIN_USERNAME_KEY);
+        }
+        const local = getLocalThemeSettings();
+        if (local.adminNickname !== sName) {
+          if (sName) {
+            saveLocalThemeSettings({ ...local, adminNickname: sName });
+          } else {
+            const next = { ...local };
+            delete next.adminNickname;
+            saveLocalThemeSettings(next);
+          }
+        }
       } catch {}
     }
   }
+
+  // 服务端权威设置优先：当服务端配置了非空昵称时不可被本地旧缓存反客为主覆盖
+  const serverNickname =
+    typeof serverSettings?.adminNickname === "string" ? serverSettings.adminNickname.trim() : "";
+  const mergedSettings = {
+    ...serverSettings,
+    ...localSettings,
+    ...(serverNickname ? { adminNickname: serverNickname } : {}),
+  };
 
   return ({
     sitename: me.site_name || "Monitor",

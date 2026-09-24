@@ -24,9 +24,14 @@ export function useThemeSettings(): ThemeSettingsState {
   const isReady = hasConfig || isError;
 
   return useMemo(() => {
+    const serverSettings = config?.theme_settings || {};
+    const serverNickname =
+      typeof serverSettings.adminNickname === "string" ? serverSettings.adminNickname.trim() : "";
+
     const merged = {
-      ...(config?.theme_settings || {}),
+      ...serverSettings,
       ...localSettings,
+      ...(serverNickname ? { adminNickname: serverNickname } : {}),
     };
     return {
       ...normalizeThemeSettings(merged),
