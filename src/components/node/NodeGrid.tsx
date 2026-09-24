@@ -18,6 +18,7 @@ import {
 import { saveAdminUsername } from "@/services/api";
 import { Flag } from "@/components/ui/Flag";
 import { NoticeBanner } from "@/components/ui/NoticeBanner";
+import { FloatingAssetButton } from "@/components/cost/FloatingAssetButton";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useAllNodeMeta,
@@ -211,7 +212,6 @@ function HomeOverviewCards({
   overview,
   costSummary,
   costLoading,
-  showOverviewRatings,
   showTrafficRating,
   showBandwidthRating,
   showAssetRating,
@@ -232,7 +232,6 @@ function HomeOverviewCards({
   costSummary: { remainingCny: number; totalOriginalPriceCny?: number } | null;
   costLoading: boolean;
   dense: boolean;
-  showOverviewRatings: boolean;
   showTrafficRating: boolean;
   showBandwidthRating: boolean;
   showAssetRating: boolean;
@@ -301,7 +300,7 @@ function HomeOverviewCards({
     ? `今日全节点出入站累计 ${formatBytes(todayTrafficTotal)}`
     : "今日流量统计中...";
   const trafficRating =
-    showOverviewRatings && showTrafficRating && todayTrafficTotal !== null
+    showTrafficRating && todayTrafficTotal !== null
       ? getOverviewRating({
         kind: "traffic",
         value: todayTrafficBytes,
@@ -317,7 +316,7 @@ function HomeOverviewCards({
       })
       : null;
   const assetRating =
-    isPriceVisible && showOverviewRatings && showAssetRating && costSummary
+    isPriceVisible && showAssetRating && costSummary
       ? getOverviewRating({
         kind: "asset",
         value: costSummary.totalOriginalPriceCny ?? 0,
@@ -1088,18 +1087,7 @@ export function NodeGrid() {
   // 资产页悬浮入口 + 首页概览卡在「空节点」与正常两个分支里完全一致，提取一次复用。
   const homeHeader = (
     <>
-      {showCostFloatingButton && (
-        <Link
-          to="/assets"
-          className="cost-summary-ball show"
-          aria-label="打开资产统计页"
-          title="资产统计"
-        >
-          <span className="cost-summary-ball-icon" aria-hidden>
-            <CircleDollarSign size={16} />
-          </span>
-        </Link>
-      )}
+      {showCostFloatingButton && <FloatingAssetButton />}
       <HomeBrand siteName={siteName} />
       <NoticeBanner notice={themeSettings.notice} />
       {showHomeOverview && (
@@ -1111,7 +1099,6 @@ export function NodeGrid() {
           renewalNodes={renewalNodes}
           costSummary={costSummary}
           costLoading={costLoading}
-          showOverviewRatings={themeSettings.showOverviewRatings}
           showTrafficRating={themeSettings.showTrafficRating}
           showBandwidthRating={themeSettings.showBandwidthRating}
           showAssetRating={themeSettings.showAssetRating}

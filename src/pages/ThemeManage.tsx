@@ -1891,56 +1891,35 @@ export function ThemeManage() {
                 title="总览文字评级"
                 aside={<ListFilter size={16} />}
               >
-                <div className="flex flex-col gap-4">
-                  <div className="surface-inset flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                    <span className="min-w-0">
-                      <span className="block setting-subhead-title">启用指标卡片文字评级</span>
-                      <span className="setting-desc">
-                        控制今日流量与资产概览综合指标卡片底部的文字评级标签。
-                      </span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={draft.showOverviewRatings}
-                      onChange={(event) => patch("showOverviewRatings", event.target.checked)}
-                      className="h-4 w-4 shrink-0 accent-(--accent-500)"
-                    />
-                  </div>
-
-                  <div className="grid gap-3 md:grid-cols-3">
-                    {OVERVIEW_RATING_LABEL_FIELDS.map((field) => {
-                      const defaultLabel = getDefaultOverviewRatingLabelText(field.key);
-                      const isIndependent = field.toggleKey === "showBandwidthRating";
-                      const ratingEnabled = isIndependent
-                        ? draft[field.toggleKey]
-                        : (draft.showOverviewRatings && draft[field.toggleKey]);
-                      return (
-                        <div key={field.key} className="surface-inset flex min-w-0 flex-col gap-2 px-4 py-3">
-                          <label className="flex items-center justify-between gap-2">
-                            <span className="setting-subhead-title">{field.title}</span>
-                            <input
-                              type="checkbox"
-                              checked={draft[field.toggleKey]}
-                              disabled={!isIndependent && !draft.showOverviewRatings}
-                              onChange={(event) => patch(field.toggleKey, event.target.checked)}
-                              className="h-4 w-4 shrink-0 accent-(--accent-500)"
-                            />
-                          </label>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {OVERVIEW_RATING_LABEL_FIELDS.map((field) => {
+                    const defaultLabel = getDefaultOverviewRatingLabelText(field.key);
+                    const ratingEnabled = draft[field.toggleKey];
+                    return (
+                      <div key={field.key} className="surface-inset flex min-w-0 flex-col gap-2 px-4 py-3">
+                        <label className="flex items-center justify-between gap-2">
+                          <span className="setting-subhead-title">{field.title}</span>
                           <input
-                            value={draft.ratingLabels[field.key]}
-                            disabled={!ratingEnabled}
-                            onChange={(event) => setRatingLabelDraft(field.key, event.target.value)}
-                            placeholder={defaultLabel}
-                            aria-label={`${field.title}名称`}
-                            className="surface-inset w-full px-3 py-2 text-[13px] outline-none disabled:opacity-60"
+                            type="checkbox"
+                            checked={draft[field.toggleKey]}
+                            onChange={(event) => patch(field.toggleKey, event.target.checked)}
+                            className="h-4 w-4 shrink-0 accent-(--accent-500)"
                           />
-                          <span className="setting-hint">
-                            {field.tierHint}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        </label>
+                        <input
+                          value={draft.ratingLabels[field.key]}
+                          disabled={!ratingEnabled}
+                          onChange={(event) => setRatingLabelDraft(field.key, event.target.value)}
+                          placeholder={defaultLabel}
+                          aria-label={`${field.title}名称`}
+                          className="surface-inset w-full px-3 py-2 text-[13px] outline-none disabled:opacity-60"
+                        />
+                        <span className="setting-hint">
+                          {field.tierHint}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </InstancePanel>
 
@@ -2011,8 +1990,8 @@ export function ThemeManage() {
                 />
                 <ToggleRow
                   field="showTodayTrafficPopover"
-                  title="悬浮显示当日流量/峰值带宽"
-                  desc="鼠标悬停在卡片或小卡片流量指标时，弹出精致的今日已用流量透视窗。"
+                  title="显示当日流量与峰值按钮"
+                  desc="在节点卡片上显示流量统计图表快捷按钮，点击或悬停可查看当日出入站流量与峰值带宽。"
                   checked={draft.showTodayTrafficPopover}
                   onPatch={patch}
                 />
@@ -2038,8 +2017,8 @@ export function ThemeManage() {
                     />
                     <ToggleRow
                       field="showCostSummaryFloatingButton"
-                      title="显示资产悬浮按钮"
-                      desc="卡内入口不可用时（总览隐藏或其开关关闭），以悬浮按钮进入资产统计页。"
+                      title="显示资产看板悬浮按钮"
+                      desc="卡内入口不可用时，在右下角提供可自由拖动停靠的悬浮钱币按钮进入资产统计页。"
                       checked={draft.showCostSummaryFloatingButton}
                       onPatch={patch}
                     />

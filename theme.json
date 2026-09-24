@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "极简立体仪表盘主题 · 适配 Monitor 探针，支持四种布局、流速图表、资产统计与动态背景",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "author": "jerry",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -96,8 +96,8 @@
     {
       "key": "showTodayTrafficPopover",
       "type": "boolean",
-      "label": "悬浮显示当日流量/峰值带宽",
-      "help": "鼠标悬停在卡片或小卡片流量指标时，弹出当日已用流量透视窗",
+      "label": "显示当日流量与峰值按钮",
+      "help": "在节点卡片上显示流量统计图表快捷按钮，点击或悬停可查看当日出入站流量与峰值带宽",
       "default": true
     },
     {
@@ -198,7 +198,7 @@
       "key": "showCostSummaryFloatingButton",
       "type": "boolean",
       "label": "显示资产看板悬浮按钮",
-      "help": "卡片入口关闭或无资产卡片时，在右下角提供快捷悬浮入口",
+      "help": "卡片入口关闭或无资产卡片时，在右下角提供可拖动的快捷悬浮入口",
       "default": true
     },
     {
@@ -217,13 +217,6 @@
     },
 
     { "type": "title", "label": "文字评级配置" },
-    {
-      "key": "showOverviewRatings",
-      "type": "boolean",
-      "label": "启用指标卡片文字评级",
-      "help": "控制今日流量与资产概览综合指标卡片底部的文字评级标签",
-      "default": true
-    },
     {
       "key": "showTrafficRating",
       "type": "boolean",
