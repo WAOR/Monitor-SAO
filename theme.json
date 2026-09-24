@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "极简立体仪表盘主题 · 适配 Monitor 探针，支持四种布局、流速图表、资产统计与动态背景",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "author": "jerry",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -236,7 +236,7 @@
       "type": "string",
       "label": "今日流量评级用词",
       "default": "",
-      "help": "4 级评级用词以逗号隔开（≤10GB、≤50GB、≤200GB、>200GB），留空默认：休闲,起步,活跃,暴走"
+      "help": "4 级评级用词以逗号隔开（≤10GB、≤50GB、≤200GB、>200GB），留空默认：LOW,MED,HIGH,ULTRA"
     },
     {
       "key": "showAssetRating",
@@ -250,13 +250,13 @@
       "type": "string",
       "label": "资产总值评级用词",
       "default": "",
-      "help": "4 级评级用词以逗号隔开（≤500元、≤1500元、≤3000元、>3000元），留空默认：入门,进阶,丰盛,传家宝"
+      "help": "4 级评级用词以逗号隔开（≤500元、≤1500元、≤3000元、>3000元），留空默认：Nano,Micro,Medium,High-Spec"
     },
     {
       "key": "showBandwidthRating",
       "type": "boolean",
       "label": "显示集群实时带宽评级",
-      "help": "在首页右侧集群状态中显示实时吞吐评级徽章（独立控制，不受指标卡片开关影响）",
+      "help": "在首页右侧集群状态中显示实时吞吐评级徽章",
       "default": true
     },
     {
@@ -264,7 +264,7 @@
       "type": "string",
       "label": "集群实时带宽评级用词",
       "default": "",
-      "help": "4 级评级用词以逗号隔开（≤1Mbps、≤10Mbps、≤100Mbps、>100Mbps），留空默认：空闲,平稳,高速,爆表"
+      "help": "4 级评级用词以逗号隔开（≤1Mbps、≤10Mbps、≤100Mbps、>100Mbps），留空默认：IDLE,LIGHT,ACTIVE,SURGE"
     },
 
     { "type": "title", "label": "管理与安全" },

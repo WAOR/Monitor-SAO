@@ -1896,7 +1896,7 @@ export function ThemeManage() {
                     <span className="min-w-0">
                       <span className="block setting-subhead-title">启用指标卡片文字评级</span>
                       <span className="setting-desc">
-                        控制今日流量与资产概览综合指标卡片底部的文字评级标签（集群实时带宽评级独立控制，不受此项影响）。
+                        控制今日流量与资产概览综合指标卡片底部的文字评级标签。
                       </span>
                     </span>
                     <input
