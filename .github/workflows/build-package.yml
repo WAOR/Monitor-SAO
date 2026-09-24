@@ -49,8 +49,8 @@ jobs:
           name: sao-theme-package
           path: |
             theme.tar.gz
-            *.tar.gz
-            *.zip
+            *-theme-*.tar.gz
+            *-theme-*.zip
             preview.png
             theme.json
 
@@ -73,8 +73,8 @@ jobs:
           name: "SAO Theme ${{ github.ref_name }}"
           files: |
             theme.tar.gz
-            *.tar.gz
-            *.zip
+            *-theme-*.tar.gz
+            *-theme-*.zip
             preview.png
             theme.json
           body_path: ${{ steps.release-notes.outputs.path }}
