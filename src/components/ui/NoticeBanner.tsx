@@ -20,25 +20,25 @@ export function NoticeBanner({ notice }: NoticeBannerProps) {
   const content = (notice ?? "").trim();
   const contentHash = content ? simpleHash(content) : "";
 
-  const [dismissed, setDismissed] = useState<boolean>(() => {
-    if (!content) return true;
+  const [dismissedHash, setDismissedHash] = useState<string | null>(() => {
     try {
-      return sessionStorage.getItem(DISMISSED_NOTICE_KEY) === contentHash;
+      return sessionStorage.getItem(DISMISSED_NOTICE_KEY);
     } catch {
-      return false;
+      return null;
     }
   });
 
   const handleDismiss = useCallback(() => {
-    setDismissed(true);
+    if (!contentHash) return;
+    setDismissedHash(contentHash);
     try {
-      if (contentHash) {
-        sessionStorage.setItem(DISMISSED_NOTICE_KEY, contentHash);
-      }
+      sessionStorage.setItem(DISMISSED_NOTICE_KEY, contentHash);
     } catch {}
   }, [contentHash]);
 
-  if (!content || dismissed) {
+  const isDismissed = Boolean(contentHash && dismissedHash === contentHash);
+
+  if (!content || isDismissed) {
     return null;
   }
 

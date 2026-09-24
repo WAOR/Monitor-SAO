@@ -278,6 +278,9 @@ export const fetchStaticThemeSettings = fetchServerThemeConfig;
 
 /** 获取站点全局配置 - 并发请求与早期数据优化 */
 export async function getPublic(options?: RequestOptions): Promise<PublicConfig> {
+  // 确保重新获取配置时从网络拉取最新的服务端主题配置，而不是死死卡在单例内存变量中
+  clearServerThemeSettingsCache();
+
   const [me, serverSettings] = await Promise.all([
     fetchMeWithEarlyData(options),
     fetchServerThemeConfig(options),
@@ -308,20 +311,18 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
     }
   }
 
-  // 服务端权威设置优先：当服务端配置了非空昵称时不可被本地旧缓存反客为主覆盖
-  const serverNickname =
-    typeof serverSettings?.adminNickname === "string" ? serverSettings.adminNickname.trim() : "";
+  // 服务端权威设置优先：服务端官方配置（包括公告 notice、昵称、布局等所有字段）覆盖本地旧缓存快照；
+  // 本地快照仅作为离线或服务端未返回时的兜底垫底
   const mergedSettings = {
-    ...serverSettings,
     ...localSettings,
-    ...(serverNickname ? { adminNickname: serverNickname } : {}),
+    ...serverSettings,
   };
 
   return ({
     sitename: me.site_name || "Monitor",
     description: "",
     theme: THEME_SHORT,
-    version: "1.0.8",
+    version: "1.0.12",
     private_site: !me.public_page,
     theme_settings: mergedSettings as ThemeSettings,
     record_preserve_time: 168,

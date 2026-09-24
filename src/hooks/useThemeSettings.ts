@@ -25,13 +25,12 @@ export function useThemeSettings(): ThemeSettingsState {
 
   return useMemo(() => {
     const serverSettings = config?.theme_settings || {};
-    const serverNickname =
-      typeof serverSettings.adminNickname === "string" ? serverSettings.adminNickname.trim() : "";
 
+    // 权威源优先：服务端官方持久化配置具有绝对最高权威，覆盖本地旧快照；
+    // 本地存储仅作为极端离线或服务端未配置时的垫底兜底。
     const merged = {
-      ...serverSettings,
       ...localSettings,
-      ...(serverNickname ? { adminNickname: serverNickname } : {}),
+      ...serverSettings,
     };
     return {
       ...normalizeThemeSettings(merged),
