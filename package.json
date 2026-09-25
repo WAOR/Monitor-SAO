@@ -4,7 +4,7 @@
   "version": "1.0.19",
   "type": "module",
   "description": "SAO Theme for Monitor - 极简立体仪表盘主题",
-  "author": "codex&shark&shanyang",
+  "author": "WAOR",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
