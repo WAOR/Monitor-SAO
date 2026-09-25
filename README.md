@@ -1,148 +1,170 @@
-# Monitor-Theme-SAO (Monitor-SAO)
+<p align="center">
+  <strong>面向多种探针服务端的SAO系列主题</strong>
+</p>
 
-> ⚠️ **声明：本项目为个人纯自用 / 定制二次开发分支。**  
-> 本主题基于优秀开源主题 Lumina / LuminaPlus / Komari-Theme-SAO 演进，并深度移植适配至 **[monitor-probe/monitor](https://github.com/monitor-probe/monitor)** 极简探针。  
-> 如果您是在寻找或探索上游主题，**强烈推荐前往并 Star 原作者的项目**：
-> - 推荐上游分支：[shanyang242/Komari-Theme-LuminaPlus](https://github.com/shanyang242/Komari-Theme-LuminaPlus)
-> - 推荐初代主题：[stqfdyr/komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina)
-> - 社区移植参考：[guboysky/LuminaPlus](https://github.com/guboysky/LuminaPlus)
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="License">
+  <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen" alt="Node Version">
+  <img src="https://img.shields.io/badge/TypeScript-Strict-blue" alt="TypeScript">
+</p>
+
+> ⚠️ **项目声明**  
+> 本项目为个人基于开源社区优秀成果进行的二次开发与定制分支。  
+> 若您正在寻找上游原版或希望探索更多衍生分支，建议前往并支持原作者的项目：
+> - 初代设计项目：[stqfdyr/komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina)
+> - 功能增强上游：[shanyang242/Komari-Theme-LuminaPlus](https://github.com/shanyang242/Komari-Theme-LuminaPlus)
+> - 社区移植参考：[volcano-1025/CFSM-Theme-LuminaPlus](https://github.com/volcano-1025/CFSM-Theme-LuminaPlus) / [guboysky/LuminaPlus](https://github.com/guboysky/LuminaPlus)
 
 ---
 
-## 🌲 项目渊源与族谱
+## 🌲 项目版本与分支导航
 
-本项目的前端设计与代码演进脉络如下：
+Theme-SAO 针对目前社区主流的数个探针服务端提供了对应适配版本，核心视觉设计与性能优化方案在各版本间保持统一：
+
+| 适用探针服务端 | 对应项目仓库 | 主要特点 |
+| :--- | :--- | :--- |
+| **Komari** | [Komari-Theme-SAO](https://github.com/WAOR/Komari-Theme-SAO) | 面向 Komari 探针，兼容 Radix 调色体系，多格式标签分隔符容错 |
+| **CF-Server-Monitor** | [CFSM-SAO](https://github.com/WAOR/CFSM-SAO) | 针对 Cloudflare 生态优化，支持 `标签-颜色` 自定义着色、四种卡片布局、资产浮球与无特征防扫 |
+| **Monitor-Probe** | [Monitor-SAO](https://github.com/WAOR/Monitor-SAO) | 深度适配极简 Rust 探针，支持原生服务器分组 Tab、主题配置持久化（含延迟线路数量配置）与测速峰值锁存机制 |
+
+---
+
+## 📜 主题族谱与演进脉络
+
+本项目前端界面的设计思路与代码结构演进关系如下：
 
 ```text
 [初代设计] komari-theme-Lumina (作者: @stqfdyr)
     │
     ▼
 [功能扩展] Komari-Theme-LuminaPlus (作者: @shanyang242 / @shark)
+    │   ├─ 引入背景图/动态壁纸、透明度调节、首页文字评级、Ping/负载图表等特性
+    │   └─ 社区移植探索：
+    │       ├─ @volcano-1025 (移植至 CF-Server-Monitor)
+    │       └─ @guboysky (移植至 Monitor-Probe)
     │
     ▼
-[家族演进] Komari-Theme-SAO / SAO-CFSM (作者: @WAOR)
-    │
-    ▼
-[最新融合] Monitor-SAO (本项目: @WAOR)
-• 深度适配 monitor-probe/monitor 探针协议 (/api/me, /api/nodes, WebSocket)
-• 深度重构首屏加载管线，体感速度显著超越我们之前的 SAO-CFSM 与 Komari 版本，真正实现“瞬时秒开”
-• 原生支持多线路 Ping 自动感知与全量展示 (无需手动改配 slot 槽位)
-• 支持极简探针原生服务器分组与官方主题配置标准持久化
-• 访客端默认资产保密与全自动 CI/CD 打包发布
+[SAO 家族定制分支] Theme-SAO 系列 (作者: @WAOR)
+    ├─ Komari-Theme-SAO   : 适配 Komari 探针
+    ├─ CFSM-SAO           : 适配 CFSM 探针
+    └─ Monitor-SAO        : 适配极简探针
 ```
 
-1. **[komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina)**：原作者 `@stqfdyr` 设计并开源的初代优雅主题。
-2. **[Komari-Theme-LuminaPlus](https://github.com/shanyang242/Komari-Theme-LuminaPlus)**：`@shanyang242` 基于 Lumina 深度重构的增强分支，引入背景图/视频、透明度调节、总览评级、Ping/负载图表等诸多实用特性。
-3. **[Komari-Theme-SAO](https://github.com/WAOR/Komari-Theme-SAO) / SAO-CFSM**：`@WAOR` 基于 LuminaPlus 进行的个人二次开发分支，确立了极简立体仪表盘与护眼暗色设计体系。
-4. **[monitor-probe/monitor](https://github.com/monitor-probe/monitor)**：高性能极简 Rust 探针服务端。
-5. **[guboysky/LuminaPlus](https://github.com/guboysky/LuminaPlus)**：社区将 LuminaPlus 引入 Monitor 探针的基础参考版本。
-6. **[Monitor-SAO](https://github.com/WAOR/Monitor-SAO)**：**本项目**，将 SAO 极简立体主题全量特性完整移植至 Monitor 探针体系。
+1. **[komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina)**（原作者：`@stqfdyr`）：开源了初代 Lumina 主题，确立了简洁现代的卡片式探针设计范式。
+2. **[Komari-Theme-LuminaPlus](https://github.com/shanyang242/Komari-Theme-LuminaPlus)**（原作者：`@shanyang242`）：在 Lumina 基础上扩充了动态壁纸、卡片透明度调节、综合评级系统及网络性能图表，奠定了后续二次开发的基础。
+3. **[Montia37/komari-theme-purcarte](https://github.com/Montia37/komari-theme-purcarte)**：为动态视频背景的设计思路与视觉呈现提供了参考。
+4. **Theme-SAO 系列**（本项目）：基于上述开源工作，统一重构首屏加载流程，引入立体悬浮卡片、浅色护眼与纯粹碳黑调色，并针对不同探针后端补充对应的实用特性。
 
 ---
 
-## ⚡ 极致加载速度与首屏性能优化
+## ⚡ 核心通用特性
 
-相比我们之前开发的 **SAO-CFSM** 版本以及 **Komari-Theme-SAO** 历史版本，本项目在极简探针体系下对前端加载管线进行了深度重构与优化，在弱网或日常网络环境下均有非常强烈的**“秒开”**体感提升：
+### 1. 首屏加载流程与体验优化
+- **早期数据并行预取（Early Data Prefetching）**：在 HTML `<head>` 解析早期通过内联脚本与静态资源并行发起配置与节点信息请求，减少传统单页应用中“HTML ➔ 脚本加载 ➔ 脚本执行 ➔ 接口请求”带来的瀑布流等待。
+- **立体骨架屏秒级占位**：在首屏数据抵达前渲染与真实仪表盘结构对齐的呼吸骨架，缓解空白页面与等待感。
+- **构建分包优化**：将趋势图表库等重型组件进行拆包与按需异步加载，控制首屏主脚本体积。
 
-1. **首屏早期数据并行预取（Early Data Prefetching）**：
-   在 HTML 刚开始解析的头部内联脚本中，与 CSS/JS 资源下载**完全并行同步发起** `/api/me` 和服务端配置请求。彻底打破传统 SPA “HTML ➡️ 下载 JS ➡️ 执行 JS ➡️ 发起 API” 的漫长串行瀑布流，数据与应用几乎同时就绪。
-2. **分包构建极致收敛（Smart Chunk Splitting）**：
-   将重量级的趋势图表组件（uPlot）、状态校验库等进行精细化拆包与按需懒加载，首页核心 JS 关键加载体积缩减至极致，主线程解析时间大幅缩短。
-3. **现代基线原生色彩与样式（Zero-Polyfill）**：
-   全面基于现代浏览器原生的 CSS `color-mix()` / `oklch` 色彩系统与现代 CSS 变量驱动，彻底剥离过时的 Polyfill 运行时，CSS 渲染管线极其纯净。
-4. **字体本地自托管与分集预载**：
-   自托管现代化 Inter Variable 字体，本地打包并使用现代 WOFF2 格式分集加载，彻底剔除外部公共 CDN（如 Google Fonts）的网络阻断风险与延迟。
-5. **高效单例 WebSocket 订阅流**：
-   重构 WebSocket 数据流分发中心，高频指标变化定向精准更新对应组件，杜绝全局不必要的 DOM 级联重复 re-render，降低长开挂机时的 CPU 消耗。
-6. **磨砂立体骨架屏秒级占位（Instant Skeleton Render）**：
-   首屏彻底消除传统 SPA 让人烦躁的“大白屏”与“转圈等待”，核心框架就绪后瞬间呈现 1:1 严格对齐 SAO 仪表盘的立体呼吸骨架；配合早期数据预取，数据落地后平滑无缝蜕变为真实界面。
+### 2. 界面设计与视觉体验
+- **双栏总览仪表盘**：
+  - 核心指标区：汇总实时速率、全站流量、在线率、临期提醒及资产总值等关键运维指标。
+  - 集群状态区：包含分段式在线率状态指示格与实时网络吞吐平滑波形图。
+- **护眼浅色与纯粹深色体系**：
+  - 浅色模式：采用分层浅灰底色配合立体悬浮卡片，降低明亮背景下的眩光感。
+  - 深色模式：采用中性碳黑基调，避免杂色泛蓝，暗光环境下视觉更加沉浸。
+- **个性化视觉配置**：支持静态背景图、自定义动态视频背景以及卡片亚克力透明度调节。
 
----
-
-## 🛠️ 本主题特性与最新优化
-
-- **深度适配极简探针 (monitor-probe/monitor)**：
-  - 全面对接 REST API (`/api/me`, `/api/nodes`, `/api/nodes/{id}/metrics`) 与 `/api/ws` 实时双向流。
-  - **原生对接服务器分组 (group)**：完整支持官方节点分组（PR #51），首页自动激活分组 Tab 标签栏，支持点击一键切换筛选，卡片副标题与管理页自动联动分组信息。
-  - **服务端主题配置标准持久化**：深度支持官方 `GET/PUT /api/themes/{short}/config` 规范，外观配色、桌面/移动端布局、图表偏好等配置全网跨设备统一生效。
-  - **管理员自定义昵称**：支持在官方后台或前端首页点击铅笔内联修改。
-  - **全站置顶公告 Banner**：支持后台配置 Markdown/文本公告并在首页顶部高亮展示。
-- **Auto Multi-Ping 多线路自适应技术**：
-  - 彻底解决上游移植版硬编码固定 3 线路、需站长手动 SSH 修改配置文件的痛点。
-  - 智能感知后台启用的全部测速线路，无论是 3 条还是 7 条线路，访客端无需任何手动配置均可**全量自适应展示**。
-- **极简立体仪表盘设计**：
-  - **毛玻璃顶部导航栏**：采用高质感磨砂玻璃材质与自适应品牌标题，布局清晰紧凑。
-  - **监控总览双栏卡片**：
-    - **核心指标区**：集成关键运维指标卡片（实时速率、全站流量、在线比例、临期提醒、资产总值等），支持悬浮立体微投影与平滑悬停动效。
-    - **集群状态区**：内置分段式服务器在线率状态指示格与全站实时网络吞吐动态平滑波形图。
-  - **灵动流光问候语**：首屏顺滑流光入场，搭配轻量呼吸流光动效，支持按不同时段智能切换贴心问候。
-- **全新护眼与极简深色体验**：
-  - **浅色护眼模式**：采用分层护眼浅灰底色与纯白立体悬浮卡片，告别强白光眩目感。
-  - **深色极简碳黑模式**：采用纯粹中性碳黑调色体系，无杂色泛蓝，暗色环境观感更加深邃沉浸。
-- **shadcn/ui 风格临期提醒悬浮卡片**：
-  - 采用轻量磨砂半透悬浮卡片（HoverCard），鼠标悬停即开即停，操作自然丝滑。
-  - 智能 7 天临期预警机制，与全站状态保持精确一致。
-- **服务器价格与资产隐私保护**：
-  - **默认访客保密**：默认对未登录访客隐藏节点价格及资产总值敏感信息。
-  - **一键快捷显隐开关**：已登录管理员可在右上角悬浮工具栏通过眼睛图标一键切换显示/隐藏价格与资产，方便日常截图与分享。
-- **CI/CD 自动化构建与发布**：
-  - 配置 GitHub Actions 自动编译与 Release 打包流，发布版本时一键生成标准主题包 `theme.tar.gz` 及配套产物。
+### 3. 运维细节与隐私防护
+- **敏感数据受控隐藏**：默认对未登录访客隐藏节点费用与资产总值信息；管理员登录后可通过顶部导航栏的快捷按钮一键切换显示或隐藏，方便截图分享。
+- **7 天临期预警**：采用轻量半透明悬浮卡片（HoverCard），直观提示即将到期的服务器节点。
 
 ---
 
-## ⚠️ 已知局限、待完善功能与 BUG 记录
+## 🧩 各版本专属特性与差异说明
 
-### 1. 测速峰值速度记录不准问题（核心根因与当前边界说明）
+由于不同探针后端的数据结构和能力存在差异，各版本针对性地保留并优化了以下功能：
 
-- **现象描述**：  
-  在对节点进行 Speedtest 等突发大流量测速时，测速进行中前端能正常看到实时数百 Mbps 的高峰值；但**测速一旦结束，卡片浮窗内的今日最高峰值会被瞬间拉低**（常常缩水成几十甚至几 Mbps）。
-- **底层技术根因（服务端时序聚合机制）**：  
-  极简探针（monitor-probe）服务端为节约数据库空间与服务器 I/O，历史数据采用 **1 分钟或 5 分钟时间片平均加权落库**。一次 15 秒的测速突发（例如 358 Mbps）与后续 45 秒的闲置状态（0 Mbps）在服务端落库时会被整窗口平摊，折算后存入 SQLite 的数值仅有：
-  $$358\text{ Mbps} \times \frac{15\text{s}}{60\text{s}} \approx 89.5\text{ Mbps}$$
-  测速结束后实时速率归零，若前端仅读取服务端历史采样点，峰值就会严重缩水。
-- **当前 SAO 主题的处理方案（v1.0.9+）**：  
-  主题在前端引入了 **「今日瞬时峰值持久锁存（Daily Peak Storage）」** 机制。WebSocket 每 2 秒推送一次快照，一旦捕获到当天的更高瞬时速率，立即按日期（`YYYY-MM-DD`）锁存在浏览器本地。测速结束后流速归零**绝不回落**，浮窗依然稳稳展示当天的真实最高峰值与精确发生时间，跨页面刷新依然保留。
-- **当前的物理边界（何时依然会不准？）**：  
-  由于该锁存依赖 WebSocket 前端实时捕获：  
-  - ✅ **人工测速场景（开着面板测速）**：100% 能够精准锁存真实最高峰值；  
-  - ❌ **无人值守/夜间离线测速**：若测速发生时**完全没有打开任何探针网页**（例如通过 Linux crontab 凌晨跑自动化测速），浏览器错过了实时 WebSocket 推流。第二天打开网页补读时，仍只能从服务端获取被平均化稀释后的历史数据。  
-  *（注：若需彻底实现 24 小时全天候离线极值记录，有待探针服务端在 Hub 处理 Agent 上报时增加原生 `today_peak` 极值字段支持）。*
+### 1. Komari 版本基准 ([Komari-Theme-SAO](https://github.com/WAOR/Komari-Theme-SAO))
+- **基准主题，目前是最满血的SAO系列主题。**
+- 
+- **默认隐藏资产数据：** 默认对未登录访客隐藏节点费用与资产总值信息；管理员可手动开启向访客展示资产信息，同时也提供快捷按钮快捷临时显/隐资产信息，便于截图分享。
+- **灵动流光昵称与动态语境问候语：** 在首页总览仪表盘顶部，主题设计了一套融合时段关怀与渐变光效的问候体系：
+- **首屏流光掠过（Sweep Layer）：** 首屏初次渲染时用户昵称通过一道包含洋红、橙红、暖黄、紫罗兰与深蓝的多色光谱光带沿 110° 角度自左向右掠过字形，平滑完成初次亮相。
+  - **常态极光微流动（Aurora Layer）：** 入场流光结束后，昵称无缝过渡至 135° 多色极光背景，以 8 秒为周期在字形内部保持缓慢、低饱和度的微流动呼吸效果，长时间停留观感自然克制。
+- **时段问候与集群状态动态语境：**
+  - 自动识别当前时间，动态根据集群实时在线率智能切换贴切的状态提示。
+- **昵称展示：**
+  - 未登录访客固定展示为 `Guest`；
+  - komari版本登录后可自动读取登录用户名。
+  - **延迟测速线路数量配置：**
+  - 相较于LuminaPlus，SAO不限制首页展示的延迟槽位数量（仅限大卡和小卡）。
+  - **重构暗色模式：**
+  - 按照个人喜好以碳黑色为基调重构暗色模式，个人十分满意当前的暗色模式。
+  - **更多细节优化：**
+  - 对一些上游主题遗留下来的细枝末节的功能进行完善和优化，不值得单独列出。
 
-### 2. 节点标签功能（暂不支持）
-Monitor 探针官方目前未提供节点标签（Tags）字段，因此原 Komari 体系下的线路色彩药丸标签功能暂处于冻结状态。
+### 2. CFSM 版本差异 ([CFSM-SAO](https://github.com/WAOR/CFSM-SAO))
+- **彩色标签智能着色语法：**
+  - 支持在后台节点备注中使用 `标签名-颜色` 格式（如 `香港BGP-blue`、`特惠机-red`、`CN2-green`）指定标签色彩。未指定颜色后缀时，系统会根据线路关键词智能匹配适宜的色系。
+- **用户名可自定义：**
+- 由于CFSM探针并未输出用户名字段，因此相较于 Komari 版本，CFSM 版改为了手动编辑用户昵称，存储到D1数据库当中，你可以直接点击昵称处编辑，也可以在主题设置中编辑。
+- **受限于特性的功能缺失：** 
+- 受限于workers免费额度限制，每日流量统计和峰值统计等功能在 CFSM 上无法准确统计，因此缺失此部分功能。
+
+### 3. 极简探针版本差异 ([Monitor-SAO](https://github.com/WAOR/Monitor-SAO))
+- **服务端配置标准持久化：**
+  - 适配极简探针最新版本主题配置持久化接口，主题配置得以跨设备统一生效。
+- **用户昵称可自定义：**
+- 由于极简探针压根就不存在用户名，因极简探针版主题采取了CFSM版同样的处理方式，你可以直接点击昵称处编辑，也可以在主题设置中编辑。
+- **提供了公告栏功能：**
+- 可以通过公告栏向访客留言，未填写公告则不会展示公告栏。
+#### 极简探针版主题待完善功能
+
+- **当前主题无法准确记录瞬时峰值：**
+  - 极简探针服务端历史数据采用 1 分钟或 5 分钟时间片平均加权落库。一次 15 秒的测速突发与后续 45 秒的闲置状态在服务端落库时会被整窗口平摊，短时间的突发测速结束后，服务端只记录平摊均值所以会导致峰值数值下降。
+  - 目前SAO主题只能在前端通过 WebSocket 实时推流捕获当日瞬时最高速率，并锁存在浏览器本地存储中（无法向其他访客展示）保证日常开盘测速期间峰值数据准确展示。  
+  - 若测速期间完全未打开网页，补读时仍受限于服务端时间片均值，要想实现准确的峰值记录，需待 monitor-probe 后端提供峰值数据后主题再进行适配。
+- **节点标签功能缺失：**
+- 极简探针目前未提供节点标签（Tags）字段，因此原 Komari 体系下和 CFSM 体系下的线路色彩药丸标签功能暂处于冻结状态，待后端支持后主题会更新适配。
 
 ---
 
-## 💻 本地开发与调试
+## 🚀 安装与部署
 
-```bash
-# 安装依赖
-npm install
+请根据您使用的探针服务端类型选择对应的安装方式：
 
-# 启动本地开发服务器
-npm run dev
+### Komari
+1. 前往 [Komari-Theme-SAO Releases](https://github.com/WAOR/Komari-Theme-SAO/releases) 下载对应主题压缩包。
+2. 在 Komari 后台主题管理中上传启用。
 
-# 浏览器访问（支持 Mock 节点数据）
-http://localhost:5173/?mock=1
+### Monitor-Probe（极简探针）
+1. 前往 [Monitor-SAO Releases](https://github.com/WAOR/Monitor-SAO/releases) 下载最新版本的打包产物 `theme.tar.gz`。
+2. 在极简探针后台主题设置页面上传启用。
+
+### CF-Server-Monitor (CFSM)
+在 CFSM 管理后台「系统设置」→「主题管理」中填入以下地址：
+```text
+# 追踪最新发布版（推荐）：
+https://github.com/WAOR/CFSM-SAO/tree/dist
+
+# 或指定特定 Commit 锁定生产版本：
+https://github.com/WAOR/CFSM-SAO/tree/<40位CommitSHA>
 ```
+
 
 ---
 
 ## 💖 致谢
 
-- 特别感谢 **[monitor-probe/monitor](https://github.com/monitor-probe/monitor)** 提供极简高效的探针监控服务端。
-- 特别感谢 **[stqfdyr/komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina)** 开源了初代 Lumina 主题。
-- 特别感谢 **[shanyang242/Komari-Theme-LuminaPlus](https://github.com/shanyang242/Komari-Theme-LuminaPlus)** 的优秀工作与丰富功能扩展。
-- 特别感谢 **[guboysky/LuminaPlus](https://github.com/guboysky/LuminaPlus)** 在 Monitor 探针主题移植上的先行探索。
-- 特别感谢 **[Montia37/komari-theme-purcarte](https://github.com/Montia37/komari-theme-purcarte)** 提供视频背景的设计思路与素材。
+感谢以下优秀开源项目与社区贡献者的付出：
+- **[stqfdyr/komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina)**：初代优雅主题开创者。
+- **[shanyang242/Komari-Theme-LuminaPlus](https://github.com/shanyang242/Komari-Theme-LuminaPlus)**：出色的增强分支与功能架构设计。
+- **[volcano-1025/CFSM-Theme-LuminaPlus](https://github.com/volcano-1025/CFSM-Theme-LuminaPlus)**：CFSM 平台的早期移植探索。
+- **[guboysky/LuminaPlus](https://github.com/guboysky/LuminaPlus)**：Monitor 探针平台的移植尝试。
+- **[Montia37/komari-theme-purcarte](https://github.com/Montia37/komari-theme-purcarte)**：动态背景视频的设计与参考素材。
+- **[komari-monitor/komari](https://github.com/komari-monitor/komari)**、**[CF-Server-Monitor](https://github.com/CF-Server-Monitor)** 与 **[monitor-probe/monitor](https://github.com/monitor-probe/monitor)**：探针监控服务端的作者及社区维护者。
 
 ---
 
-## 🔗 参考链接
+## 📄 开源许可证
 
-- [Monitor 官方仓库](https://github.com/monitor-probe/monitor)
-- [Monitor 主题开发文档](https://monitor-document.pages.dev/dev/theme)
-- [komari-theme-Lumina](https://github.com/stqfdyr/komari-theme-Lumina)
-- [Komari-Theme-LuminaPlus](https://github.com/shanyang242/Komari-Theme-LuminaPlus)
-- [guboysky/LuminaPlus](https://github.com/guboysky/LuminaPlus)
-- [Radix UI Colors 文档](https://www.radix-ui.com/themes/docs/theme/color)
+本项目基于 [MIT License](LICENSE) 开源发布。
