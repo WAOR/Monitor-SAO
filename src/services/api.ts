@@ -101,8 +101,24 @@ async function apiFetch<T>(path: string, options?: RequestOptions & RequestInit)
     });
 
     if (!res.ok) {
-      const errText = (await res.text().catch(() => "")) || res.statusText;
-      throw new ApiRequestError(errText || `Request failed with status ${res.status}`, res.status, path);
+      const contentType = res.headers?.get?.("content-type") || "";
+      let errText = "";
+      if (typeof res.text === "function") {
+        const raw = await res.text().catch(() => "");
+        if ((contentType.startsWith("text/plain") || !/<[a-z][\s\S]*>/i.test(raw)) && raw.trim()) {
+          errText = raw.trim();
+        }
+      }
+      if (!errText) {
+        if (res.status >= 500) {
+          errText = `服务暂时无法访问（HTTP ${res.status}），稍后再试`;
+        } else if (res.status === 401 || res.status === 403) {
+          errText = `请求被拦截或权限不足（HTTP ${res.status}）`;
+        } else {
+          errText = res.statusText || `请求失败（HTTP ${res.status}）`;
+        }
+      }
+      throw new ApiRequestError(errText, res.status, path);
     }
 
     if (res.status === 204) {
@@ -729,17 +745,24 @@ export async function getTodayTrafficMetrics(
         const trafficUpPoints: TrafficMetricSeries["points"] = [];
         const trafficDownPoints: TrafficMetricSeries["points"] = [];
 
-        // 1. 速率采样序列（用于峰值计算和曲线图）
+        // 1. 速率采样序列（用于峰值计算和曲线图，优先采用 Hub 1.3.1 记录的瞬时最高峰值）
         for (const p of todayPoints) {
           const isoTime = new Date(p.ts * 1000).toISOString();
+          const peakTx = typeof p.net_tx_max === "number" && Number.isFinite(p.net_tx_max)
+            ? p.net_tx_max
+            : p.net_tx;
+          const peakRx = typeof p.net_rx_max === "number" && Number.isFinite(p.net_rx_max)
+            ? p.net_rx_max
+            : p.net_rx;
+
           rateUpPoints.push({
             time: isoTime,
-            value: Math.max(0, p.net_tx),
+            value: Math.max(0, peakTx),
             count: 1,
           });
           rateDownPoints.push({
             time: isoTime,
-            value: Math.max(0, p.net_rx),
+            value: Math.max(0, peakRx),
             count: 1,
           });
         }

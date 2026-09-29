@@ -74,6 +74,8 @@ export interface MonitorHistoryPoint {
   disk_used: number;
   net_rx: number;
   net_tx: number;
+  net_rx_max?: number;
+  net_tx_max?: number;
 }
 
 export interface MonitorPingPoint {

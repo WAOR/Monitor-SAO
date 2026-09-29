@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  clearNodeMetricsHistoryCache,
   clearServerThemeSettingsCache,
   extractUsernameFromStorage,
   fetchServerThemeConfig,
@@ -35,6 +36,7 @@ describe("Monitor API Service", () => {
   beforeEach(() => {
     localStorageMock.clear();
     clearServerThemeSettingsCache();
+    clearNodeMetricsHistoryCache();
     vi.restoreAllMocks();
   });
 
@@ -361,6 +363,50 @@ describe("Monitor API Service", () => {
 
       // 速率峰值点验证
       expect(rateUpSeries!.points.map((p) => p.value)).toEqual([2000, 4000]);
+    });
+
+    it("prefers Hub 1.3.1 net_tx_max and net_rx_max over mean net_tx/net_rx for peak rates", async () => {
+      const nowMs = 1700003600 * 1000;
+      const startMs = 1700000000 * 1000;
+      const endMs = nowMs;
+
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes("/api/nodes/1/metrics")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              metrics: [
+                {
+                  ts: 1700000000,
+                  cpu: 10,
+                  mem_used: 100,
+                  disk_used: 100,
+                  net_rx: 1000,
+                  net_tx: 2000,
+                  net_rx_max: 50000, // 瞬时测速峰值 50KB/s
+                  net_tx_max: 80000, // 瞬时测速峰值 80KB/s
+                },
+              ],
+            }),
+          };
+        }
+        return { ok: false, status: 404 };
+      });
+
+      const { getTodayTrafficMetrics } = await import("@/services/api");
+      const res = await getTodayTrafficMetrics(["1"], startMs, endMs);
+
+      const rateUpSeries = res.series.find((s) => s.metricKey === "net.out.rate");
+      const rateDownSeries = res.series.find((s) => s.metricKey === "net.in.rate");
+      const upSeries = res.series.find((s) => s.metricKey === "traffic.up");
+
+      // 峰值速率优先捕获瞬时最高峰值（80000 / 50000）
+      expect(rateUpSeries!.points[0].value).toBe(80000);
+      expect(rateDownSeries!.points[0].value).toBe(50000);
+
+      // 但流量积分依然按平均值 2000 * 60 = 120000 计算，不虚标累计流量
+      expect(upSeries!.points[0].value).toBe(120000);
     });
   });
 });

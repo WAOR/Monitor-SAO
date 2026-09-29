@@ -96,17 +96,38 @@ export const CHINESE_YEAR_PAY_NAMES: Record<number, string> = {
  */
 export function classifyBillingCycleWord(
   normalized: string,
-): { kind: BillingCycleKind; years?: number } | null {
-  if (/^(monthly|month|mo|月|每月|月付)$/.test(normalized)) return { kind: "month" };
-  if (/^(quarterly|quarter|季|季度|每季|季付)$/.test(normalized)) return { kind: "quarter" };
+): { kind: BillingCycleKind; years?: number; months?: number } | null {
+  if (/^(monthly|month|mo|月|每月|月付)$/.test(normalized)) return { kind: "month", months: 1 };
+  if (/^(quarterly|quarter|季|季度|每季|季付)$/.test(normalized)) return { kind: "quarter", months: 3 };
   if (/^(semi-?annual(ly)?|half[-_]?year(ly)?|半年|半年付)$/.test(normalized)) {
-    return { kind: "halfYear" };
+    return { kind: "halfYear", months: 6 };
   }
   if (/^(annual(ly)?|yearly|year|yr|年|一年|每年|年付)$/.test(normalized)) {
     return { kind: "year", years: 1 };
   }
+  if (/^(biennial|两年|两年付|2年|2年付)$/.test(normalized)) {
+    return { kind: "year", years: 2 };
+  }
+  if (/^(triennial|三年|三年付|3年|3年付)$/.test(normalized)) {
+    return { kind: "year", years: 3 };
+  }
   if (/^(lifetime|once|one-time|永久|一次性|一次性付费|买断)$/.test(normalized)) {
     return { kind: "lifetime" };
+  }
+
+  // 匹配 Hub 1.3.1 的 `<n>m` 格式（如 18m, 60m 等）以及带单位的月数定义
+  const monthMatch = /^(\d+)[-_\s]*(m|mo|mos|month|months|月|个月|个月付|月付)$/.exec(normalized);
+  if (monthMatch) {
+    const m = Number(monthMatch[1]);
+    if (m > 0) {
+      if (m % 12 === 0) {
+        return { kind: "year", years: m / 12 };
+      }
+      if (m === 1) return { kind: "month", months: 1 };
+      if (m === 3) return { kind: "quarter", months: 3 };
+      if (m === 6) return { kind: "halfYear", months: 6 };
+      return { kind: "month", months: m };
+    }
   }
 
   // 两年 / 三年 / 四年 / 五年 / 两年付 / 三年付
@@ -136,14 +157,17 @@ export interface NormalizedBillingCycle {
   days: number;
   /** kind === "year" 时的整年数(365/360 天均视为 1 年)。 */
   years?: number;
+  /** kind === "month" 时的自定义月数（默认 1）。 */
+  months?: number;
 }
 
 /**
- * 严格按照 Komari 后台计费周期规则进行归一化：
+ * 严格按照 Komari / Monitor 后台计费周期规则进行归一化：
  * 1. 按预设周期（日历续费）：数值相近时按对应日历周期计算
  *    常用数值：30（月）、92（季）、180/182（半年）、365（年）、730（两年）、1095（三年）等
  * 2. 按自定义天数：当输入其他天数时（如 7, 45, 100），严格按天数续费
  * 3. 一次性付费：输入 -1 表示一次性付费
+ * 4. 支持 Hub 1.3.1 的 `<n>m` 格式（如 18m, 60m）与 biennial/triennial
  */
 export function normalizeBillingCycle(
   value: string | number | null | undefined,
@@ -155,9 +179,9 @@ export function normalizeBillingCycle(
     if (numeric === -1) return { kind: "lifetime", days: -1 };
 
     // Komari 后台预设方案的相近数值匹配
-    if (numeric >= 28 && numeric <= 31) return { kind: "month", days: 30 };
-    if (numeric >= 89 && numeric <= 93) return { kind: "quarter", days: 90 };
-    if (numeric >= 180 && numeric <= 184) return { kind: "halfYear", days: 180 };
+    if (numeric >= 28 && numeric <= 31) return { kind: "month", days: 30, months: 1 };
+    if (numeric >= 89 && numeric <= 93) return { kind: "quarter", days: 90, months: 3 };
+    if (numeric >= 180 && numeric <= 184) return { kind: "halfYear", days: 180, months: 6 };
     if (numeric >= 360 && numeric <= 366) return { kind: "year", days: 365, years: 1 };
     if (numeric >= 725 && numeric <= 735) return { kind: "year", days: 730, years: 2 };
     if (numeric >= 1090 && numeric <= 1100) return { kind: "year", days: 1095, years: 3 };
@@ -178,12 +202,14 @@ export function normalizeBillingCycle(
 
   const word = classifyBillingCycleWord(raw.toLowerCase());
   switch (word?.kind) {
-    case "month":
-      return { kind: "month", days: 30 };
+    case "month": {
+      const months = word.months && word.months > 0 ? word.months : 1;
+      return { kind: "month", days: months * 30, months };
+    }
     case "quarter":
-      return { kind: "quarter", days: 90 };
+      return { kind: "quarter", days: 90, months: 3 };
     case "halfYear":
-      return { kind: "halfYear", days: 180 };
+      return { kind: "halfYear", days: 180, months: 6 };
     case "lifetime":
       return { kind: "lifetime", days: -1 };
     case "year": {
@@ -195,14 +221,14 @@ export function normalizeBillingCycle(
   }
 }
 
-/** 格式化节点价格后的计费周期后缀（如 ¥71.08/三年 或 ¥30/月） */
+/** 格式化节点价格后的计费周期后缀（如 ¥71.08/三年、¥30/月 或 ¥99/18个月） */
 export function formatBillingCycle(value: string | number | null | undefined) {
   const cycle = normalizeBillingCycle(value);
   switch (cycle.kind) {
     case "lifetime":
       return "一次性";
     case "month":
-      return "月";
+      return cycle.months && cycle.months > 1 ? `${cycle.months}个月` : "月";
     case "quarter":
       return "季";
     case "halfYear":
@@ -214,14 +240,14 @@ export function formatBillingCycle(value: string | number | null | undefined) {
   }
 }
 
-/** 格式化紧凑小卡片等高密度场景的周期后缀（如 $71/3年 或 $5.8/月） */
+/** 格式化紧凑小卡片等高密度场景的周期后缀（如 $71/3年、$5.8/月 或 $99/18月） */
 export function formatCompactBillingCycleText(value: string | number | null | undefined) {
   const cycle = normalizeBillingCycle(value);
   switch (cycle.kind) {
     case "lifetime":
       return "一次";
     case "month":
-      return "月";
+      return cycle.months && cycle.months > 1 ? `${cycle.months}月` : "月";
     case "quarter":
       return "季";
     case "halfYear":

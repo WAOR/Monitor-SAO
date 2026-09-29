@@ -54,6 +54,19 @@ describe("formatBillingCycle", () => {
     expect(formatBillingCycle("semiannually")).toBe("半年");
   });
 
+  it("handles Hub 1.3.1 cycles including <n>m, biennial, and triennial", () => {
+    expect(formatBillingCycle("biennial")).toBe("两年");
+    expect(formatBillingCycle("triennial")).toBe("三年");
+    expect(formatBillingCycle("12m")).toBe("年");
+    expect(formatBillingCycle("24m")).toBe("两年");
+    expect(formatBillingCycle("36m")).toBe("三年");
+    expect(formatBillingCycle("60m")).toBe("五年");
+    expect(formatBillingCycle("18m")).toBe("18个月");
+    expect(formatBillingCycle("5m")).toBe("5个月");
+    expect(formatBillingCycle("18 个月付")).toBe("18个月");
+    expect(formatBillingCycle("5年付")).toBe("五年");
+  });
+
   it("falls back to a day-count for arbitrary positive numbers", () => {
     expect(formatBillingCycle(45)).toBe("45天");
   });
@@ -108,5 +121,8 @@ describe("formatCompactRenewalPrice", () => {
     expect(formatCompactRenewalPrice({ price: 18.6, currency: "USD", billing_cycle: 365 })).toBe("$18.6/年");
     expect(formatCompactRenewalPrice({ price: 4, currency: "USD", billing_cycle: 30 })).toBe("$4/月");
     expect(formatCompactRenewalPrice({ price: 19.9, currency: "CNY", billing_cycle: -1 })).toBe("¥19.9/一次");
+    expect(formatCompactRenewalPrice({ price: 30, currency: "USD", billing_cycle: "18m" })).toBe("$30/18月");
+    expect(formatCompactRenewalPrice({ price: 100, currency: "USD", billing_cycle: "60m" })).toBe("$100/5年");
+    expect(formatCompactRenewalPrice({ price: 50, currency: "USD", billing_cycle: "biennial" })).toBe("$50/2年");
   });
 });
