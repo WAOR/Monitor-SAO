@@ -23,13 +23,9 @@
 :root {
   color-scheme: light dark;
 
-  /* 卡片表面不透明度(0–100),由背景「卡片不透明度」设置驱动。默认 100 → --surface-a
-     等于 --surface,在背景图调低它之前,表面与纯色主题逐像素一致。-a 系列变量才是浮层
-     内容表面实际绘制用的色。 */
-  --surface-alpha: 100;
-  --surface-a: color-mix(in srgb, var(--surface) calc(var(--surface-alpha) * 1%), transparent);
-  --surface-elev-a: color-mix(in srgb, var(--surface-elev) calc(var(--surface-alpha) * 1%), transparent);
-  --hover-bg-a: color-mix(in srgb, var(--hover-bg) calc(var(--surface-alpha) * 1%), transparent);
+  --surface-a: var(--surface);
+  --surface-elev-a: var(--surface-elev);
+  --hover-bg-a: var(--hover-bg);
 
   font-family: var(--font-sans);
   font-synthesis: none;
@@ -48,12 +44,6 @@ body {
   color: var(--text-primary);
 }
 
-/* --bg-0 只挂在 <html>(画布)上,不挂 <body>。自定义背景图画在负 z-index 的
-   body::before 上,而 CSS 绘制顺序里 body 自身背景在负 z 子元素之后绘制 —— 所以若
-   把 --bg-0 放到 <body> 会盖住背景图。保持 <body> 透明让图显示;未配置背景图时,
-   <html> 仍提供纯色 --bg-0 兜底。
-   氛围层(顶光 --canvas-glow)也画在 <html> 背景上,天然只在纯色模式出现——透明模式的
-   body::before 图片盖在其上,所以两者互不干扰。变量未定义时回退为 none,该层不绘制。 */
 html {
   scrollbar-gutter: stable;
   background-color: var(--bg-0);

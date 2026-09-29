@@ -1,6 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { Lock } from "lucide-react";
-import { BackgroundLayer } from "./BackgroundLayer";
 import { Spinner } from "@/components/ui/Spinner";
 import { useAppearance } from "@/hooks/useAppearance";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,7 +53,6 @@ export function AppShell() {
   const isCheckingShell = isCheckingAccess || isCheckingHomeData;
   return (
     <div className="relative flex min-h-screen flex-col">
-      <BackgroundLayer />
       {/* MAO 风格顶部导航 Bar 框架 */}
       <header className="mao-top-nav-bar">
         <div className="mx-auto flex h-14 w-full max-w-430 items-center justify-between px-3 sm:px-5 md:px-6 lg:px-8">

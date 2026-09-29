@@ -1,14 +1,5 @@
 import type { ThemeSettings } from "@/types/komari";
 import {
-  DEFAULT_BACKGROUND_ALIGNMENT,
-  DEFAULT_BACKGROUND_VIDEO_URL,
-  DEFAULT_SURFACE_OPACITY,
-  normalizeBackgroundAlignment,
-  normalizeBackgroundUrl,
-  normalizeBackgroundVideoUrl,
-  normalizeSurfaceOpacity,
-} from "@/utils/background";
-import {
   DEFAULT_COST_RATE_API_URL,
   normalizeCostIgnoredNodes,
   normalizeCostPremiums,
@@ -32,7 +23,6 @@ import {
 
 export type Appearance = "system" | "light" | "dark";
 export type NodeViewMode = "large" | "compact" | "mini" | "list";
-export type BackgroundMediaType = "image" | "video";
 
 export interface ResolvedThemeSettings {
   defaultAppearance: Appearance;
@@ -70,19 +60,11 @@ export interface ResolvedThemeSettings {
   costIgnoredNodes: string[];
   costPremiums: Record<string, CostPremiumEntry>;
   costRateApiUrl: string;
-  enableBackgroundImage: boolean;
-  backgroundMediaType: BackgroundMediaType;
-  backgroundImage: string;
-  backgroundImageMobile: string;
-  backgroundVideo: string;
-  backgroundVideoDark: string;
-  backgroundAlignment: string;
-  surfaceOpacity: number;
   notice: string;
   adminNickname: string;
 }
 
-/** 后端 theme.json 中声明的官方配置字段清单 (共 34 项) */
+/** 后端 theme.json 中声明的官方配置字段清单 (共 27 项) */
 export const THEME_CONFIG_KEYS = [
   "defaultAppearance",
   "desktopNodeViewMode",
@@ -98,13 +80,6 @@ export const THEME_CONFIG_KEYS = [
   "compactShowTrafficTotal",
   "compactShowBilling",
   "compactShowUptime",
-  "enableBackgroundImage",
-  "backgroundMediaType",
-  "backgroundImage",
-  "backgroundImageMobile",
-  "backgroundVideo",
-  "backgroundVideoDark",
-  "surfaceOpacity",
   "showCostSummary",
   "showCostSummaryFloatingButton",
   "showPriceForGuests",
@@ -158,14 +133,6 @@ export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   costIgnoredNodes: [],
   costPremiums: {},
   costRateApiUrl: DEFAULT_COST_RATE_API_URL,
-  enableBackgroundImage: true,
-  backgroundMediaType: "image",
-  backgroundImage: "",
-  backgroundImageMobile: "",
-  backgroundVideo: DEFAULT_BACKGROUND_VIDEO_URL,
-  backgroundVideoDark: "",
-  backgroundAlignment: DEFAULT_BACKGROUND_ALIGNMENT,
-  surfaceOpacity: DEFAULT_SURFACE_OPACITY,
   notice: "",
   adminNickname: "",
 };
@@ -212,9 +179,6 @@ function normalizePlainText(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 
-function normalizeBackgroundMediaType(value: unknown): BackgroundMediaType {
-  return value === "video" ? "video" : "image";
-}
 
 // 管理员默认排序:字段非法回落 default;方向非法时回落该字段的自然方向(文本升、数值降)。
 function normalizeHomeSortDefault(
@@ -281,16 +245,6 @@ export function normalizeThemeSettings(
     costIgnoredNodes: normalizeCostIgnoredNodes(settings?.costIgnoredNodes),
     costPremiums: normalizeCostPremiums(settings?.costPremiums),
     costRateApiUrl: normalizeCostRateApiUrl(settings?.costRateApiUrl),
-    // 默认开:让已配置背景图的存量站点升级后行为不变;关闭 = 保留 URL 但不加载背景图。
-    enableBackgroundImage: enabledUnlessFalse(settings?.enableBackgroundImage),
-    backgroundMediaType: normalizeBackgroundMediaType(settings?.backgroundMediaType),
-    backgroundImage: normalizeBackgroundUrl(settings?.backgroundImage),
-    backgroundImageMobile: normalizeBackgroundUrl(settings?.backgroundImageMobile),
-    backgroundVideo:
-      normalizeBackgroundVideoUrl(settings?.backgroundVideo) || DEFAULT_BACKGROUND_VIDEO_URL,
-    backgroundVideoDark: normalizeBackgroundVideoUrl(settings?.backgroundVideoDark),
-    backgroundAlignment: normalizeBackgroundAlignment(settings?.backgroundAlignment),
-    surfaceOpacity: normalizeSurfaceOpacity(settings?.surfaceOpacity),
     notice: typeof settings?.notice === "string" ? settings.notice.trim() : "",
     adminNickname:
       typeof settings?.adminNickname === "string"

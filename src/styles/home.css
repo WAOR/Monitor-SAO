@@ -918,8 +918,7 @@
   --metric-accent: var(--accent-500);
 }
 
-/* 暗色依靠表面色阶建立层级，不叠白色顶光或指标色氛围。背景图模式仍由 --surface-a
-   保留用户配置的透明度。 */
+/* 暗色依靠表面色阶建立层级，不叠白色顶光或指标色氛围。 */
 :root[data-appearance="dark"] .overview-card {
   background: var(--surface-a);
 }

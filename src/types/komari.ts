@@ -149,14 +149,6 @@ export interface ThemeSettings {
     number | { amount?: number; paidCny?: number; acquiredAt?: string }
   >;
   costRateApiUrl?: string;
-  enableBackgroundImage?: boolean;
-  backgroundMediaType?: "image" | "video";
-  backgroundImage?: string;
-  backgroundImageMobile?: string;
-  backgroundVideo?: string;
-  backgroundVideoDark?: string;
-  backgroundAlignment?: string;
-  surfaceOpacity?: number;
   notice?: string;
   adminNickname?: string;
 }

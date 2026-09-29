@@ -121,11 +121,11 @@ describe("Monitor API Service", () => {
         return { ok: false, status: 404 };
       });
 
-      await saveThemeSettings({ notice: "New Notice", surfaceOpacity: 0.9 });
+      await saveThemeSettings({ notice: "New Notice", desktopNodeViewMode: "compact" });
       expect(putBody).not.toBeNull();
       const parsed = JSON.parse(putBody!);
       expect(parsed.notice).toBe("New Notice");
-      expect(parsed.surfaceOpacity).toBe(0.9);
+      expect(parsed.desktopNodeViewMode).toBe("compact");
     });
 
     it("clears stale local notice when notice is cleared or omitted on server", async () => {
