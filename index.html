@@ -37,7 +37,7 @@
         } catch {}
 
         try {
-          const cachedTitle = localStorage.getItem("komaritheme:sitename");
+          const cachedTitle = localStorage.getItem("sao:sitename") || localStorage.getItem("komaritheme:sitename");
           if (cachedTitle && cachedTitle.trim()) {
             document.title = cachedTitle.trim();
             const setMeta = (sel, val) => {
@@ -48,7 +48,7 @@
             setMeta('meta[property="og:title"]', cachedTitle.trim());
             setMeta('meta[name="twitter:title"]', cachedTitle.trim());
           }
-          const cachedDesc = localStorage.getItem("komaritheme:description");
+          const cachedDesc = localStorage.getItem("sao:description") || localStorage.getItem("komaritheme:description");
           if (cachedDesc && cachedDesc.trim()) {
             const setMeta = (sel, val) => {
               const el = document.querySelector(sel);

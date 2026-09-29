@@ -51,15 +51,17 @@
     pointer-events: none;
     transform: translateX(-20px);
   }
+
+  .mao-nav-brand-left {
+    transition: opacity 200ms ease, visibility 200ms ease, transform 200ms ease;
+  }
 }
 
-/* 顶栏左侧标题与图标基础样式与过渡动效 */
+/* 顶栏左侧标题与图标基础样式（桌面端保持稳定静态，杜绝初次渲染或断点计算引发的位移动画抖动） */
 .mao-nav-brand-left {
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: opacity 200ms ease, visibility 200ms ease, transform 200ms ease;
-  will-change: opacity, transform;
 }
 
 .home-overview {

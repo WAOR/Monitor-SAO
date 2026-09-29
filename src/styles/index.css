@@ -55,6 +55,7 @@ body {
    氛围层(顶光 --canvas-glow)也画在 <html> 背景上,天然只在纯色模式出现——透明模式的
    body::before 图片盖在其上,所以两者互不干扰。变量未定义时回退为 none,该层不绘制。 */
 html {
+  scrollbar-gutter: stable;
   background-color: var(--bg-0);
   background-image: var(--canvas-glow, none);
   background-repeat: no-repeat;
