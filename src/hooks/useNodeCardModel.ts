@@ -18,7 +18,6 @@ import {
   formatByteRate,
   formatExpireDays,
   formatUptimeDays,
-  joinDisplayParts,
   parseTags,
 } from "@/utils/format";
 import {
@@ -152,13 +151,10 @@ export function useNodeCardModel(
   const metaModel = useMemo(() => {
     if (!meta) return null;
     const tags = parseTags(meta.tags);
-    const group = showCardGroup ? meta.group : undefined;
-    const subtitleParts = [group, meta.public_remark]
-      .map((part) => part?.trim())
-      .filter((part): part is string => Boolean(part));
-    const subtitleLabels = new Set(subtitleParts.map((part) => part.toLowerCase()));
+    const group = showCardGroup ? meta.group?.trim() : undefined;
+    const subtitle = group || "";
     const compactFooterTags = tags.filter(
-      (tag) => !subtitleLabels.has(tag.label.trim().toLowerCase()),
+      (tag) => !subtitle || tag.label.trim().toLowerCase() !== subtitle.toLowerCase(),
     );
     const fallbackFooterTags =
       tags.length > 0
@@ -170,9 +166,9 @@ export function useNodeCardModel(
       tags,
       footerTags: fallbackFooterTags,
       compactFooterTags,
-      subtitle: joinDisplayParts(subtitleParts),
-      expire: formatExpireDays(meta.expired_at, now),
-      expireColor: getExpireTextColor(meta.expired_at, now),
+      subtitle,
+      expire: formatExpireDays(meta.expired_at, now, meta.expires_in),
+      expireColor: getExpireTextColor(meta.expired_at, now, meta.expires_in),
       isPriceVisible,
       renewalPrice: isPriceVisible ? formatRenewalPrice(meta) : null,
       compactRenewalPrice: isPriceVisible ? formatCompactRenewalPrice(meta) : null,

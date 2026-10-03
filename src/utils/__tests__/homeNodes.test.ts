@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { HomeNodeSummary } from "@/services/wsStore";
 import {
   getHomeGroupOptions,
+  hasUngroupedNodes,
   normalizeHomeGroupOrder,
   sortHomeGroupOptions,
 } from "@/utils/homeNodes";
@@ -38,6 +39,11 @@ describe("home node helpers", () => {
         node({ uuid: "d", group: "" }),
       ]),
     ).toEqual(["US 美国", "HK 香港"]);
+  });
+
+  it("detects ungrouped nodes correctly (Monitor 1.3.2 ungrouped support)", () => {
+    expect(hasUngroupedNodes([node({ uuid: "a", group: "US" }), node({ uuid: "b", group: "" })])).toBe(true);
+    expect(hasUngroupedNodes([node({ uuid: "a", group: "US" }), node({ uuid: "b", group: "HK" })])).toBe(false);
   });
 
 });

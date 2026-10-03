@@ -67,73 +67,55 @@ export interface ChartTooltipState {
   time: string;
 }
 
-interface TimeRangeOption {
+export interface TimeRangeOption {
   label: string;
   value: number;
 }
 
-// load 和 ping 共用同一套历史区间预设；唯一区别是是否在前面加 "实时" 选项，这由
-// buildHistoryRangeOptions 的 includeRealtime 标志处理，而非改预设列表本身。
-const TIME_RANGE_OPTIONS: TimeRangeOption[] = [
-  { label: "1 小时", value: 1 },
-  { label: "4 小时", value: 4 },
-  { label: "1 天", value: 24 },
-  { label: "7 天", value: 168 },
-  { label: "30 天", value: 720 },
-];
-
-// Ping 详情只保留高分辨率仍有观察价值的四档。metric store 虽可保留更久，
-// 但 30/90 天会退化到小时级 rollup，不再放进详情页快捷范围。
-const PING_TIME_RANGE_OPTIONS: TimeRangeOption[] = TIME_RANGE_OPTIONS.filter(
-  (option) => option.value <= 168,
-);
-
-function formatRangeLabel(hours: number) {
+export function formatRangeLabel(hours: number): string {
+  if (hours <= 0) return "实时";
   if (hours % 24 === 0) {
     const days = hours / 24;
     return `${days} 天`;
   }
-
   return `${hours} 小时`;
 }
 
-function buildHistoryRangeOptions(
-  presets: TimeRangeOption[],
-  maxHours: number | null | undefined,
-  includeRealtime: boolean,
-) {
-  const options = includeRealtime ? [{ label: "实时", value: 0 }] : [];
-  if (!Number.isFinite(maxHours) || !maxHours || maxHours <= 0) {
-    return [...options, ...presets];
-  }
+// 官方 1.3.2 规范标准窗口：小于保留期的整档位，最后加上保留期本身
+export const STANDARD_HISTORY_WINDOWS = [1, 6, 24, 168, 720, 2160];
 
-  const safeMaxHours = Math.floor(maxHours);
-  const resolved = presets.filter((option) => option.value <= safeMaxHours);
-  const hasExactMatch = resolved.some((option) => option.value === safeMaxHours);
-  const largestPreset = presets[presets.length - 1]?.value ?? 0;
+export function buildLoadTimeRangeOptions(maxHours: number | null | undefined): TimeRangeOption[] {
+  // hub 1.3.1 及更早没有 history_days 时按 7 天（168 小时）处理；1.3.2+ 动态按保留天数生成
+  const whole = Number.isFinite(maxHours) && maxHours && maxHours > 0
+    ? Math.floor(maxHours)
+    : 168;
 
-  // 保留时间大于前端最长快捷档时，不再把它动态追加成 90 天等超长按钮。
-  // 小于最长档的非标准保留时间仍会显示，避免让用户选到后端已清理的数据范围。
-  if (safeMaxHours > 0 && safeMaxHours < largestPreset && !hasExactMatch) {
-    resolved.push({
-      label: formatRangeLabel(safeMaxHours),
-      value: safeMaxHours,
-    });
-  }
+  // 小于保留期的整档位，保留期比整档位多不到四分之一时去掉那一档，免得两个按钮并列
+  const filteredWindows = STANDARD_HISTORY_WINDOWS.filter((h) => h * 1.25 <= whole);
+  const hoursList = [...new Set([...filteredWindows, whole])];
 
-  return [...options, ...resolved];
+  return [
+    { label: "实时", value: 0 },
+    ...hoursList.map((h) => ({
+      label: formatRangeLabel(h),
+      value: h,
+    })),
+  ];
 }
 
-export function buildLoadTimeRangeOptions(maxHours: number | null | undefined) {
-  return buildHistoryRangeOptions(TIME_RANGE_OPTIONS, maxHours, true);
-}
+export function buildPingTimeRangeOptions(maxHours: number | null | undefined): TimeRangeOption[] {
+  const whole = Number.isFinite(maxHours) && maxHours && maxHours > 0
+    ? Math.floor(maxHours)
+    : 168;
+  const pingWindows = [1, 6, 24, 168];
+  const filtered = pingWindows.filter((h) => h * 1.25 <= whole);
+  const targetWhole = Math.min(whole, 168);
+  const hoursList = [...new Set([...filtered, targetWhole])];
 
-export function buildPingTimeRangeOptions(maxHours: number | null | undefined) {
-  if (!Number.isFinite(maxHours) || !maxHours || maxHours <= 0) {
-    return [...PING_TIME_RANGE_OPTIONS];
-  }
-  const safeMaxHours = Math.floor(maxHours);
-  return PING_TIME_RANGE_OPTIONS.filter((option) => option.value <= safeMaxHours);
+  return hoursList.map((h) => ({
+    label: formatRangeLabel(h),
+    value: h,
+  }));
 }
 
 const GRID_CHART_DEFAULT = { w: 320, h: 132 };

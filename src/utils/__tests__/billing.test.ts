@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   formatBillingCycle,
   formatCompactRenewalPrice,
+  formatMoney,
   formatRenewalPrice,
+  parseBillingMonths,
 } from "@/utils/billing";
 
 function inDays(days: number) {
@@ -124,5 +126,40 @@ describe("formatCompactRenewalPrice", () => {
     expect(formatCompactRenewalPrice({ price: 30, currency: "USD", billing_cycle: "18m" })).toBe("$30/18月");
     expect(formatCompactRenewalPrice({ price: 100, currency: "USD", billing_cycle: "60m" })).toBe("$100/5年");
     expect(formatCompactRenewalPrice({ price: 50, currency: "USD", billing_cycle: "biennial" })).toBe("$50/2年");
+  });
+});
+
+describe("formatMoney (Monitor 1.3.2 Intl & fallback)", () => {
+  it("formats standard ISO currencies using Intl.NumberFormat zh-CN locale", () => {
+    const usd = formatMoney(12.5, "USD");
+    expect(usd).toContain("12.50");
+    expect(usd).toMatch(/US\$|\$/);
+
+    const cny = formatMoney(99, "CNY");
+    expect(cny).toContain("99.00");
+    expect(cny).toContain("¥");
+
+    const jpy = formatMoney(1000, "JPY");
+    expect(jpy).toContain("1,000");
+  });
+
+  it("safely falls back to `${currency} ${amount.toFixed(2)}` when currency is invalid", () => {
+    const fallback = formatMoney(25, "CUSTOM_CURRENCY_INVALID");
+    expect(fallback).toBe("CUSTOM_CURRENCY_INVALID 25.00");
+  });
+});
+
+describe("parseBillingMonths (Monitor 1.3.2 billing cycle spec)", () => {
+  it("parses named cycles and <n>m formats", () => {
+    expect(parseBillingMonths("monthly")).toBe(1);
+    expect(parseBillingMonths("quarterly")).toBe(3);
+    expect(parseBillingMonths("semiannual")).toBe(6);
+    expect(parseBillingMonths("yearly")).toBe(12);
+    expect(parseBillingMonths("biennial")).toBe(24);
+    expect(parseBillingMonths("triennial")).toBe(36);
+    expect(parseBillingMonths("once")).toBe(0);
+    expect(parseBillingMonths("60m")).toBe(60);
+    expect(parseBillingMonths("18m")).toBe(18);
+    expect(Number.isNaN(parseBillingMonths("invalid_cycle"))).toBe(true);
   });
 });

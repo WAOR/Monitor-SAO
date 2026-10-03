@@ -49,6 +49,26 @@ export function resolveCurrencySymbol(currency?: string | null): string {
   return COMMON_CURRENCY_SYMBOLS[trimmed.toUpperCase()] || trimmed;
 }
 
+/**
+ * 官方 Monitor 1.3.2 规范金额格式化：
+ * 地区写死 zh-CN：显示不随访客的浏览器语言变，美元、港币写作 US$、HK$，日元写作 JP¥，不和人民币的 ¥ 混淆；
+ * hub 1.3.1 起货币是三个大写字母，更早的版本存下的值可能不是，用 Intl.NumberFormat 必须兜住它抛出的错误。
+ */
+export function formatMoney(amount: number, currency: string): string {
+  if (!Number.isFinite(amount)) return "—";
+  const curr = currency?.trim() || "CNY";
+  try {
+    return new Intl.NumberFormat("zh-CN", {
+      style: "currency",
+      currency: curr,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    // hub 1.3.1 之前存下的值，可能不是三个字母
+    return `${curr} ${amount.toFixed(2)}`;
+  }
+}
+
 function formatPriceNumber(value: number, compact = false) {
   if (compact) {
     return COMPACT_PRICE_FORMATTER.format(value);
@@ -89,6 +109,27 @@ export const CHINESE_YEAR_PAY_NAMES: Record<number, string> = {
   4: "四年付",
   5: "五年付",
 };
+
+/**
+ * 官方 1.3.2 规范付款周期转月数：
+ * monthly/quarterly/semiannual/yearly/biennial/triennial 对应 1/3/6/12/24/36 个月；
+ * <n>m 对应 n 个月（1–1200）；once 对应 0；无法识别的返回 NaN
+ */
+export function parseBillingMonths(cycle: string): number {
+  const named: Record<string, number> = {
+    monthly: 1,
+    quarterly: 3,
+    semiannual: 6,
+    yearly: 12,
+    biennial: 24,
+    triennial: 36,
+  };
+  const trimmed = (cycle || "").trim().toLowerCase();
+  if (trimmed === "once" || trimmed === "lifetime") return 0;
+  if (named[trimmed] !== undefined) return named[trimmed];
+  const match = /^(\d+)m$/.exec(trimmed);
+  return match ? Number(match[1]) : NaN;
+}
 
 /**
  * 把自由文本的账单周期关键词(须预先 lowercase/trim)归类成标准周期,识别不出时返回 null。

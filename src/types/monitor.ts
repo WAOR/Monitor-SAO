@@ -58,6 +58,8 @@ export interface MonitorNode {
   hostname?: string;
   ip?: string;
   remark?: string;
+  public_remark?: string;
+  expires_in?: number | null;
 }
 
 export interface MonitorMe {
@@ -65,17 +67,20 @@ export interface MonitorMe {
   github: boolean;
   site_name: string;
   public_page: boolean;
+  history_days?: number;
 }
 
 export interface MonitorHistoryPoint {
   ts: number;
   cpu: number;
+  cpu_max?: number;
   mem_used: number;
   disk_used: number;
   net_rx: number;
   net_tx: number;
   net_rx_max?: number;
   net_tx_max?: number;
+  minutes?: number;
 }
 
 export interface MonitorPingPoint {
@@ -91,6 +96,7 @@ export interface MonitorMetricsHistoryResponse {
   ping: MonitorPingPoint[];
   probes: Record<string, string>;
   loss?: Record<string, number>;
+  step?: number;
 }
 
 /** 检查并防御性修复畸形或缺失的 metrics 数据，防止单节点异常引发全屏报错 */
@@ -227,7 +233,8 @@ export function convertMonitorNodeToInfo(node: MonitorNode): NodeInfo {
     currency: node.currency || "CNY",
     expired_at: node.expires_at || "",
     tags: "",
-    public_remark: node.remark || "",
+    public_remark: (typeof node.public_remark === "string" ? node.public_remark : node.remark) || "",
+    expires_in: node.expires_in !== undefined ? node.expires_in : undefined,
     traffic_limit: node.traffic_limit ?? 0,
     traffic_limit_type: node.traffic_mode || "",
     ipv4: node.ip || "",

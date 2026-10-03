@@ -41,16 +41,22 @@ try {
     stdio: "inherit",
   });
 
+  // Monitor 1.3.0+ 校验：发布前用 gzip -t 检查压缩流是否写完整
+  execSync(`gzip -t "${tarGzName}"`, {
+    cwd: root,
+    stdio: "inherit",
+  });
+
   // 同时也保留一份带版本号命名的归档
   execSync(`cp "${tarGzName}" "${namedTarGzName}"`, {
     cwd: root,
     stdio: "inherit",
   });
 
-  console.log(`✅ 打包成功:`);
-  console.log(`   - ${tarGzName} (可直接拖拽上传至 Monitor 面板)`);
+  console.log(`✅ 打包成功并通过 gzip -t 完整性校验:`);
+  console.log(`   - ${tarGzName} (可直接拖拽上传至 Monitor 面板或用于 GitHub Release)`);
   console.log(`   - ${namedTarGzName}`);
 } catch (err) {
-  console.error("打包失败:", err);
+  console.error("打包或校验失败:", err);
   process.exit(1);
 }

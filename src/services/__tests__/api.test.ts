@@ -173,6 +173,8 @@ describe("Monitor API Service", () => {
               name: "Node 1",
               country: "US",
               online: true,
+              public_remark: "公开备注说明",
+              expires_in: 30,
               metrics: {
                 uptime: 12345,
                 cpu: 15.5,
@@ -201,31 +203,45 @@ describe("Monitor API Service", () => {
       expect(nodes[0].uuid).toBe("1");
       expect(nodes[0].name).toBe("Node 1");
       expect(nodes[0].region).toBe("US");
+      expect(nodes[0].public_remark).toBe("公开备注说明");
+      expect(nodes[0].expires_in).toBe(30);
     });
   });
 
   describe("getLoadRecords & getPingRecords", () => {
-    it("fetches load metrics history", async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          metrics: [
-            {
-              ts: 1700000000,
-              cpu: 25.5,
-              mem_used: 512,
-              disk_used: 1024,
-              net_rx: 50,
-              net_tx: 60,
-            },
-          ],
-        }),
+    it("fetches load metrics history and supports 1.3.2 cpu_max, minutes, step and wide retention hours", async () => {
+      let requestedUrl = "";
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        requestedUrl = url;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            step: 3600,
+            metrics: [
+              {
+                ts: 1700000000,
+                cpu: 25.5,
+                cpu_max: 88.0,
+                minutes: 60,
+                mem_used: 512,
+                disk_used: 1024,
+                net_rx: 50,
+                net_tx: 60,
+              },
+            ],
+          }),
+        };
       });
 
-      const res = await getLoadRecords("1", 24);
+      // 验证 1.3.2 支持 720 小时（30天）及更长范围，不被截断在 168 小时
+      const res = await getLoadRecords("1", 720);
+      expect(requestedUrl).toContain("hours=720");
       expect(res.count).toBe(1);
       expect(res.records[0].cpu).toBe(25.5);
+      expect(res.records[0].cpu_max).toBe(88.0);
+      expect(res.records[0].minutes).toBe(60);
+      expect(res.records[0].step).toBe(3600);
       expect(res.records[0].time).toBe(1700000000 * 1000);
     });
 

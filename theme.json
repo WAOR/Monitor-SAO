@@ -1,8 +1,8 @@
 {
   "name": "SAO",
   "short": "sao",
-  "description": "极简立体仪表盘主题 · 适配 Monitor 探针",
-  "version": "1.0.21",
+  "description": "极简立体仪表盘主题 · 适配 Monitor 探针 (v1.3.2+)",
+  "version": "1.0.22",
   "author": "WAOR",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -86,6 +86,13 @@
       "default": true
     },
     {
+      "key": "showUngroupedTab",
+      "type": "boolean",
+      "label": "在分组栏显示“未分组”标签",
+      "help": "当存在未指定分组的节点时，在分组栏提供“未分组”快捷标签（关闭后未分组节点仍在“全部”中可见）",
+      "default": false
+    },
+    {
       "key": "showRegionBar",
       "type": "boolean",
       "label": "显示地区筛选栏",
@@ -116,6 +123,13 @@
       "label": "显示首页顶部总览栏",
       "help": "在首页顶部展示服务器数、在线率、内存、硬盘、流量及资产卡片",
       "default": true
+    },
+    {
+      "key": "overviewFollowGroup",
+      "type": "boolean",
+      "label": "顶部总览跟随当前分组联动",
+      "help": "开启后切换分组时，顶部总览仅统计当前分组数据；关闭后始终统计全站整体数据",
+      "default": false
     },
     {
       "key": "enableHomepageMultiPing",

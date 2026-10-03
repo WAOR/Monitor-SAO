@@ -38,8 +38,10 @@ import {
   getHomeGroupLabel,
   getHomeGroupOptions,
   getHomeRegionOptions,
+  hasUngroupedNodes,
   HOME_ALL_GROUP,
   HOME_ALL_REGION,
+  HOME_UNGROUPED,
   sortHomeGroupOptions,
   type HomeRegionOption,
 } from "@/utils/homeNodes";
@@ -632,10 +634,12 @@ function HomeOverviewCards({
 
 function GroupTabs({
   groups,
+  hasUngrouped,
   selectedGroup,
   onSelectGroup,
 }: {
   groups: string[];
+  hasUngrouped?: boolean;
   selectedGroup: string;
   onSelectGroup: (group: string) => void;
 }) {
@@ -661,6 +665,17 @@ function GroupTabs({
           {group}
         </button>
       ))}
+      {hasUngrouped && groups.length > 0 && (
+        <button
+          type="button"
+          aria-pressed={selectedGroup === HOME_UNGROUPED}
+          data-active={selectedGroup === HOME_UNGROUPED ? "true" : "false"}
+          onClick={() => onSelectGroup(HOME_UNGROUPED)}
+          title="未分组"
+        >
+          未分组
+        </button>
+      )}
     </div>
   );
 }
@@ -817,6 +832,33 @@ export function NodeGrid() {
     for (const node of visibleMeta) map.set(node.uuid, node.name?.trim() || node.uuid);
     return map;
   }, [visibleMeta]);
+
+  const groupOptions = useMemo(
+    () =>
+      sortHomeGroupOptions(
+        getHomeGroupOptions(visibleNodes),
+        themeSettings.isReady ? themeSettings.homeGroupOrder : [],
+      ),
+    [visibleNodes, themeSettings.homeGroupOrder, themeSettings.isReady],
+  );
+  const hasUngrouped = useMemo(() => hasUngroupedNodes(visibleNodes), [visibleNodes]);
+  const isUngroupedTabEnabled =
+    themeSettings.isReady && themeSettings.showUngroupedTab && hasUngrouped;
+  const groupFilteredNodes = useMemo(() => {
+    if (selectedGroup === HOME_ALL_GROUP) return visibleNodes;
+    if (selectedGroup === HOME_UNGROUPED) {
+      return isUngroupedTabEnabled
+        ? visibleNodes.filter((node) => !getHomeGroupLabel(node.group))
+        : visibleNodes;
+    }
+    return visibleNodes.filter((node) => getHomeGroupLabel(node.group) === selectedGroup);
+  }, [visibleNodes, selectedGroup, isUngroupedTabEnabled]);
+
+  const overviewNodes =
+    themeSettings.isReady && themeSettings.overviewFollowGroup
+      ? groupFilteredNodes
+      : visibleNodes;
+
   const overview = useMemo<HomeOverview>(() => {
     let onlineNodes = 0;
     let offlineNodes = 0;
@@ -832,7 +874,7 @@ export function NodeGrid() {
     let totalTcpConn = 0;
     let totalUdpConn = 0;
 
-    for (const node of visibleNodes) {
+    for (const node of overviewNodes) {
       if (node.online === true) {
         onlineNodes += 1;
         totalCpu += node.cpuPct || 0;
@@ -856,7 +898,7 @@ export function NodeGrid() {
     const diskPct = totalDiskTotal > 0 ? (totalDiskUsed / totalDiskTotal) * 100 : 0;
 
     return {
-      totalNodes: visibleNodes.length,
+      totalNodes: overviewNodes.length,
       onlineNodes,
       offlineNodes,
       trafficUp,
@@ -873,7 +915,13 @@ export function NodeGrid() {
       totalTcpConn,
       totalUdpConn,
     };
-  }, [visibleNodes]);
+  }, [overviewNodes]);
+
+  const overviewRenewalNodes = useMemo(() => {
+    if (!themeSettings.isReady || !themeSettings.overviewFollowGroup) return renewalNodes;
+    const groupUuids = new Set(groupFilteredNodes.map((n) => n.uuid));
+    return renewalNodes.filter((n) => groupUuids.has(n.uuid));
+  }, [renewalNodes, groupFilteredNodes, themeSettings.isReady, themeSettings.overviewFollowGroup]);
   const showHomeOverview = themeSettings.isReady && themeSettings.showHomeOverview;
   const showTrafficPopover = themeSettings.isReady && themeSettings.showTodayTrafficPopover;
   const hasNodes = visibleMeta.length > 0;
@@ -938,21 +986,6 @@ export function NodeGrid() {
     return map;
   }, [costSummary]);
   const costLoading = costNeeded && rateQuery.isLoading;
-  const groupOptions = useMemo(
-    () =>
-      sortHomeGroupOptions(
-        getHomeGroupOptions(visibleNodes),
-        themeSettings.isReady ? themeSettings.homeGroupOrder : [],
-      ),
-    [visibleNodes, themeSettings.homeGroupOrder, themeSettings.isReady],
-  );
-  const groupFilteredNodes = useMemo(
-    () =>
-      selectedGroup === HOME_ALL_GROUP
-        ? visibleNodes
-        : visibleNodes.filter((node) => getHomeGroupLabel(node.group) === selectedGroup),
-    [visibleNodes, selectedGroup],
-  );
   // 地区选项在分组筛选之后统计,让国旗计数反映当前分组内的分布。
   const regionOptions = useMemo(
     () => getHomeRegionOptions(groupFilteredNodes),
@@ -975,10 +1008,16 @@ export function NodeGrid() {
   });
 
   useEffect(() => {
-    if (selectedGroup !== HOME_ALL_GROUP && !groupOptions.includes(selectedGroup)) {
+    if (
+      selectedGroup !== HOME_ALL_GROUP &&
+      selectedGroup !== HOME_UNGROUPED &&
+      !groupOptions.includes(selectedGroup)
+    ) {
+      setSelectedGroup(HOME_ALL_GROUP);
+    } else if (selectedGroup === HOME_UNGROUPED && !hasUngrouped) {
       setSelectedGroup(HOME_ALL_GROUP);
     }
-  }, [groupOptions, selectedGroup]);
+  }, [groupOptions, hasUngrouped, selectedGroup]);
 
   // 选中的地区在当前分组里不存在了(切换分组/节点变化)就回到全部。
   useEffect(() => {
@@ -1000,8 +1039,10 @@ export function NodeGrid() {
   useEffect(() => {
     if (!themeSettings.showGroupTabs && selectedGroup !== HOME_ALL_GROUP) {
       setSelectedGroup(HOME_ALL_GROUP);
+    } else if (!isUngroupedTabEnabled && selectedGroup === HOME_UNGROUPED) {
+      setSelectedGroup(HOME_ALL_GROUP);
     }
-  }, [themeSettings.showGroupTabs, selectedGroup]);
+  }, [themeSettings.showGroupTabs, isUngroupedTabEnabled, selectedGroup]);
 
   // 卡片列表只随 UUID 集合/顺序变化；卡片内部各自订阅实时数据。
   const uuidsKey = useMemo(
@@ -1096,7 +1137,7 @@ export function NodeGrid() {
           dense={mode === "mini" || mode === "list"}
           showDetailButton={showCostDetailButton}
           showAssetCard={showAssetCard}
-          renewalNodes={renewalNodes}
+          renewalNodes={overviewRenewalNodes}
           costSummary={costSummary}
           costLoading={costLoading}
           showTrafficRating={themeSettings.showTrafficRating}
@@ -1157,6 +1198,7 @@ export function NodeGrid() {
             {showGroupTabs && (
               <GroupTabs
                 groups={groupOptions}
+                hasUngrouped={isUngroupedTabEnabled}
                 selectedGroup={selectedGroup}
                 onSelectGroup={setSelectedGroup}
               />

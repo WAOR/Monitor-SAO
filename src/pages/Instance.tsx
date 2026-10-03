@@ -11,6 +11,7 @@ import {
   buildPingTimeRangeOptions,
 } from "@/components/instance/chartShared";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
+import { useAuth } from "@/hooks/useAuth";
 import { useNodeMeta, useNodeStoreStatus } from "@/hooks/useNode";
 
 const DEFAULT_PING_HOURS = 4;
@@ -44,6 +45,7 @@ function RangeSelector({
 
 export function Instance() {
   const { uuid } = useParams<{ uuid: string }>();
+  const { data: me } = useAuth();
   const { data: config } = usePublicConfig();
   const meta = useNodeMeta(uuid ?? "");
   const storeStatus = useNodeStoreStatus(Boolean(uuid));
@@ -52,18 +54,17 @@ export function Instance() {
   const [pingHours, setPingHours] = useState(DEFAULT_PING_HOURS);
   const chartControlsRef = useRef<HTMLDivElement | null>(null);
 
-  const metricRetentionHours =
-    config?.metric_retention_days && config.metric_retention_days > 0
-      ? config.metric_retention_days * 24
-      : null;
+  // Monitor 1.3.2 规范：优先读取 /api/me 里的 history_days，旧版没有时按 7 天处理
+  const retentionDays = me?.history_days ?? config?.metric_retention_days ?? 7;
+  const metricRetentionHours = retentionDays > 0 ? retentionDays * 24 : 168;
 
   const loadRanges = useMemo(
-    () => buildLoadTimeRangeOptions(metricRetentionHours ?? config?.record_preserve_time),
-    [config?.record_preserve_time, metricRetentionHours],
+    () => buildLoadTimeRangeOptions(metricRetentionHours),
+    [metricRetentionHours],
   );
   const pingRanges = useMemo(
-    () => buildPingTimeRangeOptions(metricRetentionHours ?? config?.ping_record_preserve_time),
-    [config?.ping_record_preserve_time, metricRetentionHours],
+    () => buildPingTimeRangeOptions(metricRetentionHours),
+    [metricRetentionHours],
   );
 
   const alignCharts = useCallback(() => {

@@ -151,7 +151,14 @@ export function resolveExpireTimestamp(
 export function getExpireDaysRemaining(
   iso: string | number | null | undefined,
   now = Date.now(),
+  expiresIn?: number | null,
 ): number | null {
+  // Hub 1.2.0+ 返回 expires_in：按 hub 所在日期的剩余天数，0 为今天，负数为已过期，null 为无到期日。
+  // 必须优先使用它，避免访客不同时区产生提前显示「已过期」问题。
+  if (expiresIn !== undefined) {
+    if (expiresIn === null) return null;
+    return Number.isFinite(expiresIn) ? Math.floor(expiresIn) : null;
+  }
   const ts = resolveExpireTimestamp(iso);
   if (ts == null || !Number.isFinite(now)) return null;
   return Math.floor((ts - now) / 86400000);
@@ -168,8 +175,9 @@ function resolveExpireTone(days: number | null | undefined): ExpireTone {
 export function formatExpireDays(
   iso: string | null | undefined,
   now = Date.now(),
+  expiresIn?: number | null,
 ): { value: string; unit: string; tone: ExpireTone } {
-  const days = getExpireDaysRemaining(iso, now);
+  const days = getExpireDaysRemaining(iso, now, expiresIn);
   const tone = resolveExpireTone(days);
   if (days == null) return { value: "—", unit: "", tone };
   if (tone === "long") return { value: "长期", unit: "", tone };

@@ -18,6 +18,7 @@ export type RenewalReminderSource = Pick<
   | "billing_cycle"
   | "auto_renewal"
   | "expired_at"
+  | "expires_in"
 > & {
   online?: boolean | null;
 };
@@ -49,7 +50,10 @@ export const EMPTY_RENEWAL_REMINDER_PREFERENCES: RenewalReminderPreferences = {
 };
 
 export function renewalCycleKey(node: RenewalReminderSource, expiresAt?: number) {
-  const resolved = expiresAt ?? resolveExpireTimestamp(node.expired_at);
+  const resolved =
+    expiresAt ??
+    resolveExpireTimestamp(node.expired_at) ??
+    (node.expires_in !== undefined ? node.expires_in : null);
   return resolved == null ? null : `${node.uuid}:${resolved}`;
 }
 
@@ -61,13 +65,16 @@ export function getRenewalReminders(
   const reminders: RenewalReminderItem[] = [];
 
   for (const node of nodes) {
-    const expiresAt = resolveExpireTimestamp(node.expired_at);
-    if (expiresAt == null) continue;
+    const rawExpiresAt = resolveExpireTimestamp(node.expired_at);
+    if (rawExpiresAt == null && node.expires_in === undefined) continue;
 
-    // 与节点卡、列表和资产页共用同一套向下取整口径，避免同屏出现 2 天/3 天。
-    const daysRemaining = getExpireDaysRemaining(expiresAt, now);
+    // 与节点卡、列表和资产页共用同一套向下取整口径，优先使用 Hub 的 expires_in
+    const daysRemaining = getExpireDaysRemaining(rawExpiresAt, now, node.expires_in);
     if (daysRemaining == null) continue;
     if (daysRemaining > RENEWAL_WARNING_DAYS) continue;
+
+    const expiresAt =
+      rawExpiresAt ?? Math.round(now + (node.expires_in ?? 0) * 86_400_000);
 
     const expired = daysRemaining < 0;
     // 首页可要求过期节点必须明确在线：状态尚未返回（null/undefined）时先不展示，

@@ -70,6 +70,10 @@ export function InstanceDetails({
         <div className="instance-info-group">
           <div className="instance-info-group-title">系统</div>
           <InfoRow label="状态" value={isOnline ? "在线" : "离线"} />
+          {meta.group ? <InfoRow label="分组" value={meta.group} /> : null}
+          {meta.public_remark ? (
+            <InfoRow label="公开备注" value={meta.public_remark} />
+          ) : null}
           <InfoRow
             label="CPU"
             value={`${meta.cpu_name || "—"}${meta.cpu_cores > 0 ? ` (x${meta.cpu_cores})` : ""}`}

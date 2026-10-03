@@ -41,8 +41,8 @@ const LOAD_HISTORY_RENDER_LIMIT = 720;
 const REALTIME_HISTORY_SEED_LIMIT = 120;
 const REALTIME_SAMPLE_LIMIT = 600;
 
-const CPU_KEYS = ["cpu"];
-const CPU_COLORS = [CHART_PALETTE.cpu];
+const CPU_KEYS = ["cpu", "cpu_max"];
+const CPU_COLORS = [CHART_PALETTE.cpu, "rgba(93, 136, 255, 0.45)"];
 const MEMORY_KEYS = ["ram", "swap"];
 const MEMORY_COLORS = [CHART_PALETTE.memory, CHART_PALETTE.warning];
 const DISK_KEYS = ["disk"];
@@ -55,6 +55,7 @@ const PROCESS_KEYS = ["process"];
 const PROCESS_COLORS = [CHART_PALETTE.warning];
 const SERIES_LABELS: Record<string, string> = {
   cpu: "CPU",
+  cpu_max: "CPU 峰值",
   ram: "内存",
   swap: "Swap",
   disk: "磁盘",
@@ -66,6 +67,7 @@ const SERIES_LABELS: Record<string, string> = {
 };
 const LOAD_INTERPOLATE_KEYS = [
   "cpu",
+  "cpu_max",
   "ram",
   "swap",
   "disk",
@@ -93,6 +95,7 @@ function getHistoryRenderLimit(hours: number) {
 
 const DOWNSAMPLE_KEYS = [
   "cpu",
+  "cpu_max",
   "ram",
   "swap",
   "disk",
@@ -134,6 +137,7 @@ function pointFromNode(node: NodeMetrics): ChartPoint {
   return {
     time: node.updatedAt > 0 ? node.updatedAt / 1000 : Date.now() / 1000,
     cpu: node.cpuPct,
+    cpu_max: null,
     // total 为 0 表示该指标不存在(如无 Swap),填 null 让 uPlot 不画线,而不是画一条假的 0%。
     ram: node.ramTotal > 0 ? (node.ramUsed / node.ramTotal) * 100 : null,
     swap: node.swapTotal > 0 ? (node.swapUsed / node.swapTotal) * 100 : null,
@@ -436,6 +440,7 @@ export function LoadChart({
       return {
         time,
         cpu: record.cpu,
+        cpu_max: typeof record.cpu_max === "number" ? record.cpu_max : null,
         ram: totals.ramTotal > 0 ? (record.ram / totals.ramTotal) * 100 : null,
         swap: totals.swapTotal > 0 ? (record.swap / totals.swapTotal) * 100 : null,
         disk: totals.diskTotal > 0 ? (record.disk / totals.diskTotal) * 100 : null,
@@ -566,7 +571,11 @@ export function LoadChart({
               ? `${node.cpuPct.toFixed(2)}%`
               : `${(points[points.length - 1]?.cpu ?? 0).toFixed(2)}%`
           }
-          note="使用率"
+          note={
+            !isRealtime && typeof points[points.length - 1]?.cpu_max === "number"
+              ? `峰值 ${(points[points.length - 1].cpu_max as number).toFixed(1)}%`
+              : "使用率"
+          }
           points={points}
           keys={CPU_KEYS}
           colors={CPU_COLORS}

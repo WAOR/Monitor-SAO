@@ -87,4 +87,17 @@ describe("normalizeThemeSettings", () => {
     expect(normalizeThemeSettings({ adminNickname: "  jerry  " }).adminNickname).toBe("jerry");
     expect(normalizeThemeSettings({ adminNickname: 123 } as never).adminNickname).toBe("");
   });
+
+  it("defaults showUngroupedTab and overviewFollowGroup to false unless explicitly enabled", () => {
+    const base = normalizeThemeSettings({});
+    expect(base.showUngroupedTab).toBe(false);
+    expect(base.overviewFollowGroup).toBe(false);
+
+    const enabled = normalizeThemeSettings({
+      showUngroupedTab: true,
+      overviewFollowGroup: true,
+    });
+    expect(enabled.showUngroupedTab).toBe(true);
+    expect(enabled.overviewFollowGroup).toBe(true);
+  });
 });

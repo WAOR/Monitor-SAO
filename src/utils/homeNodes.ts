@@ -2,6 +2,7 @@ import type { HomeNodeSummary } from "@/services/wsStore";
 import { getDisplayRegionCode } from "@/utils/geo";
 
 export const HOME_ALL_GROUP = "__all__";
+export const HOME_UNGROUPED = "__ungrouped__";
 export const HOME_ALL_REGION = "__all__";
 
 export interface HomeRegionOption {
@@ -70,6 +71,11 @@ export function dedupeGroupLabels(groups: Iterable<string | null | undefined>): 
 
 export function getHomeGroupOptions(nodes: HomeNodeSummary[]) {
   return dedupeGroupLabels(nodes.map((node) => node.group));
+}
+
+/** 检查是否存在未分组的节点 */
+export function hasUngroupedNodes(nodes: HomeNodeSummary[]): boolean {
+  return nodes.some((node) => !getHomeGroupLabel(node.group));
 }
 
 /** 规范化存下来的 group 排序:trim、去空、去重(首次出现的优先)。 */

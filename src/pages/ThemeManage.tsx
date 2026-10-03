@@ -269,7 +269,9 @@ function pickManagedThemeSettings(settings: ResolvedThemeSettings) {
     homepageMultiPingTaskIds: settings.homepageMultiPingTaskIds,
     fakePingForUnbound: settings.fakePingForUnbound,
     showHomeOverview: settings.showHomeOverview,
+    overviewFollowGroup: settings.overviewFollowGroup,
     showGroupTabs: settings.showGroupTabs,
+    showUngroupedTab: settings.showUngroupedTab,
     showRegionBar: settings.showRegionBar,
     showCardGroup: settings.showCardGroup,
     homeGroupOrder: settings.homeGroupOrder,
@@ -1519,10 +1521,24 @@ export function ThemeManage() {
                     onPatch={patch}
                   />
                   <ToggleRow
+                    field="overviewFollowGroup"
+                    title="顶部总览跟随当前分组联动"
+                    desc="开启后切换分组时，顶部总览仅统计当前分组数据；关闭后始终统计全站整体数据。"
+                    checked={draft.overviewFollowGroup}
+                    onPatch={patch}
+                  />
+                  <ToggleRow
                     field="showGroupTabs"
                     title="显示分组筛选栏"
                     desc="在卡片列表上方展示分组 Tab 快速筛选。"
                     checked={draft.showGroupTabs}
+                    onPatch={patch}
+                  />
+                  <ToggleRow
+                    field="showUngroupedTab"
+                    title="在分组栏显示“未分组”标签"
+                    desc="当存在未指定分组的节点时，在分组栏提供“未分组”快捷标签（关闭后未分组节点仍在“全部”中可见）。"
+                    checked={draft.showUngroupedTab}
                     onPatch={patch}
                   />
                   <ToggleRow

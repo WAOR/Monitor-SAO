@@ -215,6 +215,11 @@ async function fetchMeWithEarlyData(options?: RequestOptions): Promise<MonitorMe
   return apiFetch<MonitorMe>("/api/me", options);
 }
 
+/** 获取当前 MonitorMe 完整信息 /api/me */
+export async function getMonitorMe(options?: RequestOptions): Promise<MonitorMe> {
+  return fetchMeWithEarlyData(options);
+}
+
 /** 获取当前登录态 /api/me */
 export async function getMe(options?: RequestOptions): Promise<Me> {
   const data = await fetchMeWithEarlyData(options);
@@ -224,6 +229,7 @@ export async function getMe(options?: RequestOptions): Promise<Me> {
     logged_in: data.authed,
     username,
     uuid: "",
+    history_days: data.history_days,
   };
 }
 
@@ -416,13 +422,16 @@ export async function getLoadRecords(
   hours: number,
   options?: RequestOptions,
 ): Promise<LoadRecordsResponse> {
-  const queryHours = Math.max(1, Math.min(hours || 1, 168));
+  const queryHours = Math.max(1, Math.min(hours || 1, 8760));
   const path = `/api/nodes/${encodeURIComponent(uuid)}/metrics?hours=${queryHours}&points=300&series=metrics`;
 
   try {
     const data = await apiFetch<MonitorMetricsHistoryResponse>(path, options);
     const records: LoadRecord[] = (data.metrics ?? []).map((m: MonitorHistoryPoint) => ({
       cpu: m.cpu,
+      cpu_max: m.cpu_max,
+      minutes: m.minutes,
+      step: data.step,
       gpu: 0,
       ram: m.mem_used,
       ram_total: 0,
@@ -464,7 +473,7 @@ export async function getPingRecords(
   hours: number,
   options?: RequestOptions,
 ): Promise<PingRecordsResponse> {
-  const queryHours = Math.max(1, Math.min(hours || 1, 24));
+  const queryHours = Math.max(1, Math.min(hours || 1, 8760));
   const path = `/api/nodes/${encodeURIComponent(uuid)}/metrics?hours=${queryHours}&points=300&series=ping`;
 
   try {

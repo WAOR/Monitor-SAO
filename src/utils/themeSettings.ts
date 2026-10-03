@@ -34,7 +34,9 @@ export interface ResolvedThemeSettings {
   homepageMultiPingTaskIds: number[];
   fakePingForUnbound: boolean;
   showHomeOverview: boolean;
+  overviewFollowGroup: boolean;
   showGroupTabs: boolean;
+  showUngroupedTab: boolean;
   showRegionBar: boolean;
   showCardGroup: boolean;
   homeGroupOrder: string[];
@@ -64,16 +66,18 @@ export interface ResolvedThemeSettings {
   adminNickname: string;
 }
 
-/** 后端 theme.json 中声明的官方配置字段清单 (共 27 项) */
+/** 后端 theme.json 中声明的官方配置字段清单 (共 29 项) */
 export const THEME_CONFIG_KEYS = [
   "defaultAppearance",
   "desktopNodeViewMode",
   "mobileNodeViewMode",
   "showGroupTabs",
+  "showUngroupedTab",
   "showRegionBar",
   "showCardGroup",
   "enableHomeSort",
   "showHomeOverview",
+  "overviewFollowGroup",
   "enableHomepageMultiPing",
   "showTodayTrafficPopover",
   "showConnections",
@@ -107,7 +111,9 @@ export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   homepageMultiPingTaskIds: [],
   fakePingForUnbound: false,
   showHomeOverview: true,
+  overviewFollowGroup: false,
   showGroupTabs: true,
+  showUngroupedTab: false,
   showRegionBar: true,
   showCardGroup: true,
   homeGroupOrder: [],
@@ -218,7 +224,9 @@ export function normalizeThemeSettings(
     // 默认关闭(需手动开启):给访客展示的是模拟数据,必须由站长显式决定。
     fakePingForUnbound: settings?.fakePingForUnbound === true,
     showHomeOverview: enabledUnlessFalse(settings?.showHomeOverview),
+    overviewFollowGroup: settings?.overviewFollowGroup === true,
     showGroupTabs: enabledUnlessFalse(settings?.showGroupTabs),
+    showUngroupedTab: settings?.showUngroupedTab === true,
     showRegionBar: enabledUnlessFalse(settings?.showRegionBar),
     showCardGroup: enabledUnlessFalse(settings?.showCardGroup),
     homeGroupOrder: normalizeHomeGroupOrder(settings?.homeGroupOrder),

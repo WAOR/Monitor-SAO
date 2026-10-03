@@ -144,6 +144,40 @@ describe("getExpireDaysRemaining / formatExpireDays", () => {
     expect(formatExpireDays(inDays(40_000))).toEqual({ value: "长期", unit: "", tone: "long" });
   });
 
+  it("prioritizes Hub's expires_in over local clock calculation (Monitor 1.2.0+ & 1.3.2)", () => {
+    // 即使本地时钟算出来已过期，若 hub 返回 expires_in: 0，说明今天到期
+    expect(getExpireDaysRemaining("2026-06-13T00:00:00.000Z", undefined, 0)).toBe(0);
+    expect(formatExpireDays("2026-06-13T00:00:00.000Z", undefined, 0)).toEqual({
+      value: "今日",
+      unit: "",
+      tone: "critical",
+    });
+
+    // 正数天数
+    expect(getExpireDaysRemaining(null, undefined, 45)).toBe(45);
+    expect(formatExpireDays(null, undefined, 45)).toEqual({
+      value: "45",
+      unit: "天",
+      tone: "ok",
+    });
+
+    // 负数已过期天数
+    expect(getExpireDaysRemaining(null, undefined, -3)).toBe(-3);
+    expect(formatExpireDays(null, undefined, -3)).toEqual({
+      value: "已过期",
+      unit: "",
+      tone: "critical",
+    });
+
+    // null 表示没有到期日
+    expect(getExpireDaysRemaining(null, undefined, null)).toBeNull();
+    expect(formatExpireDays(null, undefined, null)).toEqual({
+      value: "—",
+      unit: "",
+      tone: "none",
+    });
+  });
+
   it("handles the today / expired boundary", () => {
     // 未来约 1 小时会向下取整成剩余 0 天
     expect(formatExpireDays(inDays(0, 1))).toEqual({ value: "今日", unit: "", tone: "critical" });

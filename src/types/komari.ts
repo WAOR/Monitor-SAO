@@ -59,6 +59,7 @@ export const NodeInfoSchema = z
     expired_at: z.union([z.string(), z.number()]).nullish().transform((v) => (v == null ? "" : String(v))),
     tags: looseString.default(""),
     public_remark: looseString.default(""),
+    expires_in: z.number().nullable().optional(),
     traffic_limit: looseNumber.default(0),
     traffic_limit_type: looseString.default(""),
     ipv4: looseString.default(""),
@@ -119,7 +120,9 @@ export interface ThemeSettings {
   homepageMultiPingTaskIds?: number[];
   fakePingForUnbound?: boolean;
   showHomeOverview?: boolean;
+  overviewFollowGroup?: boolean;
   showGroupTabs?: boolean;
+  showUngroupedTab?: boolean;
   showRegionBar?: boolean;
   showCardGroup?: boolean;
   homeGroupOrder?: string[];
@@ -191,6 +194,7 @@ export const MeSchema = z
     logged_in: z.boolean().default(false),
     username: z.string().default(""),
     uuid: z.string().default(""),
+    history_days: z.number().optional(),
   })
   .passthrough();
 
@@ -199,6 +203,7 @@ export type Me = z.output<typeof MeSchema>;
 export const LoadRecordSchema = z
   .object({
     cpu: z.number().default(0),
+    cpu_max: z.number().optional(),
     gpu: z.number().default(0),
     ram: z.number().default(0),
     ram_total: z.number().default(0),
@@ -217,6 +222,8 @@ export const LoadRecordSchema = z
     connections_udp: z.number().default(0),
     time: z.union([z.string(), z.number()]),
     client: z.string().default(""),
+    minutes: z.number().optional(),
+    step: z.number().optional(),
   })
   .passthrough();
 
