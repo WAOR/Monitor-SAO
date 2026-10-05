@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "极简立体仪表盘主题 · 适配 Monitor 探针 (v1.3.2+)",
-  "version": "1.0.22",
+  "version": "1.1.0",
   "author": "WAOR",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -77,6 +77,52 @@
           "label": "清单列表 (List)"
         }
       ]
+    },
+    {
+      "key": "clusterOverviewMode",
+      "type": "select",
+      "label": "首页集群状态展示模式",
+      "default": "classic",
+      "options": [
+        {
+          "value": "classic",
+          "label": "经典双层卡片 (上下两层：状态与实时流量)"
+        },
+        {
+          "value": "nodes",
+          "label": "机架方格热力矩阵 (20 列紧凑机架网格全景)"
+        }
+      ]
+    },
+    {
+      "key": "matrixColorTheme",
+      "type": "select",
+      "label": "机架方格矩阵配色风格",
+      "default": "default",
+      "options": [
+        {
+          "value": "default",
+          "label": "经典标准 (绿 · 橙 · 红)"
+        },
+        {
+          "value": "eva",
+          "label": "EVA 初号机 (紫 · 荧光绿 · 橙红)"
+        }
+      ]
+    },
+    {
+      "key": "matrixBootAnimation",
+      "type": "boolean",
+      "label": "方格矩阵 SAO 主题开场动画",
+      "help": "进入首页时方格矩阵是否播放光束横扫与开场点阵动画",
+      "default": true
+    },
+    {
+      "key": "matrixMockFill",
+      "type": "boolean",
+      "label": "模拟数据填充机架空闲机位插槽",
+      "help": "在方格矩阵中是否使用动态模拟负载数据填满未接入服务器的闲置插槽",
+      "default": false
     },
     {
       "key": "showGroupTabs",

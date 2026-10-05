@@ -26,6 +26,9 @@
         // 超前核心 API 预加载：利用浏览器解析 HTML 与下载 React Bundle 的网络空档期，提前并发拉取关键数据
         try {
           if (typeof window !== "undefined" && typeof fetch === "function") {
+            const search = window.location.search || "";
+            // Mock 纯前端开发预览时跳过预加载，避免打到未启动的本地后端端口
+            if (search.includes("mock=1") || search.includes("mock=true")) return;
             const p = window.location.pathname || "/";
             const dir = p.endsWith("/") ? p : p.substring(0, p.lastIndexOf("/") + 1);
             const prefix = dir === "/" ? "" : dir.replace(/\/+$/, "");

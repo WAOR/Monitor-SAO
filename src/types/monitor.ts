@@ -106,7 +106,7 @@ export function safeMonitorNodes(raw: unknown): MonitorNode[] {
     ? raw
     : (raw as { nodes?: unknown[]; data?: unknown[] })?.nodes ??
       (raw as { data?: unknown[] })?.data ??
-      (raw && typeof raw === "object" && "id" in (raw as Record<string, unknown>) ? [raw] : []);
+      (raw && typeof raw === "object" && ("id" in (raw as Record<string, unknown>) || "uuid" in (raw as Record<string, unknown>)) ? [raw] : []);
   if (!Array.isArray(list)) return [];
 
   const toSafeNum = (v: unknown, fallback = 0): number => {
@@ -123,7 +123,19 @@ export function safeMonitorNodes(raw: unknown): MonitorNode[] {
     const rawNodeObj = item as Record<string, unknown>;
     const rawGroup = rawNodeObj.group ?? rawNodeObj.group_name;
     const safeGroup = typeof rawGroup === "string" ? rawGroup.trim() : "";
-    const node = { ...(item as MonitorNode), group: safeGroup };
+    const safeId = rawNodeObj.id != null ? rawNodeObj.id : rawNodeObj.uuid;
+    const safeCountry =
+      typeof rawNodeObj.country === "string"
+        ? rawNodeObj.country
+        : typeof rawNodeObj.region === "string"
+          ? rawNodeObj.region
+          : "";
+    const node = {
+      ...(item as MonitorNode),
+      id: safeId as number,
+      country: safeCountry,
+      group: safeGroup,
+    };
 
     const m = node.metrics as Record<string, unknown> | null | undefined;
     if (!m || typeof m !== "object") {
@@ -205,14 +217,17 @@ export function safeMonitorNodes(raw: unknown): MonitorNode[] {
  * 将 MonitorNode 转为主题内部通用的 NodeInfo 结构
  */
 export function convertMonitorNodeToInfo(node: MonitorNode): NodeInfo {
-  const uuid = String(node.id);
+  const uuid =
+    node.id != null
+      ? String(node.id)
+      : (node as unknown as { uuid?: string }).uuid || "";
   const memTotal = node.metrics?.mem_total ?? node.mem_total ?? 0;
   const swapTotal = node.metrics?.swap_total ?? node.swap_total ?? 0;
   const diskTotal = node.metrics?.disk_total ?? node.disk_total ?? 0;
 
   return {
     uuid,
-    name: node.name || `Node ${node.id}`,
+    name: node.name || (uuid ? `Node ${uuid}` : "Node"),
     group: node.group?.trim() || "",
     region: (node.country || "").toUpperCase(),
     hidden: false,

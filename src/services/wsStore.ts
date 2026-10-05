@@ -297,7 +297,10 @@ function applyMonitorNodes(rawList: unknown) {
   const touchedTrends: string[] = [];
 
   for (const node of safeList) {
-    const uuid = String(node.id);
+    const uuid =
+      node.id != null
+        ? String(node.id)
+        : ((node as unknown as { uuid?: string }).uuid || "");
     if (!order.includes(uuid)) {
       order.push(uuid);
     }
@@ -420,8 +423,22 @@ function fetchOnce() {
     });
 }
 
+function isMockMode(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const search = window.location.search || "";
+    if (search.includes("mock=1") || search.includes("mock=true")) return true;
+    if (window.sessionStorage?.getItem("monitor-sao:mock") === "1") return true;
+  } catch {}
+  return false;
+}
+
 function startWsConnection() {
   if (typeof window === "undefined") return;
+  if (isMockMode()) {
+    if (!pollTimer) pollTimer = setInterval(fetchOnce, 2000);
+    return;
+  }
 
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const wsUrl = `${protocol}//${window.location.host}/api/ws`;
@@ -462,7 +479,11 @@ function startStore() {
   isStarted = true;
 
   fetchOnce();
-  startWsConnection();
+  if (isMockMode()) {
+    if (!pollTimer) pollTimer = setInterval(fetchOnce, 2000);
+  } else {
+    startWsConnection();
+  }
 }
 
 function stopStore() {

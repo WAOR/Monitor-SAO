@@ -1,162 +1,162 @@
 import type { NodeInfo } from "@/types/komari";
 
-const GIB = 1024 ** 3;
-const TIB = 1024 ** 4;
-const MIB = 1024 ** 2;
+const MIB = 1024 * 1024;
+const GIB = 1024 * MIB;
+const TIB = 1024 * GIB;
 
 function dateAfter(days: number) {
   return new Date(Date.now() + days * 86_400_000).toISOString();
 }
 
-const nodes: NodeInfo[] = [
+const BASE_NODES: NodeInfo[] = [
   {
     uuid: "tokyo-edge-01",
     name: "Tokyo Edge",
     group: "生产",
     region: "JP",
     hidden: false,
-    cpu_name: "AMD EPYC 7B13",
-    cpu_cores: 4,
+    cpu_name: "AMD EPYC 7763",
+    cpu_cores: 8,
     arch: "x86_64",
     virtualization: "KVM",
     os: "debian",
-    kernel_version: "6.1.0",
-    gpu_name: "",
-    mem_total: 8 * GIB,
-    swap_total: 2 * GIB,
-    disk_total: 160 * GIB,
-    weight: 10,
-    price: 48,
-    billing_cycle: "month",
-    auto_renewal: true,
-    currency: "CNY",
-    expired_at: dateAfter(24),
-    tags: "边缘<Cyan>; 高带宽<Teal>; 优选<Ruby>",
-    public_remark: "东京入口与静态资源",
-    traffic_limit: 4 * TIB,
-    traffic_limit_type: "sum",
-    ipv4: "203.0.113.11",
-    ipv6: "2001:db8::11",
-    created_at: dateAfter(-420),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    uuid: "singapore-api-01",
-    name: "Singapore API",
-    group: "生产",
-    region: "SG",
-    hidden: false,
-    cpu_name: "Intel Xeon Gold 6338",
-    cpu_cores: 8,
-    arch: "x86_64",
-    virtualization: "KVM",
-    os: "ubuntu",
-    kernel_version: "6.8.0",
-    gpu_name: "",
-    mem_total: 16 * GIB,
-    swap_total: 4 * GIB,
-    disk_total: 240 * GIB,
-    weight: 20,
-    price: 18,
-    billing_cycle: "month",
-    auto_renewal: true,
-    currency: "USD",
-    expired_at: dateAfter(12),
-    tags: "API<Blue>; 核心<Crimson>; 高可用<Jade>",
-    public_remark: "东南亚 API 集群",
-    traffic_limit: 6 * TIB,
-    traffic_limit_type: "sum",
-    ipv4: "203.0.113.21",
-    ipv6: "2001:db8::21",
-    created_at: dateAfter(-310),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    uuid: "frankfurt-db-01",
-    name: "Frankfurt DB",
-    group: "生产",
-    region: "DE",
-    hidden: false,
-    cpu_name: "AMD EPYC 7763",
-    cpu_cores: 12,
-    arch: "x86_64",
-    virtualization: "KVM",
-    os: "alma",
-    kernel_version: "5.14.0",
-    gpu_name: "",
-    mem_total: 32 * GIB,
-    swap_total: 8 * GIB,
-    disk_total: 480 * GIB,
-    weight: 30,
-    price: 34,
-    billing_cycle: "month",
-    auto_renewal: false,
-    currency: "EUR",
-    expired_at: dateAfter(3),
-    tags: "数据库<Amber>; 临期<Tomato>; 欧洲<Grass>",
-    public_remark: "主数据库副本",
-    traffic_limit: 8 * TIB,
-    traffic_limit_type: "sum",
-    ipv4: "203.0.113.31",
-    ipv6: "2001:db8::31",
-    created_at: dateAfter(-260),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    uuid: "new-york-worker-01",
-    name: "New York Worker",
-    group: "生产",
-    region: "US",
-    hidden: false,
-    cpu_name: "Intel Xeon Platinum 8370C",
-    cpu_cores: 8,
-    arch: "x86_64",
-    virtualization: "KVM",
-    os: "rocky",
-    kernel_version: "5.14.0",
+    kernel_version: "6.1.0-21-amd64",
     gpu_name: "",
     mem_total: 16 * GIB,
     swap_total: 4 * GIB,
     disk_total: 320 * GIB,
-    weight: 40,
-    price: 22,
+    weight: 10,
+    price: 36,
     billing_cycle: "month",
     auto_renewal: true,
     currency: "USD",
-    expired_at: dateAfter(46),
-    tags: "队列<Pink>; 异步<Lime>; 美东<Sky>",
-    public_remark: "北美异步任务",
-    traffic_limit: 5 * TIB,
+    expired_at: dateAfter(28),
+    tags: "核心机房<Violet>; BGP多线<Blue>; 高可用<Emerald>",
+    public_remark: "东京主节点",
+    traffic_limit: 10 * TIB,
     traffic_limit_type: "sum",
-    ipv4: "203.0.113.41",
-    ipv6: "2001:db8::41",
+    ipv4: "203.0.113.10",
+    ipv6: "2001:db8::10",
+    created_at: dateAfter(-360),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    uuid: "hongkong-bgp-02",
+    name: "Hong Kong BGP",
+    group: "生产",
+    region: "HK",
+    hidden: false,
+    cpu_name: "Intel Xeon Platinum 8375C",
+    cpu_cores: 4,
+    arch: "x86_64",
+    virtualization: "KVM",
+    os: "ubuntu",
+    kernel_version: "5.15.0-105-generic",
+    gpu_name: "",
+    mem_total: 8 * GIB,
+    swap_total: 2 * GIB,
+    disk_total: 160 * GIB,
+    weight: 20,
+    price: 180,
+    billing_cycle: "quarter",
+    auto_renewal: true,
+    currency: "HKD",
+    expired_at: dateAfter(64),
+    tags: "CN2-GIA<Rose>; 三网直连<Cyan>; 优质带宽<Amber>",
+    public_remark: "亚太网关",
+    traffic_limit: 4 * TIB,
+    traffic_limit_type: "sum",
+    ipv4: "203.0.113.20",
+    ipv6: "2001:db8::20",
+    created_at: dateAfter(-240),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    uuid: "silicon-valley-compute-03",
+    name: "Silicon Valley Compute",
+    group: "计算",
+    region: "US",
+    hidden: false,
+    cpu_name: "AMD Ryzen 9 7950X",
+    cpu_cores: 16,
+    arch: "x86_64",
+    virtualization: "BareMetal",
+    os: "arch",
+    kernel_version: "6.9.3-arch1-1",
+    gpu_name: "NVIDIA RTX 4090",
+    mem_total: 64 * GIB,
+    swap_total: 16 * GIB,
+    disk_total: 1920 * GIB,
+    weight: 30,
+    price: 120,
+    billing_cycle: "month",
+    auto_renewal: false,
+    currency: "USD",
+    expired_at: dateAfter(5),
+    tags: "GPU渲染<Fuchsia>; 深度学习<Purple>; 高主频<Orange>",
+    public_remark: "AI 模型训练机器",
+    traffic_limit: 20 * TIB,
+    traffic_limit_type: "sum",
+    ipv4: "203.0.113.30",
+    ipv6: "2001:db8::30",
     created_at: dateAfter(-180),
     updated_at: new Date().toISOString(),
   },
   {
-    uuid: "hong-kong-cache-01",
-    name: "Hong Kong Cache",
-    group: "边缘",
-    region: "HK",
+    uuid: "frankfurt-storage-04",
+    name: "Frankfurt Storage",
+    group: "存储",
+    region: "DE",
     hidden: false,
-    cpu_name: "AMD EPYC 7543P",
+    cpu_name: "Intel Xeon E-2288G",
+    cpu_cores: 8,
+    arch: "x86_64",
+    virtualization: "KVM",
+    os: "debian",
+    kernel_version: "6.1.0-21-amd64",
+    gpu_name: "",
+    mem_total: 32 * GIB,
+    swap_total: 8 * GIB,
+    disk_total: 7680 * GIB,
+    weight: 40,
+    price: 45,
+    billing_cycle: "month",
+    auto_renewal: true,
+    currency: "EUR",
+    expired_at: dateAfter(12),
+    tags: "RAID10<Yellow>; 异地容灾<Lime>; 大容量<Green>",
+    public_remark: "归档与备份集群",
+    traffic_limit: 8 * TIB,
+    traffic_limit_type: "sum",
+    ipv4: "203.0.113.40",
+    ipv6: "2001:db8::40",
+    created_at: dateAfter(-300),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    uuid: "singapore-ingress-05",
+    name: "Singapore Ingress",
+    group: "网关",
+    region: "SG",
+    hidden: false,
+    cpu_name: "AMD EPYC 7002",
     cpu_cores: 4,
     arch: "x86_64",
     virtualization: "KVM",
     os: "alpine",
-    kernel_version: "6.6.12",
+    kernel_version: "6.6.32-0-lts",
     gpu_name: "",
-    mem_total: 6 * GIB,
-    swap_total: 2 * GIB,
-    disk_total: 120 * GIB,
+    mem_total: 4 * GIB,
+    swap_total: 1 * GIB,
+    disk_total: 80 * GIB,
     weight: 50,
-    price: 68,
-    billing_cycle: "quarter",
+    price: 9.9,
+    billing_cycle: "month",
     auto_renewal: true,
-    currency: "CNY",
-    expired_at: dateAfter(61),
-    tags: "缓存<Gold>; 极速<Mint>; BGP<Plum>; 亚太<Iris>",
-    public_remark: "香港缓存层",
+    currency: "USD",
+    expired_at: dateAfter(41),
+    tags: "轻量容器<Teal>; 任意播<Indigo>; 入口防护<Red>",
+    public_remark: "东南亚反代入口",
     traffic_limit: 3 * TIB,
     traffic_limit_type: "sum",
     ipv4: "203.0.113.51",
@@ -197,46 +197,138 @@ const nodes: NodeInfo[] = [
   },
 ];
 
-const statusProfiles = [
-  [18, 2.1, 0.7, 34, 11, 18_000_000, 72_000_000, 820 * GIB, 1.1 * TIB, true],
-  [46, 9.2, 2.6, 57, 38, 32_000_000, 98_000_000, 1.8 * TIB, 2.2 * TIB, true],
-  [91, 27.4, 8.8, 83, 161, 8_000_000, 24_000_000, 3.6 * TIB, 2.9 * TIB, true],
-  [63, 11.8, 3.4, 66, 78, 21_000_000, 54_000_000, 1.4 * TIB, 1.7 * TIB, true],
-  [31, 3.4, 1.2, 42, 24, 28_000_000, 86_000_000, 740 * GIB, 1.3 * TIB, true],
-  [0, 0, 0, 38, 232, 0, 0, 1.1 * TIB, 880 * GIB, false],
-] as const;
+function getMockNodes(): NodeInfo[] {
+  if (typeof window === "undefined") return BASE_NODES;
+  const params = new URLSearchParams(window.location.search);
+  let sessionNodes = 0;
+  try {
+    sessionNodes =
+      Number(window.sessionStorage?.getItem("monitor_dev_nodes")) ||
+      Number(window.sessionStorage?.getItem("komari_dev_nodes")) ||
+      0;
+  } catch {}
+  const targetCount = Number(params.get("nodes")) || sessionNodes;
+  if (!targetCount || targetCount <= BASE_NODES.length) {
+    return BASE_NODES;
+  }
+
+  // 如果用户指定了像 ?mock=1&nodes=60 或 100，自动扩充复制
+  const result: NodeInfo[] = [...BASE_NODES];
+  let i = BASE_NODES.length;
+  while (result.length < targetCount) {
+    const template = BASE_NODES[i % BASE_NODES.length]!;
+    const copyIndex = Math.floor(i / BASE_NODES.length) + 1;
+    result.push({
+      ...template,
+      uuid: `${template.uuid}-sub-${copyIndex}`,
+      name: `${template.name} #${copyIndex}`,
+      weight: template.weight + i * 5,
+      ipv4: `203.0.113.${(10 + i) % 250}`,
+      ipv6: `2001:db8::${(10 + i).toString(16)}`,
+    });
+    i++;
+  }
+  return result;
+}
+
+const nodes: NodeInfo[] = getMockNodes();
+
+function wave(seed: number, period: number, amplitude: number, offset: number) {
+  return offset + Math.sin((Date.now() / period) * (1 + seed * 0.17)) * amplitude;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getNodeStatusProfile(index: number, node: NodeInfo) {
+  // 保持约 6-7% 离线
+  const isOffline = index % 15 === 5;
+  const isHighLoad = !isOffline && index % 9 === 2;
+
+  if (isOffline) {
+    return [0, 0, 0, 38, 232, 0, 0, 1.1 * TIB, 880 * GIB, false] as const;
+  }
+
+  const cpu = isHighLoad
+    ? Math.round(clamp(wave(index, 14_000, 8, 88), 75, 98))
+    : Math.round(clamp(wave(index, 24_000, 25, 42), 5, 75));
+
+  const load = +(cpu * 0.08 * (node.cpu_cores || 4) / 4).toFixed(2);
+  const swapPct = isHighLoad ? 35 : Math.round(clamp(wave(index, 30_000, 10, 12), 0, 40));
+  const diskPct = Math.round(clamp(30 + (index % 7) * 9, 10, 92));
+
+  // Ping 延迟根据地区产生拟真基准延迟
+  const region = (node.region || "").toUpperCase();
+  let basePing = 36;
+  if (region === "HK" || region === "TW" || region === "SG" || region === "JP") {
+    basePing = 24 + (index % 4) * 14;
+  } else if (region === "US" || region === "CA") {
+    basePing = 135 + (index % 3) * 8;
+  } else if (region === "DE" || region === "GB" || region === "FR" || region === "CH") {
+    basePing = 175 + (index % 3) * 7;
+  } else if (region === "AU" || region === "KR") {
+    basePing = 215 + (index % 3) * 16;
+  } else {
+    basePing = 50 + (index % 5) * 30;
+  }
+
+  // 吞吐阶梯：在方格矩阵呈现不同梯级（>10MB/s 梯级3、>2MB/s 梯级2、>200KB/s 梯级1、空闲）
+  const speedTier = index % 4;
+  let upRate = 50_000;
+  let downRate = 120_000;
+  if (speedTier === 3) {
+    upRate = Math.round(clamp(wave(index, 9_000, 4_000_000, 12_000_000), 8_000_000, 35_000_000));
+    downRate = Math.round(clamp(wave(index + 2, 11_000, 6_000_000, 18_000_000), 10_000_000, 50_000_000));
+  } else if (speedTier === 2) {
+    upRate = Math.round(clamp(wave(index, 12_000, 1_000_000, 3_500_000), 2_100_000, 6_000_000));
+    downRate = Math.round(clamp(wave(index + 1, 14_000, 1_500_000, 4_800_000), 2_200_000, 8_000_000));
+  } else if (speedTier === 1) {
+    upRate = Math.round(clamp(wave(index, 15_000, 200_000, 450_000), 220_000, 800_000));
+    downRate = Math.round(clamp(wave(index + 3, 17_000, 300_000, 750_000), 250_000, 1_200_000));
+  } else {
+    upRate = Math.round(clamp(wave(index, 20_000, 40_000, 60_000), 5_000, 120_000));
+    downRate = Math.round(clamp(wave(index + 1, 22_000, 60_000, 90_000), 8_000, 160_000));
+  }
+
+  const totalUp = (800 + index * 120) * GIB;
+  const totalDown = (1200 + index * 180) * GIB;
+
+  return [cpu, load, swapPct, diskPct, basePing, upRate, downRate, totalUp, totalDown, true] as const;
+}
 
 function latestStatus() {
   const now = Date.now();
   return Object.fromEntries(
     nodes.map((node, index) => {
       const [cpu, load, swapPct, diskPct, , up, down, totalUp, totalDown, online] =
-        statusProfiles[index];
+        getNodeStatusProfile(index, node);
       if (!online) return [node.uuid, { online: false }];
-      const memoryPct = index === 2 ? 88 : 36 + index * 7;
+      const memoryPct = index % 9 === 2 ? 88 : 36 + (index % 6) * 7;
       return [
         node.uuid,
         {
           online: true,
           cpu,
           ram: (node.mem_total * memoryPct) / 100,
-          ram_total: node.mem_total,
           swap: (node.swap_total * swapPct) / 100,
-          swap_total: node.swap_total,
           load,
-          load5: load * 0.86,
-          load15: load * 0.72,
+          load5: +(load * 0.88).toFixed(2),
+          load15: +(load * 0.76).toFixed(2),
           disk: (node.disk_total * diskPct) / 100,
-          disk_total: node.disk_total,
-          net_out: up,
-          net_in: down,
-          net_total_up: totalUp,
-          net_total_down: totalDown,
-          uptime: (index + 3) * 864_000,
-          process: 96 + index * 21,
-          connections: 180 + index * 44,
-          connections_udp: 12 + index * 3,
-          updated_at: now,
+          net_in: totalDown,
+          net_out: totalUp,
+          net_in_transfer: totalDown,
+          net_out_transfer: totalUp,
+          net_in_speed: down,
+          net_out_speed: up,
+          uptime: 86400 * (15 + index * 8) + (index % 5) * 3600,
+          tcp: 32 + (index % 8) * 14,
+          udp: 12 + (index % 5) * 6,
+          process: 80 + (index % 10) * 12,
+          thread: 300 + (index % 10) * 45,
+          temp: 42 + (index % 6) * 3,
+          updated_at: new Date(now - (index % 4) * 1000).toISOString(),
         },
       ];
     }),
@@ -245,35 +337,119 @@ function latestStatus() {
 
 function loadRecords(uuid: string) {
   const node = nodes.find((item) => item.uuid === uuid) ?? nodes[0];
-  const index = nodes.indexOf(node);
-  const profile = statusProfiles[Math.max(0, index)];
+  const index = Math.max(0, nodes.indexOf(node));
+  const profile = getNodeStatusProfile(index, node);
   const now = Date.now();
   return Array.from({ length: 72 }, (_, sample) => {
     const phase = sample / 7 + index;
     const cpu = Math.max(2, Math.min(98, profile[0] + Math.sin(phase) * 10));
-    const ram = node.mem_total * Math.min(0.94, 0.35 + index * 0.08 + Math.cos(phase) * 0.04);
+    const ram = Math.max(
+      node.mem_total * 0.2,
+      Math.min(node.mem_total * 0.95, node.mem_total * (0.42 + Math.cos(phase) * 0.12)),
+    );
+    const disk = Math.max(
+      node.disk_total * 0.1,
+      Math.min(node.disk_total * 0.95, (node.disk_total * profile[3]) / 100),
+    );
+    const load = Math.max(0.1, +(profile[1] + Math.sin(phase) * 0.4).toFixed(2));
+    const swap = (node.swap_total * profile[2]) / 100;
     return {
-      cpu,
-      gpu: 0,
-      ram,
-      ram_total: node.mem_total,
-      swap: node.swap_total * 0.08,
-      swap_total: node.swap_total,
-      load: profile[1] + Math.sin(phase) * 0.8,
-      temp: 48 + index * 4 + Math.sin(phase) * 3,
-      disk: node.disk_total * (profile[3] / 100),
-      disk_total: node.disk_total,
-      net_in: Math.max(0, profile[6] * (0.7 + Math.sin(phase) * 0.24)),
-      net_out: Math.max(0, profile[5] * (0.7 + Math.cos(phase) * 0.24)),
-      net_total_up: Math.max(0, profile[7] - (71 - sample) * (12 + index * 3) * MIB),
-      net_total_down: Math.max(0, profile[8] - (71 - sample) * (28 + index * 5) * MIB),
-      process: 100 + index * 20,
-      connections: 180 + index * 40,
-      connections_udp: 16,
       time: now - (71 - sample) * 300_000,
-      client: node.uuid,
+      cpu,
+      ram,
+      swap,
+      load,
+      disk,
+      net_in: profile[6] * (0.8 + Math.sin(phase) * 0.2),
+      net_out: profile[5] * (0.8 + Math.cos(phase) * 0.2),
+      tcp: 30 + (sample % 12),
+      udp: 10 + (sample % 6),
+      process: 120,
+      thread: 450,
     };
   });
+}
+
+function parseTimeRange(startStr?: string, endStr?: string, defaultHours = 1) {
+  const end = endStr ? new Date(endStr).getTime() : Date.now();
+  const start = startStr ? new Date(startStr).getTime() : end - defaultHours * 3600_000;
+  return { start, end };
+}
+
+function loadMetricPayload(params: {
+  uuid?: string;
+  metric_keys?: string[];
+  start?: string;
+  end?: string;
+}) {
+  const { start, end } = parseTimeRange(params.start, params.end, 1);
+  const metricKeys = params.metric_keys ?? [
+    "cpu.percent",
+    "memory.used",
+    "disk.used",
+    "net.in.rate",
+    "net.out.rate",
+    "load.1m",
+    "swap.used",
+    "tcp.connections",
+    "udp.connections",
+    "process.count",
+    "thread.count",
+  ];
+  const pointCount = 30;
+  const intervalMs = Math.max(60_000, Math.floor((end - start) / pointCount));
+  const uuid = params.uuid ?? nodes[0].uuid;
+  const index = nodes.findIndex((node) => node.uuid === uuid);
+  if (index < 0) return [];
+  const profile = getNodeStatusProfile(index, nodes[index]);
+  if (!profile[9]) return [];
+  return metricKeys.map((metricKey) => ({
+    metric_key: metricKey,
+    entity_id: uuid,
+    series_name: "",
+    interval_seconds: intervalMs / 1000,
+    points: Array.from({ length: pointCount }, (_, pointIndex) => {
+      const time = new Date(start + (pointIndex + 1) * intervalMs).toISOString();
+      const phase = pointIndex / 6 + index;
+      let value = 0;
+      switch (metricKey) {
+        case "cpu.percent":
+          value = Math.max(2, Math.min(98, profile[0] + Math.sin(phase) * 8));
+          break;
+        case "memory.used":
+          value = nodes[index].mem_total * (0.42 + Math.cos(phase) * 0.08);
+          break;
+        case "disk.used":
+          value = (nodes[index].disk_total * profile[3]) / 100;
+          break;
+        case "net.in.rate":
+          value = profile[6] * (0.8 + Math.sin(phase) * 0.2);
+          break;
+        case "net.out.rate":
+          value = profile[5] * (0.8 + Math.cos(phase) * 0.2);
+          break;
+        case "load.1m":
+          value = Math.max(0.1, +(profile[1] + Math.sin(phase) * 0.3).toFixed(2));
+          break;
+        case "swap.used":
+          value = (nodes[index].swap_total * profile[2]) / 100;
+          break;
+        case "tcp.connections":
+          value = 30 + (pointIndex % 10);
+          break;
+        case "udp.connections":
+          value = 10 + (pointIndex % 5);
+          break;
+        case "process.count":
+          value = 120;
+          break;
+        case "thread.count":
+          value = 450;
+          break;
+      }
+      return { time, value, count: 1 };
+    }),
+  }));
 }
 
 function trafficMetricPayload(params: {
@@ -282,158 +458,40 @@ function trafficMetricPayload(params: {
   start?: string;
   end?: string;
 }) {
-  const start = Number.isFinite(Date.parse(params.start ?? ""))
-    ? Date.parse(params.start ?? "")
-    : new Date().setHours(0, 0, 0, 0);
-  const end = Number.isFinite(Date.parse(params.end ?? ""))
-    ? Date.parse(params.end ?? "")
-    : Date.now();
+  const { start, end } = parseTimeRange(params.start, params.end, 24);
+  const metricKeys = params.metric_keys ?? [
+    "traffic.up",
+    "traffic.down",
+    "net.in.rate",
+    "net.out.rate",
+  ];
+  const pointCount = 36;
+  const intervalMs = Math.max(60_000, Math.floor((end - start) / pointCount));
   const entityIds = params.entity_ids?.length ? params.entity_ids : nodes.map((node) => node.uuid);
-  const metricKeys = params.metric_keys ?? [];
-  const intervalMs = 5 * 60 * 1000;
-  const pointCount = Math.max(1, Math.ceil((end - start) / intervalMs));
-  const series = entityIds.flatMap((uuid) => {
-    const index = nodes.findIndex((node) => node.uuid === uuid);
-    if (index < 0 || index === nodes.length - 1) return [];
-    return metricKeys.map((metricKey) => ({
-      metric_key: metricKey,
-      entity_id: uuid,
-      interval_seconds: intervalMs / 1000,
-      points: Array.from({ length: pointCount }, (_, pointIndex) => {
-        const phase = pointIndex / 9 + index * 0.8;
-        const time = new Date(start + pointIndex * intervalMs).toISOString();
-        const value =
-          metricKey === "traffic.up"
-            ? (12 + index * 3) * MIB * (0.72 + Math.sin(phase) * 0.24)
-            : metricKey === "traffic.down"
-              ? (28 + index * 5) * MIB * (0.74 + Math.cos(phase) * 0.22)
-              : metricKey === "net.out.rate"
-                ? statusProfiles[index][5] * (0.62 + Math.sin(phase) * 0.34)
-                : statusProfiles[index][6] * (0.66 + Math.cos(phase) * 0.3);
-        return { time, value: Math.max(0, value), count: 1 };
-      }),
-    }));
-  });
-  return {
-    start: new Date(start).toISOString(),
-    end: new Date(end).toISOString(),
-    series,
-    count: series.length,
-  };
-}
 
-// queryMetrics 的 ping 路径:latency/loss 双序列,tags 携带 task_id;丢包桶 latency 为
-// null、loss 为 1,与真实后端聚合语义一致(mergePingMetricSeries 会还原成 -1 记录)。
-function pingMetricPayload(params: {
-  metric_keys?: string[];
-  entity_ids?: string[];
-  hours?: number;
-  tags?: { task_id?: string };
-}) {
-  const end = Date.now();
-  const hours = typeof params.hours === "number" && params.hours > 0 ? params.hours : 6;
-  const intervalMs = 60_000;
-  const pointCount = Math.min(360, Math.max(12, Math.round((hours * 3_600_000) / intervalMs)));
-  const start = end - pointCount * intervalMs;
-  const entityIds = params.entity_ids?.length ? params.entity_ids : nodes.map((node) => node.uuid);
-  const requestedTask = Number(params.tags?.task_id);
-  const tasks =
-    Number.isFinite(requestedTask) && requestedTask > 0
-      ? pingTasks.filter((task) => task.id === requestedTask)
-      : pingTasks;
-  const metricKeys = (params.metric_keys ?? []).filter((key) => key.startsWith("ping."));
-  const series = entityIds.flatMap((uuid) => {
+  return entityIds.flatMap((uuid) => {
     const index = nodes.findIndex((node) => node.uuid === uuid);
     if (index < 0) return [];
-    return tasks.flatMap((task) =>
-      metricKeys.map((metricKey) => ({
-        metric_key: metricKey,
-        entity_id: uuid,
-        tags: { task_id: String(task.id) },
-        interval_seconds: intervalMs / 1000,
-        points: Array.from({ length: pointCount }, (_, pointIndex) => {
-          const time = new Date(start + (pointIndex + 1) * intervalMs).toISOString();
-          const lost = index === 2 && pointIndex % 17 === 0;
-          if (metricKey === "ping.loss") {
-            return { time, value: lost ? 1 : 0, count: 1 };
-          }
-          const baseline = statusProfiles[index][4] + (task.id - 1) * 18;
-          return {
-            time,
-            value: lost
-              ? null
-              : Math.max(1, baseline + Math.round(Math.sin(pointIndex / 5 + index) * 9)),
-            count: 1,
-          };
-        }),
-      })),
-    );
-  });
-  return {
-    start: new Date(start).toISOString(),
-    end: new Date(end).toISOString(),
-    series,
-    count: series.length,
-  };
-}
-
-// queryMetrics 的负载路径:直接把 loadRecords 的字段转成对应 metric 序列。
-const LOAD_METRIC_RECORD_FIELD = {
-  "cpu.usage": "cpu",
-  "memory.used": "ram",
-  "swap.used": "swap",
-  "load.average": "load",
-  "disk.used": "disk",
-  "net.in.rate": "net_in",
-  "net.out.rate": "net_out",
-  "net.total.up": "net_total_up",
-  "net.total.down": "net_total_down",
-  "process.count": "process",
-  "connections.tcp": "connections",
-  "connections.udp": "connections_udp",
-} as const;
-
-function loadMetricPayload(params: { metric_keys?: string[]; entity_ids?: string[] }) {
-  const entityIds = params.entity_ids?.length ? params.entity_ids : [nodes[0].uuid];
-  const metricKeys = (params.metric_keys ?? []).filter(
-    (key): key is keyof typeof LOAD_METRIC_RECORD_FIELD => key in LOAD_METRIC_RECORD_FIELD,
-  );
-  const series = entityIds.flatMap((uuid) => {
-    const records = loadRecords(uuid);
+    const profile = getNodeStatusProfile(index, nodes[index]);
+    if (!profile[9]) return [];
     return metricKeys.map((metricKey) => ({
       metric_key: metricKey,
       entity_id: uuid,
-      interval_seconds: 300,
-      points: records.map((record) => ({
-        time: new Date(record.time).toISOString(),
-        value: record[LOAD_METRIC_RECORD_FIELD[metricKey]],
-        count: 1,
-      })),
-    }));
-  });
-  const now = Date.now();
-  return {
-    start: new Date(now - 72 * 300_000).toISOString(),
-    end: new Date(now).toISOString(),
-    series,
-    count: series.length,
-  };
-}
-
-function pingRecords(uuid?: string, taskId = 1) {
-  const clients = uuid ? [uuid] : nodes.map((node) => node.uuid);
-  const now = Date.now();
-  return clients.flatMap((client) => {
-    const index = nodes.findIndex((node) => node.uuid === client);
-    const baseline = statusProfiles[Math.max(0, index)][4] + (taskId - 1) * 18;
-    return Array.from({ length: 60 }, (_, sample) => ({
-      task_id: taskId,
-      time: now - (59 - sample) * 60_000,
-      value:
-        index === 2 && sample % 17 === 0
-          ? -1
-          : Math.max(1, baseline + Math.round(Math.sin(sample / 5 + index) * 9)),
-      client,
+      series_name: "",
+      interval_seconds: intervalMs / 1000,
+      points: Array.from({ length: pointCount }, (_, pointIndex) => {
+        const time = new Date(start + (pointIndex + 1) * intervalMs).toISOString();
+        const phase = pointIndex / 5 + index;
+        const value =
+          metricKey === "traffic.up"
+            ? (12 + (index % 6) * 3) * MIB * (0.72 + Math.sin(phase) * 0.24)
+            : metricKey === "traffic.down"
+              ? (28 + (index % 6) * 5) * MIB * (0.74 + Math.cos(phase) * 0.22)
+              : metricKey === "net.out.rate"
+                ? profile[5] * (0.62 + Math.sin(phase) * 0.34)
+                : profile[6] * (0.66 + Math.cos(phase) * 0.3);
+        return { time, value: Math.max(0, value), count: 1 };
+      }),
     }));
   });
 }
@@ -451,6 +509,77 @@ const pingTasks = [
   weight: index + 1,
 }));
 
+function pingMetricPayload(params: {
+  metric_keys?: string[];
+  entity_ids?: string[];
+  tags?: { task_id?: string };
+  start?: string;
+  end?: string;
+}) {
+  const { start, end } = parseTimeRange(params.start, params.end, 1);
+  const metricKeys = params.metric_keys ?? ["ping.latency", "ping.loss"];
+  const pointCount = 30;
+  const intervalMs = Math.max(60_000, Math.floor((end - start) / pointCount));
+  const entityIds = params.entity_ids?.length ? params.entity_ids : nodes.map((node) => node.uuid);
+  const taskIdFilter = params.tags?.task_id ? Number(params.tags.task_id) : undefined;
+  const tasks = taskIdFilter
+    ? pingTasks.filter((task) => task.id === taskIdFilter)
+    : pingTasks;
+
+  const series = entityIds.flatMap((uuid) => {
+    const index = nodes.findIndex((node) => node.uuid === uuid);
+    if (index < 0) return [];
+    const profile = getNodeStatusProfile(index, nodes[index]);
+    return tasks.flatMap((task) =>
+      metricKeys.map((metricKey) => ({
+        metric_key: metricKey,
+        entity_id: uuid,
+        series_name: task.name,
+        interval_seconds: intervalMs / 1000,
+        points: Array.from({ length: pointCount }, (_, pointIndex) => {
+          const time = new Date(start + (pointIndex + 1) * intervalMs).toISOString();
+          const lost = !profile[9] || (index % 11 === 0 && pointIndex % 17 === 0);
+          if (metricKey === "ping.loss") {
+            return { time, value: lost ? 1 : 0, count: 1 };
+          }
+          const baseline = profile[4] + (task.id - 1) * 18;
+          return {
+            time,
+            value: lost
+              ? 0
+              : Math.max(
+                  1,
+                  baseline + Math.round(Math.sin(pointIndex / 4 + index + task.id) * 7),
+                ),
+            count: 1,
+          };
+        }),
+      })),
+    );
+  });
+  return series;
+}
+
+function pingRecords(uuid?: string, taskId = 1) {
+  const clients = uuid ? [uuid] : nodes.map((node) => node.uuid);
+  const now = Date.now();
+  return clients.flatMap((client) => {
+    const index = Math.max(0, nodes.findIndex((node) => node.uuid === client));
+    const profile = getNodeStatusProfile(index, nodes[index] ?? nodes[0]);
+    const baseline = profile[4] + (taskId - 1) * 18;
+    return Array.from({ length: 60 }, (_, sample) => ({
+      task_id: taskId,
+      time: now - (59 - sample) * 60_000,
+      value:
+        !profile[9] || (index % 11 === 0 && sample % 17 === 0)
+          ? -1
+          : Math.max(1, baseline + Math.round(Math.sin(sample / 5 + index) * 9)),
+      client,
+      status: 1,
+    }));
+  });
+}
+
 function json(data: unknown, init?: ResponseInit) {
   return new Response(JSON.stringify(data), {
     status: 200,
@@ -461,11 +590,65 @@ function json(data: unknown, init?: ResponseInit) {
 
 export function installDevMockApi() {
   const nativeFetch = window.fetch.bind(window);
-  // ?mock=1&admin=1 模拟已登录管理员,连带放开 /api/admin/*,ThemeManage 才可在 dev 调试。
-  const adminMode = new URLSearchParams(window.location.search).get("admin") === "1";
-  // 保存后的主题设置驻留内存,让「保存 → /api/public refetch」链路在 dev 里闭环。
-  const defaultTheme = "komari-theme-sao";
+  // ?mock=1 默认模拟已登录管理员,放开 /api/admin/*,ThemeManage 才可在 dev 正常保存。显式 ?admin=0 模拟未授权。
+  const adminMode = new URLSearchParams(window.location.search).get("admin") !== "0";
+  // 保存后的主题设置驻留内存与本地存储，让「保存 → /api/public refetch」以及刷新页面闭环。
+  const defaultTheme = "SAO";
+  const MOCK_STORAGE_KEY = "monitor_mock_theme_settings";
+  const LEGACY_STORAGE_KEY = "komari_mock_theme_settings";
+  const defaultMockThemeSettings: Record<string, unknown> = {
+    desktopNodeViewMode: "compact",
+    mobileNodeViewMode: "compact",
+    clusterOverviewMode: "classic",
+    showHomeOverview: true,
+    showGroupTabs: true,
+    showRegionBar: true,
+    showCardGroup: true,
+    enableHomeSort: true,
+    showCostSummary: true,
+    showCostSummaryFloatingButton: true,
+    showPriceForGuests: false,
+    showOverviewRatings: true,
+    showTrafficRating: true,
+    showBandwidthRating: true,
+    showAssetRating: true,
+    showPingChart: true,
+    // 单任务刻意和三网首项不同，便于回归验证列表没有误读全局三网数据。
+    homepagePingBindings: { "2": nodes.map((node) => node.uuid) },
+    enableHomepageMultiPing:
+      new URLSearchParams(window.location.search).get("multiPing") === "1",
+    homepageMultiPingTaskIds: [1, 2, 3],
+  };
+
   const savedThemeSettings: Record<string, Record<string, unknown>> = {};
+
+  const readPersistedSettings = (): Record<string, unknown> | null => {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        const raw =
+          window.localStorage.getItem(MOCK_STORAGE_KEY) ||
+          window.localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (raw) return JSON.parse(raw) as Record<string, unknown>;
+      }
+    } catch {}
+    return null;
+  };
+
+  const writePersistedSettings = (settings: Record<string, unknown>) => {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(settings));
+      }
+    } catch {}
+  };
+
+  const initialStored = readPersistedSettings();
+  if (initialStored) {
+    savedThemeSettings["SAO"] = initialStored;
+    savedThemeSettings["sao"] = initialStored;
+    savedThemeSettings["monitor-theme-sao"] = initialStored;
+    savedThemeSettings["komari-theme-sao"] = initialStored;
+  }
 
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const request = new Request(input, init);
@@ -486,8 +669,26 @@ export function installDevMockApi() {
     if (url.pathname === "/api/me") {
       return json(
         adminMode
-          ? { logged_in: true, username: "mock-admin", uuid: "mock-admin-uuid" }
-          : { logged_in: false, username: "", uuid: "" },
+          ? {
+              authed: true,
+              logged_in: true,
+              username: "mock-admin",
+              uuid: "mock-admin-uuid",
+              github: false,
+              site_name: "Monitor SAO",
+              public_page: true,
+              history_days: 90,
+            }
+          : {
+              authed: false,
+              logged_in: false,
+              username: "",
+              uuid: "",
+              github: false,
+              site_name: "Monitor SAO",
+              public_page: true,
+              history_days: 90,
+            },
       );
     }
 
@@ -512,16 +713,54 @@ export function installDevMockApi() {
     if (url.pathname === "/api/admin/theme/settings") {
       if (!adminMode) return json({ message: "unauthorized" }, { status: 401 });
       const theme = url.searchParams.get("theme") ?? defaultTheme;
-      savedThemeSettings[theme] = (await request.json()) as Record<string, unknown>;
+      const body = (await request.json()) as Record<string, unknown>;
+      savedThemeSettings[theme] = body;
+      savedThemeSettings["SAO"] = body;
+      savedThemeSettings["sao"] = body;
+      savedThemeSettings["monitor-theme-sao"] = body;
+      savedThemeSettings["komari-theme-sao"] = body;
+      writePersistedSettings(body);
       return json({ status: "success" });
+    }
+
+    // 拦截 Monitor 官方主题配置接口: GET /api/themes/{short}/config 与 PUT /api/themes/{short}/config
+    if (/^\/api\/themes\/[^/]+\/config$/.test(url.pathname) || url.pathname === "/sao-config.json") {
+      if (request.method === "PUT" || request.method === "POST") {
+        if (!adminMode) return json({ message: "unauthorized" }, { status: 401 });
+        const body = (await request.json()) as Record<string, unknown>;
+        savedThemeSettings[defaultTheme] = body;
+        savedThemeSettings["SAO"] = body;
+        savedThemeSettings["sao"] = body;
+        savedThemeSettings["monitor-theme-sao"] = body;
+        savedThemeSettings["komari-theme-sao"] = body;
+        writePersistedSettings(body);
+        return json(body);
+      }
+      // GET 请求
+      const activeSaved =
+        savedThemeSettings["sao"] ??
+        savedThemeSettings["SAO"] ??
+        savedThemeSettings[defaultTheme] ??
+        readPersistedSettings();
+      return json(
+        activeSaved
+          ? { ...defaultMockThemeSettings, ...activeSaved }
+          : defaultMockThemeSettings,
+      );
     }
 
     if (url.pathname === "/api/public") {
       const theme = url.searchParams.get("theme") ?? defaultTheme;
+      const activeSaved =
+        savedThemeSettings[theme] ??
+        savedThemeSettings["SAO"] ??
+        savedThemeSettings["monitor-theme-sao"] ??
+        savedThemeSettings["komari-theme-sao"] ??
+        readPersistedSettings();
       return json({
-        sitename: "Lumina Ops",
+        sitename: "Monitor SAO",
         description: "全球节点运行状态",
-        theme: "komari-theme-sao",
+        theme: "SAO",
         allow_cors: false,
         disable_password_login: false,
         oauth_enable: false,
@@ -532,32 +771,50 @@ export function installDevMockApi() {
         metric_retention_days: 90,
         custom_head: "",
         custom_body: "",
-        theme_settings: savedThemeSettings[theme] ?? {
-          desktopNodeViewMode: "compact",
-          mobileNodeViewMode: "compact",
-          showHomeOverview: true,
-          showGroupTabs: true,
-          showRegionBar: true,
-          showCardGroup: true,
-          enableHomeSort: true,
-          showCostSummary: true,
-          showCostSummaryFloatingButton: true,
-          showPriceForGuests: false,
-          showOverviewRatings: true,
-          showTrafficRating: true,
-          showBandwidthRating: true,
-          showAssetRating: true,
-          // 单任务刻意和三网首项不同，便于回归验证列表没有误读全局三网数据。
-          homepagePingBindings: { "2": nodes.map((node) => node.uuid) },
-          enableHomepageMultiPing:
-            new URLSearchParams(window.location.search).get("multiPing") === "1",
-          homepageMultiPingTaskIds: [1, 2, 3],
-        },
+        theme_settings: activeSaved
+          ? { ...defaultMockThemeSettings, ...activeSaved }
+          : defaultMockThemeSettings,
       });
     }
 
     if (url.pathname === "/api/nodes") {
-      return json(nodes);
+      const nowSec = Math.floor(Date.now() / 1000);
+      return json(
+        nodes.map((node, index) => {
+          const [cpu, load, swapPct, diskPct, , up, down, totalUp, totalDown, online] =
+            getNodeStatusProfile(index, node);
+          const memoryPct = index % 9 === 2 ? 88 : 36 + (index % 6) * 7;
+          return {
+            ...node,
+            id: node.uuid,
+            name: node.name,
+            group: node.group,
+            sort: node.weight,
+            public: true,
+            online,
+            country: node.region,
+            last_seen: nowSec,
+            metrics: {
+              uptime: 86400 * (15 + index * 8) + (index % 5) * 3600,
+              cpu,
+              load: [load, +(load * 0.88).toFixed(2), +(load * 0.76).toFixed(2)],
+              mem_total: node.mem_total,
+              mem_used: Math.round((node.mem_total * memoryPct) / 100),
+              swap_total: node.swap_total,
+              swap_used: Math.round((node.swap_total * swapPct) / 100),
+              disk_total: node.disk_total,
+              disk_used: Math.round((node.disk_total * diskPct) / 100),
+              net_rx: down,
+              net_tx: up,
+              total_rx: totalDown,
+              total_tx: totalUp,
+              tcp: 32 + (index % 8) * 14,
+              udp: 12 + (index % 5) * 6,
+              procs: 80 + (index % 10) * 12,
+            },
+          };
+        }),
+      );
     }
 
     if (url.pathname === "/api/rpc2") {
