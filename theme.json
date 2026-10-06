@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "极简立体仪表盘主题 · 适配 Monitor 探针 (v1.3.2+)",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "author": "WAOR",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -178,6 +178,27 @@
       "default": false
     },
     {
+      "key": "showTrafficPageButton",
+      "type": "boolean",
+      "label": "显示今日流量页入口按钮",
+      "help": "在首页今日流量卡片右上角显示进入流量统计页的图表按钮；若关闭，首页则暂无其他途径进入流量详情页",
+      "default": true
+    },
+    {
+      "key": "showCostSummary",
+      "type": "boolean",
+      "label": "显示资产统计页入口按钮",
+      "help": "在首页资产概览卡右上角显示进入资产统计页的钱币图标按钮；若与悬浮按钮均关闭，首页则无其他途径进入资产统计页",
+      "default": true
+    },
+    {
+      "key": "showCostSummaryFloatingButton",
+      "type": "boolean",
+      "label": "显示资产看板悬浮按钮",
+      "help": "备用入口：仅在关闭「显示资产统计页入口按钮」或未显示资产卡片时生效；若两者均关闭，首页则无其他途径进入资产统计页",
+      "default": true
+    },
+    {
       "key": "enableHomepageMultiPing",
       "type": "boolean",
       "label": "首页展示多线路 Ping 矩阵",
@@ -222,20 +243,6 @@
     {
       "type": "title",
       "label": "资产与财务"
-    },
-    {
-      "key": "showCostSummary",
-      "type": "boolean",
-      "label": "显示资产统计页入口按钮",
-      "help": "在首页资产概览卡右上角显示进入资产统计页的钱币图标按钮",
-      "default": true
-    },
-    {
-      "key": "showCostSummaryFloatingButton",
-      "type": "boolean",
-      "label": "显示资产看板悬浮按钮",
-      "help": "卡片入口关闭或无资产卡片时，在右下角提供可拖动的快捷悬浮入口",
-      "default": true
     },
     {
       "key": "showPriceForGuests",

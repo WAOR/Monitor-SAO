@@ -223,6 +223,7 @@ function HomeOverviewCards({
   trafficRatingLabels,
   bandwidthRatingLabels,
   assetRatingLabels,
+  showTrafficDetailButton = true,
   showDetailButton,
   showAssetCard,
   renewalNodes,
@@ -250,6 +251,7 @@ function HomeOverviewCards({
   trafficRatingLabels: string;
   bandwidthRatingLabels: string;
   assetRatingLabels: string;
+  showTrafficDetailButton?: boolean;
   showDetailButton: boolean;
   showAssetCard: boolean;
   renewalNodes: RenewalReminderSource[];
@@ -514,17 +516,19 @@ function HomeOverviewCards({
                 <StatMetricIcon metric="traffic" icon={TrendingUp} />
                 <span className="mao-stat-label">今日流量</span>
               </div>
-              <Link
-                to="/traffic"
-                className="overview-card-action mao-stat-action"
-                aria-label="打开今日流量统计页"
-                title="今日流量详情"
-                onPointerEnter={onWarmTraffic}
-                onFocus={onWarmTraffic}
-                onClick={onWarmTraffic}
-              >
-                <TrafficBarsIcon size={14} />
-              </Link>
+              {showTrafficDetailButton && (
+                <Link
+                  to="/traffic"
+                  className="overview-card-action mao-stat-action"
+                  aria-label="打开今日流量统计页"
+                  title="今日流量详情"
+                  onPointerEnter={onWarmTraffic}
+                  onFocus={onWarmTraffic}
+                  onClick={onWarmTraffic}
+                >
+                  <TrafficBarsIcon size={14} />
+                </Link>
+              )}
             </div>
             <div className="mao-stat-value">
               {trafficValue}{trafficUnit && <span className="mao-stat-unit"> {trafficUnit}</span>}
@@ -999,6 +1003,8 @@ export function NodeGrid() {
   }, [renewalNodes, groupFilteredNodes, themeSettings.isReady, themeSettings.overviewFollowGroup]);
   const showHomeOverview = themeSettings.isReady && themeSettings.showHomeOverview;
   const showTrafficPopover = themeSettings.isReady && themeSettings.showTodayTrafficPopover;
+  const showTrafficDetailButton =
+    themeSettings.isReady ? themeSettings.showTrafficPageButton : true;
   const hasNodes = visibleMeta.length > 0;
   const loggedIn = Boolean(me?.logged_in);
   const canAccessAssets = loggedIn || themeSettings.showPriceForGuests;
@@ -1210,6 +1216,7 @@ export function NodeGrid() {
         <HomeOverviewCards
           overview={overview}
           dense={mode === "mini" || mode === "list"}
+          showTrafficDetailButton={showTrafficDetailButton}
           showDetailButton={showCostDetailButton}
           showAssetCard={showAssetCard}
           renewalNodes={overviewRenewalNodes}
