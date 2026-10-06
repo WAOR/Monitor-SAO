@@ -266,8 +266,8 @@
       "key": "showTrafficRating",
       "type": "boolean",
       "label": "显示今日流量评级",
-      "help": "在首页今日流量卡片底部显示用量评级标签",
-      "default": true
+      "help": "在首页「今日流量」指标卡片底部显示用量评级标签",
+      "default": false
     },
     {
       "key": "trafficRatingLabels",
@@ -280,8 +280,8 @@
       "key": "showAssetRating",
       "type": "boolean",
       "label": "显示资产总值评级",
-      "help": "在资产总值卡片底部显示总价值评级标签",
-      "default": true
+      "help": "在首页「资产总值」指标卡片底部显示总价值评级标签",
+      "default": false
     },
     {
       "key": "assetRatingLabels",
@@ -293,8 +293,8 @@
     {
       "key": "showBandwidthRating",
       "type": "boolean",
-      "label": "显示集群实时带宽评级",
-      "help": "在集群状态中显示实时吞吐评级徽章",
+      "label": "显示集群实时带宽徽章评级",
+      "help": "在右上角「集群状态」面板标题栏（状态健康旁）显示吞吐状态徽章",
       "default": true
     },
     {
