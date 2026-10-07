@@ -4,7 +4,9 @@ import {
   formatByteRate,
   formatByteRateLabel,
   formatClockTime,
+  formatCompactOfflineDuration,
   formatExpireDays,
+  formatOfflineDuration,
   formatTrafficRateLabel,
   formatUptimeDays,
   getExpireDaysRemaining,
@@ -205,3 +207,30 @@ describe("parseTags", () => {
     expect(parseTags("Random")).toEqual([{ label: "Random", color: "violet" }]);
   });
 });
+
+describe("formatOfflineDuration (Monitor 1.4.0+ spec)", () => {
+  it("prioritizes last_seen_ago from hub", () => {
+    expect(formatOfflineDuration(25)).toBe("刚刚离线");
+    expect(formatOfflineDuration(120)).toBe("离线 2 分钟");
+    expect(formatOfflineDuration(3600)).toBe("离线 1 小时");
+    expect(formatOfflineDuration(86400 * 3)).toBe("离线 3 天");
+  });
+
+  it("handles null / never reported as null", () => {
+    expect(formatOfflineDuration(null)).toBeNull();
+  });
+
+  it("falls back to local diff when last_seen_ago is undefined (pre-1.4.0 hub)", () => {
+    const nowMs = 1700000000 * 1000;
+    expect(formatOfflineDuration(undefined, 1700000000 - 30, nowMs)).toBe("刚刚离线");
+    expect(formatOfflineDuration(undefined, 1700000000 - 600, nowMs)).toBe("离线 10 分钟");
+  });
+
+  it("formats compact offline duration", () => {
+    expect(formatCompactOfflineDuration(20)).toBe("刚刚离线");
+    expect(formatCompactOfflineDuration(300)).toBe("离线 5m");
+    expect(formatCompactOfflineDuration(7200)).toBe("离线 2h");
+    expect(formatCompactOfflineDuration(86400 * 2)).toBe("离线 2d");
+  });
+});
+

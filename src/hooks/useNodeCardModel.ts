@@ -153,19 +153,19 @@ export function useNodeCardModel(
     const tags = parseTags(meta.tags);
     const group = showCardGroup ? meta.group?.trim() : undefined;
     const subtitle = group || "";
-    const compactFooterTags = tags.filter(
+    const filteredTags = tags.filter(
       (tag) => !subtitle || tag.label.trim().toLowerCase() !== subtitle.toLowerCase(),
     );
-    const fallbackFooterTags =
-      tags.length > 0
-        ? tags
-        : group
+    const footerTags =
+      filteredTags.length > 0
+        ? filteredTags
+        : !subtitle && group
           ? [{ label: group, color: "gray" }]
           : [];
     return {
-      tags,
-      footerTags: fallbackFooterTags,
-      compactFooterTags,
+      tags: filteredTags,
+      footerTags,
+      compactFooterTags: footerTags,
       subtitle,
       expire: formatExpireDays(meta.expired_at, now, meta.expires_in),
       expireColor: getExpireTextColor(meta.expired_at, now, meta.expires_in),

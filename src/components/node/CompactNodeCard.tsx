@@ -38,6 +38,7 @@ import {
   pingEmptyLabels,
   TRAFFIC_SLIVER_RATIO,
 } from "./nodeCardShared";
+import { formatCompactOfflineDuration } from "@/utils/format";
 import { IpStackBadges } from "./IpStackBadges";
 import { NodeTodayTrafficPopover } from "./NodeTodayTrafficPopover";
 import type {
@@ -701,7 +702,7 @@ export const CompactNodeCard = memo(function CompactNodeCard({
     ping,
     pingBuckets,
     homepagePingLines,
-    compactFooterTags: footerTags,
+    footerTags,
     subtitle,
     compactRenewalPrice,
     isPriceVisible,
@@ -722,8 +723,15 @@ export const CompactNodeCard = memo(function CompactNodeCard({
   const showBilling = themeSettings.isReady && themeSettings.compactShowBilling;
   const showUptime = themeSettings.isReady && themeSettings.compactShowUptime;
   const showConnections = themeSettings.isReady && themeSettings.showConnections;
-  // 开关关闭或节点离线时,完全跳过格式化工作。
-  const uptimeLabel = showUptime && !isOffline ? formatCompactUptime(node.uptime) : "";
+  // 开关关闭时跳过；离线时显示根据 hub 时钟或上报差值计算的离线时长。
+  const uptimeLabel = showUptime
+    ? isOffline
+      ? formatCompactOfflineDuration(
+          node.last_seen_ago,
+          node.updatedAt > 0 ? node.updatedAt / 1000 : null,
+        ) || "离线"
+      : formatCompactUptime(node.uptime)
+    : "";
 
   return (
     <article

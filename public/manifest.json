@@ -1,17 +1,24 @@
 {
   "id": "/",
-  "name": "Komari Monitor",
-  "short_name": "Komari",
-  "description": "A Komari server monitor.",
+  "name": "SAO Monitor",
+  "short_name": "SAO",
+  "description": "SAO Monitor Theme · 极简立体仪表盘主题",
   "lang": "zh-CN",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#09090b",
+  "theme_color": "#f4f5f7",
   "icons": [
     {
-      "src": "/favicon.ico",
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ]

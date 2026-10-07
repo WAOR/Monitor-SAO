@@ -606,6 +606,7 @@ export function installDevMockApi() {
     showCardGroup: true,
     enableHomeSort: true,
     showTrafficPageButton: true,
+    showTrafficPageForGuests: false,
     showCostSummary: true,
     showCostSummaryFloatingButton: true,
     showPriceForGuests: false,
@@ -794,7 +795,8 @@ export function installDevMockApi() {
             public: true,
             online,
             country: node.region,
-            last_seen: nowSec,
+            last_seen: online ? nowSec : nowSec - 300 - index * 60,
+            last_seen_ago: online ? 0 : 300 + index * 60,
             metrics: {
               uptime: 86400 * (15 + index * 8) + (index % 5) * 3600,
               cpu,

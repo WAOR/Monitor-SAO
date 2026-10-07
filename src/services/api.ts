@@ -329,7 +329,7 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
     // 服务端官方配置成功获取，服务端为绝对唯一权威源：
     // 1. 服务端配置完整继承
     // 2. 本地存储仅保留非 schema 的复杂扩展数据（如 costPremiums/homepagePingBindings 等，若服务端未存储）
-    // 3. 官方 schema 字段一律以服务端为准；若服务端未返回或已清空（如 notice），绝不允许本地旧缓存死灰复燃！
+    // 3. 官方 schema 字段一律以服务端为准；若服务端未返回或已清空（如 adminNickname），绝不允许本地旧缓存死灰复燃！
     mergedSettings = { ...serverSettings };
 
     for (const [key, val] of Object.entries(localSettings)) {
@@ -338,7 +338,7 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
       }
     }
 
-    // 同步刷新本地存储，清理掉已被服务端删除或修改的 schema 字段（如已清空的公告 notice、昵称等）
+    // 同步刷新本地存储，清理掉已被服务端删除或修改的 schema 字段（如已清空的昵称等）
     if (typeof window !== "undefined" && window.localStorage) {
       try {
         let localDirty = false;

@@ -381,8 +381,22 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let isStarted = false;
 let refCount = 0;
+let fetchSeq = 0;
+
+async function frameText(data: string | Blob): Promise<string> {
+  if (typeof data === "string") return data;
+  if (typeof DecompressionStream === "function" && data instanceof Blob) {
+    const stream = data.stream().pipeThrough(new DecompressionStream("gzip"));
+    return new Response(stream).text();
+  }
+  if (data instanceof Blob) {
+    return data.text();
+  }
+  return String(data);
+}
 
 function fetchOnce() {
+  const currentSeq = ++fetchSeq;
   const early =
     typeof window !== "undefined"
       ? (window as unknown as { __EARLY_DATA__?: { nodes?: Promise<{ nodes?: unknown[] } | null> | null } })
@@ -408,11 +422,15 @@ function fetchOnce() {
 
   fetchPromise
     .then((d) => {
+      if (currentSeq !== fetchSeq) return;
+      if (typeof document !== "undefined" && document.hidden) return;
       if (d) {
         applyMonitorNodes(d);
       }
     })
     .catch(() => {
+      if (currentSeq !== fetchSeq) return;
+      if (typeof document !== "undefined" && document.hidden) return;
       state.failureStreak += 1;
       storeStatusSnapshot = {
         failureStreak: state.failureStreak,
@@ -440,8 +458,11 @@ function startWsConnection() {
     return;
   }
 
+  // 1.4.0+ 新特性：支持 gzip 压缩二进制帧（?gzip）。不支持 DecompressionStream 时回退到未压缩
+  const canGzip = typeof DecompressionStream === "function";
+  const gzipQuery = canGzip ? "?gzip" : "";
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+  const wsUrl = `${protocol}//${window.location.host}/api/ws${gzipQuery}`;
 
   try {
     wsSocket = new WebSocket(wsUrl);
@@ -450,17 +471,27 @@ function startWsConnection() {
     return;
   }
 
+  // 解压是异步的，后到的帧可能先解完，维护 Promise 链按序处理
+  let decodeQueue = Promise.resolve();
+
   wsSocket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      if (data) {
-        applyMonitorNodes(data);
-        if (pollTimer) {
-          clearInterval(pollTimer);
-          pollTimer = null;
+    decodeQueue = decodeQueue
+      .then(async () => {
+        const text = await frameText(event.data);
+        // 连接关闭或重置后才解完的帧丢弃
+        if (!wsSocket || wsSocket.readyState !== WebSocket.OPEN) return;
+        const data = JSON.parse(text);
+        if (data) {
+          applyMonitorNodes(data);
+          if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
         }
-      }
-    } catch {}
+      })
+      .catch((e) => {
+        console.warn("[Monitor-SAO] 解码 WS 帧失败:", e);
+      });
   };
 
   wsSocket.onerror = () => {
@@ -469,14 +500,48 @@ function startWsConnection() {
 
   wsSocket.onclose = () => {
     if (!isStarted) return;
+    if (typeof document !== "undefined" && document.hidden) return;
     if (!pollTimer) pollTimer = setInterval(fetchOnce, 2000);
     reconnectTimer = setTimeout(startWsConnection, 3000);
   };
 }
 
+function handleVisibilityChange() {
+  if (typeof document === "undefined") return;
+  if (document.hidden) {
+    // 页面切到后台：关闭推送、停止轮询与重连，丢弃挂起前在途请求
+    if (wsSocket) {
+      wsSocket.close();
+      wsSocket = null;
+    }
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  } else {
+    // 切回前台：立即拉取一次 /api/nodes 并重新建立连接
+    if (isStarted && refCount > 0) {
+      fetchOnce();
+      if (isMockMode()) {
+        if (!pollTimer) pollTimer = setInterval(fetchOnce, 2000);
+      } else {
+        startWsConnection();
+      }
+    }
+  }
+}
+
 function startStore() {
   if (isStarted) return;
   isStarted = true;
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+  }
 
   fetchOnce();
   if (isMockMode()) {
@@ -488,6 +553,9 @@ function startStore() {
 
 function stopStore() {
   isStarted = false;
+  if (typeof document !== "undefined") {
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }
   if (wsSocket) {
     wsSocket.close();
     wsSocket = null;

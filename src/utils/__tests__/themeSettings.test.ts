@@ -77,17 +77,18 @@ describe("normalizeThemeSettings", () => {
     expect(normalizeThemeSettings({ showPriceForGuests: "yes" } as never).showPriceForGuests).toBe(false);
   });
 
+  it("defaults showTrafficPageForGuests to false unless explicitly enabled", () => {
+    expect(normalizeThemeSettings({}).showTrafficPageForGuests).toBe(false);
+    expect(normalizeThemeSettings({ showTrafficPageForGuests: true }).showTrafficPageForGuests).toBe(true);
+    expect(normalizeThemeSettings({ showTrafficPageForGuests: false }).showTrafficPageForGuests).toBe(false);
+    expect(normalizeThemeSettings({ showTrafficPageForGuests: "yes" } as never).showTrafficPageForGuests).toBe(false);
+  });
+
   it("parses hiddenNodes from a delimited string and dedupes", () => {
     expect(normalizeThemeSettings({}).hiddenNodes).toEqual([]);
     expect(
       normalizeThemeSettings({ hiddenNodes: "节点A, 节点A\nuuid-1；节点B" } as never).hiddenNodes,
     ).toEqual(["节点A", "uuid-1", "节点B"]);
-  });
-
-  it("normalizes notice string and trims whitespace", () => {
-    expect(normalizeThemeSettings({}).notice).toBe("");
-    expect(normalizeThemeSettings({ notice: "  重要维护公告  " }).notice).toBe("重要维护公告");
-    expect(normalizeThemeSettings({ notice: 123 } as never).notice).toBe("");
   });
 
   it("normalizes adminNickname string, trims whitespace and limits length", () => {

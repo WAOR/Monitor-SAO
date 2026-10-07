@@ -18,7 +18,6 @@ import {
 import { saveAdminUsername } from "@/services/api";
 import type { HomeNodeSummary } from "@/services/wsStore";
 import { Flag } from "@/components/ui/Flag";
-import { NoticeBanner } from "@/components/ui/NoticeBanner";
 import { StatMetricIcon } from "../ui/StatMetricIcon";
 import { FloatingAssetButton } from "@/components/cost/FloatingAssetButton";
 import { ClusterHeatmap } from "@/components/node/ClusterHeatmap";
@@ -1003,10 +1002,11 @@ export function NodeGrid() {
   }, [renewalNodes, groupFilteredNodes, themeSettings.isReady, themeSettings.overviewFollowGroup]);
   const showHomeOverview = themeSettings.isReady && themeSettings.showHomeOverview;
   const showTrafficPopover = themeSettings.isReady && themeSettings.showTodayTrafficPopover;
-  const showTrafficDetailButton =
-    themeSettings.isReady ? themeSettings.showTrafficPageButton : true;
-  const hasNodes = visibleMeta.length > 0;
   const loggedIn = Boolean(me?.logged_in);
+  const canAccessTraffic = loggedIn || themeSettings.showTrafficPageForGuests;
+  const showTrafficDetailButton =
+    (themeSettings.isReady ? themeSettings.showTrafficPageButton : true) && canAccessTraffic;
+  const hasNodes = visibleMeta.length > 0;
   const canAccessAssets = loggedIn || themeSettings.showPriceForGuests;
   // 卡内入口与悬浮入口互斥，避免重复操作入口。
   const showAssetCard = showHomeOverview && hasNodes;
@@ -1211,7 +1211,6 @@ export function NodeGrid() {
     <>
       {showCostFloatingButton && <FloatingAssetButton />}
       <HomeBrand siteName={siteName} />
-      <NoticeBanner notice={themeSettings.notice} />
       {showHomeOverview && (
         <HomeOverviewCards
           overview={overview}

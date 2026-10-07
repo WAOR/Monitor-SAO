@@ -115,22 +115,22 @@ describe("Monitor API Service", () => {
             ok: true,
             status: 200,
             headers: new Headers({ "content-type": "application/json" }),
-            text: async () => JSON.stringify({ notice: "Old Notice" }),
+            text: async () => JSON.stringify({ adminNickname: "Old Nick" }),
           };
         }
         return { ok: false, status: 404 };
       });
 
-      await saveThemeSettings({ notice: "New Notice", desktopNodeViewMode: "compact" });
+      await saveThemeSettings({ adminNickname: "New Nick", desktopNodeViewMode: "compact" });
       expect(putBody).not.toBeNull();
       const parsed = JSON.parse(putBody!);
-      expect(parsed.notice).toBe("New Notice");
+      expect(parsed.adminNickname).toBe("New Nick");
       expect(parsed.desktopNodeViewMode).toBe("compact");
     });
 
-    it("clears stale local notice when notice is cleared or omitted on server", async () => {
-      saveLocalThemeSettings({ notice: "Old Stale Notice", defaultAppearance: "dark" });
-      expect(getLocalThemeSettings().notice).toBe("Old Stale Notice");
+    it("clears stale local settings when field is cleared or omitted on server", async () => {
+      saveLocalThemeSettings({ adminNickname: "Old Stale Nick", defaultAppearance: "dark" });
+      expect(getLocalThemeSettings().adminNickname).toBe("Old Stale Nick");
 
       global.fetch = vi.fn().mockImplementation(async (url: string) => {
         if (url === "/api/me") {
@@ -146,7 +146,7 @@ describe("Monitor API Service", () => {
             ok: true,
             status: 200,
             headers: new Headers({ "content-type": "application/json" }),
-            // Notice is omitted or empty on server
+            // adminNickname is omitted or empty on server
             json: async () => ({ defaultAppearance: "dark" }),
           };
         }
@@ -154,10 +154,10 @@ describe("Monitor API Service", () => {
       });
 
       const pub = await getPublic();
-      // Server is authoritative: notice must be empty string
-      expect(pub.theme_settings.notice).toBe("");
-      // Local storage must also be pruned to prevent zombie notice
-      expect(getLocalThemeSettings().notice).toBeUndefined();
+      // Server is authoritative: adminNickname must be empty string
+      expect(pub.theme_settings.adminNickname).toBe("");
+      // Local storage must also be pruned to prevent zombie setting
+      expect(getLocalThemeSettings().adminNickname).toBeUndefined();
     });
   });
 

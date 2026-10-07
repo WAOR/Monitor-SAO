@@ -213,3 +213,61 @@ export function parseTags(raw: string | undefined | null): Array<{ label: string
       return { label: item, color: inferPlainTagColor(item) };
     });
 }
+
+/**
+ * 格式化节点离线时长（极简探针 1.4.0+ 规范）
+ *
+ * 规范要点：
+ * 1. 优先使用 hub 计算的 last_seen_ago（秒数，按 hub 时钟计算），不拿 last_seen 减客户端时间，
+ *    避免双系统、东八区时差或访客电脑时间不准导致算出负数或刚离线就显示离线 8 小时。
+ * 2. 旧版 hub (1.3.2 及更早) 没有该 key 时，降级使用客户端时钟与 lastSeenSec 计算差值。
+ * 3. 从未上报过时返回 null。
+ */
+export function formatOfflineDuration(
+  lastSeenAgo?: number | null,
+  lastSeenSec?: number | null,
+  nowMs = Date.now(),
+): string | null {
+  let seconds: number | null = null;
+  if (lastSeenAgo !== undefined) {
+    if (lastSeenAgo === null) return null;
+    seconds = Math.max(0, Math.floor(lastSeenAgo));
+  } else if (lastSeenSec && lastSeenSec > 0) {
+    const diff = Math.floor(nowMs / 1000) - lastSeenSec;
+    seconds = Math.max(0, diff);
+  }
+
+  if (seconds == null) return null;
+  if (seconds < 60) return "刚刚离线";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `离线 ${minutes} 分钟`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `离线 ${hours} 小时`;
+  const days = Math.floor(hours / 24);
+  return `离线 ${days} 天`;
+}
+
+export function formatCompactOfflineDuration(
+  lastSeenAgo?: number | null,
+  lastSeenSec?: number | null,
+  nowMs = Date.now(),
+): string | null {
+  let seconds: number | null = null;
+  if (lastSeenAgo !== undefined) {
+    if (lastSeenAgo === null) return null;
+    seconds = Math.max(0, Math.floor(lastSeenAgo));
+  } else if (lastSeenSec && lastSeenSec > 0) {
+    const diff = Math.floor(nowMs / 1000) - lastSeenSec;
+    seconds = Math.max(0, diff);
+  }
+
+  if (seconds == null) return null;
+  if (seconds < 60) return "刚刚离线";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `离线 ${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `离线 ${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `离线 ${days}d`;
+}
+

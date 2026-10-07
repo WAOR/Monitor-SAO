@@ -35,8 +35,8 @@ if (existsSync(previewPath)) {
 }
 
 try {
-  // 生成标准 theme.tar.gz (支持直接拖拽进 Monitor 面板)
-  execSync(`tar -czf "${tarGzName}" ${filesToPack.map((f) => `"${f}"`).join(" ")}`, {
+  // 生成标准 theme.tar.gz (支持直接拖拽进 Monitor 面板，排除 macOS 隐藏文件)
+  execSync(`tar --exclude='.DS_Store' -czf "${tarGzName}" ${filesToPack.map((f) => `"${f}"`).join(" ")}`, {
     cwd: root,
     stdio: "inherit",
   });

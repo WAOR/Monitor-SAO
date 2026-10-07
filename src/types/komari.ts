@@ -60,6 +60,7 @@ export const NodeInfoSchema = z
     tags: looseString.default(""),
     public_remark: looseString.default(""),
     expires_in: z.number().nullable().optional(),
+    last_seen_ago: z.number().nullable().optional(),
     traffic_limit: looseNumber.default(0),
     traffic_limit_type: looseString.default(""),
     ipv4: looseString.default(""),
@@ -108,6 +109,7 @@ export interface NodeMetrics {
   connectionsTcp: number;
   connectionsUdp: number;
   updatedAt: number;
+  last_seen_ago?: number | null;
 }
 
 export type MatrixColorTheme = "default" | "eva";
@@ -152,6 +154,7 @@ export interface ThemeSettings {
   homeSortField?: "default" | "name" | "speed" | "traffic" | "price";
   homeSortDirection?: "asc" | "desc";
   showTrafficPageButton?: boolean;
+  showTrafficPageForGuests?: boolean;
   showCostSummary?: boolean;
   showCostSummaryFloatingButton?: boolean;
   showPriceForGuests?: boolean;
@@ -175,7 +178,6 @@ export interface ThemeSettings {
     number | { amount?: number; paidCny?: number; acquiredAt?: string }
   >;
   costRateApiUrl?: string;
-  notice?: string;
   adminNickname?: string;
 }
 

@@ -10,6 +10,7 @@ import {
 } from "./instanceTodayTrafficFormat";
 import {
   formatBytes,
+  formatOfflineDuration,
   formatUptimeDays,
 } from "@/utils/format";
 import { resolveTrafficUsage } from "@/utils/traffic";
@@ -55,6 +56,13 @@ export function InstanceDetails({
   );
   const lastUpdated =
     metrics.updatedAt > 0 ? TIME_FORMATTER.format(metrics.updatedAt) : "—";
+  const offlineDuration = !isOnline
+    ? formatOfflineDuration(
+        meta.last_seen_ago ?? metrics.last_seen_ago,
+        metrics.updatedAt > 0 ? metrics.updatedAt / 1000 : null,
+        now,
+      )
+    : null;
   const trimmedName = meta.name?.trim();
   const panelTitle = trimmedName ? `${trimmedName} 信息` : "实例信息";
 
@@ -63,13 +71,18 @@ export function InstanceDetails({
       title={panelTitle}
       titleAction={<InstanceSwitcher currentUuid={uuid} />}
       description={
-        isOnline ? undefined : "节点当前离线，以下展示最近一次上报的缓存数据。"
+        isOnline
+          ? undefined
+          : `节点当前离线${offlineDuration ? `（${offlineDuration}）` : ""}，以下展示最近一次上报的缓存数据。`
       }
     >
       <div className="instance-info-groups">
         <div className="instance-info-group">
           <div className="instance-info-group-title">系统</div>
-          <InfoRow label="状态" value={isOnline ? "在线" : "离线"} />
+          <InfoRow
+            label="状态"
+            value={isOnline ? "在线" : offlineDuration ? `离线 (${offlineDuration})` : "离线"}
+          />
           {meta.group ? <InfoRow label="分组" value={meta.group} /> : null}
           {meta.public_remark ? (
             <InfoRow label="公开备注" value={meta.public_remark} />

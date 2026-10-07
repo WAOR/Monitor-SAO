@@ -60,6 +60,7 @@ export interface MonitorNode {
   remark?: string;
   public_remark?: string;
   expires_in?: number | null;
+  last_seen_ago?: number | null;
 }
 
 export interface MonitorMe {
@@ -250,6 +251,7 @@ export function convertMonitorNodeToInfo(node: MonitorNode): NodeInfo {
     tags: "",
     public_remark: (typeof node.public_remark === "string" ? node.public_remark : node.remark) || "",
     expires_in: node.expires_in !== undefined ? node.expires_in : undefined,
+    last_seen_ago: node.last_seen_ago !== undefined ? node.last_seen_ago : undefined,
     traffic_limit: node.traffic_limit ?? 0,
     traffic_limit_type: node.traffic_mode || "",
     ipv4: node.ip || "",
@@ -294,6 +296,7 @@ export function convertMonitorNodeToMetrics(node: MonitorNode): NodeMetrics {
       connectionsTcp: 0,
       connectionsUdp: 0,
       updatedAt: (node.last_seen || 0) * 1000,
+      last_seen_ago: node.last_seen_ago !== undefined ? node.last_seen_ago : undefined,
     };
   }
 
@@ -325,5 +328,6 @@ export function convertMonitorNodeToMetrics(node: MonitorNode): NodeMetrics {
     connectionsTcp: m.tcp ?? 0,
     connectionsUdp: m.udp ?? 0,
     updatedAt: (node.last_seen || 0) * 1000,
+    last_seen_ago: node.last_seen_ago !== undefined ? node.last_seen_ago : undefined,
   };
 }

@@ -1,8 +1,8 @@
 {
   "name": "SAO",
   "short": "sao",
-  "description": "极简立体仪表盘主题 · 适配 Monitor 探针 (v1.3.2+)",
-  "version": "1.1.2",
+  "description": "极简立体仪表盘主题 · 适配 Monitor 探针 (v1.4.0+)",
+  "version": "1.1.3",
   "author": "WAOR",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -181,22 +181,36 @@
       "key": "showTrafficPageButton",
       "type": "boolean",
       "label": "显示今日流量页入口按钮",
-      "help": "在首页今日流量卡片右上角显示进入流量统计页的图表按钮；若关闭，首页则暂无其他途径进入流量详情页",
+      "help": "在首页今日流量卡片右上角显示进入流量统计页的图表按钮；若希望访客可见需同步开启「向访客显示流量入口按钮」",
       "default": true
+    },
+    {
+      "key": "showTrafficPageForGuests",
+      "type": "boolean",
+      "label": "向访客显示流量入口按钮",
+      "help": "默认关闭。关闭时未登录访客隐藏今日流量卡片右上角图表按钮，保持卡片无图标统一纯净；开启后访客亦可在卡片右上角点击进入流量统计页",
+      "default": false
     },
     {
       "key": "showCostSummary",
       "type": "boolean",
       "label": "显示资产统计页入口按钮",
-      "help": "在首页资产概览卡右上角显示进入资产统计页的钱币图标按钮；若与悬浮按钮均关闭，首页则无其他途径进入资产统计页",
+      "help": "在首页资产总值卡右上角显示进入资产统计页的钱币图标按钮；若未开启「向访客公开价格与资产」，该按钮仅管理员登录后可见",
       "default": true
     },
     {
       "key": "showCostSummaryFloatingButton",
       "type": "boolean",
       "label": "显示资产看板悬浮按钮",
-      "help": "备用入口：仅在关闭「显示资产统计页入口按钮」或未显示资产卡片时生效；若两者均关闭，首页则无其他途径进入资产统计页",
+      "help": "备用悬浮入口（在页面右下角显示）：仅在关闭了「资产总值」卡片右上角按钮或关闭了「显示顶部总览栏」时生效浮现，避免入口重复；同样受访客资产权限控制",
       "default": true
+    },
+    {
+      "key": "showPriceForGuests",
+      "type": "boolean",
+      "label": "向访客公开价格与资产",
+      "help": "默认关闭。独立控制财务数据是否对访客脱敏：开启后访客可见节点价格与资产总额并解锁资产入口；关闭时对访客隐藏价格并将资产显示为保密",
+      "default": false
     },
     {
       "key": "enableHomepageMultiPing",
@@ -243,13 +257,6 @@
     {
       "type": "title",
       "label": "资产与财务"
-    },
-    {
-      "key": "showPriceForGuests",
-      "type": "boolean",
-      "label": "向访客公开价格与资产",
-      "help": "开启后访客可见价格标签；关闭后对访客隐藏价格并将资产显示为保密",
-      "default": false
     },
     {
       "key": "costRateApiUrl",
@@ -321,13 +328,6 @@
       "label": "管理员显示昵称",
       "default": "",
       "help": "登录后在页面顶部总览问候语处展示（如：早上好，jerry），留空默认为 Admin"
-    },
-    {
-      "key": "notice",
-      "type": "text",
-      "label": "全站置顶横幅公告",
-      "default": "",
-      "help": "显示在首页顶部，支持多行文本，留空则不显示"
     }
   ]
 }

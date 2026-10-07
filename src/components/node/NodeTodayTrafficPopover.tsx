@@ -130,14 +130,15 @@ export function NodeTodayTrafficPopover({
     [cancelClose, cancelFocusCheck],
   );
 
+  const { dataUpdatedAt, isFetching, refetch } = traffic;
   useEffect(() => {
     if (!trafficAvailable) return;
     setTrafficActive(open);
-    if (open && Date.now() - traffic.dataUpdatedAt > 15_000 && !traffic.isFetching) {
-      void traffic.refetch();
+    if (open && Date.now() - dataUpdatedAt > 15_000 && !isFetching) {
+      void refetch();
     }
     return () => setTrafficActive(false);
-  }, [open, setTrafficActive, traffic.dataUpdatedAt, traffic.isFetching, traffic.refetch, trafficAvailable]);
+  }, [dataUpdatedAt, isFetching, open, refetch, setTrafficActive, trafficAvailable]);
 
   useEffect(() => {
     if (!open || !focusPopoverOnOpenRef.current) return;

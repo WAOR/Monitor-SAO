@@ -52,6 +52,7 @@ export interface ResolvedThemeSettings {
   homeSortField: HomeSortField;
   homeSortDirection: HomeSortDirection;
   showTrafficPageButton: boolean;
+  showTrafficPageForGuests: boolean;
   showCostSummary: boolean;
   showCostSummaryFloatingButton: boolean;
   showPriceForGuests: boolean;
@@ -71,7 +72,6 @@ export interface ResolvedThemeSettings {
   costIgnoredNodes: string[];
   costPremiums: Record<string, CostPremiumEntry>;
   costRateApiUrl: string;
-  notice: string;
   adminNickname: string;
 }
 
@@ -98,6 +98,7 @@ export const THEME_CONFIG_KEYS = [
   "compactShowBilling",
   "compactShowUptime",
   "showTrafficPageButton",
+  "showTrafficPageForGuests",
   "showCostSummary",
   "showCostSummaryFloatingButton",
   "showPriceForGuests",
@@ -110,7 +111,6 @@ export const THEME_CONFIG_KEYS = [
   "bandwidthRatingLabels",
   "enableAdminButton",
   "adminNickname",
-  "notice",
 ] as const;
 
 export const THEME_CONFIG_KEYS_SET: ReadonlySet<string> = new Set<string>(THEME_CONFIG_KEYS);
@@ -141,6 +141,7 @@ export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   homeSortField: "default",
   homeSortDirection: HOME_SORT_NATURAL_DIRECTION.default,
   showTrafficPageButton: true,
+  showTrafficPageForGuests: false,
   showCostSummary: true,
   showCostSummaryFloatingButton: true,
   showPriceForGuests: false,
@@ -160,7 +161,6 @@ export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   costIgnoredNodes: [],
   costPremiums: {},
   costRateApiUrl: DEFAULT_COST_RATE_API_URL,
-  notice: "",
   adminNickname: "",
 };
 
@@ -329,6 +329,8 @@ export function normalizeThemeSettings(
     enableHomeSort: enabledUnlessFalse(settings?.enableHomeSort),
     ...normalizeHomeSortDefault(settings?.homeSortField, settings?.homeSortDirection),
     showTrafficPageButton: enabledUnlessFalse(settings?.showTrafficPageButton),
+    // 默认关闭(向访客保密入口):关闭时未登录访客隐藏今日流量右上角图表按钮，保持卡片无图标统一纯净。
+    showTrafficPageForGuests: settings?.showTrafficPageForGuests === true,
     showCostSummary: enabledUnlessFalse(settings?.showCostSummary),
     showCostSummaryFloatingButton: enabledUnlessFalse(settings?.showCostSummaryFloatingButton),
     // 默认关闭(向访客保密):需站长在主题设置中显式开启，未开启时向访客显示为保密。
@@ -350,7 +352,6 @@ export function normalizeThemeSettings(
     costIgnoredNodes: normalizeCostIgnoredNodes(settings?.costIgnoredNodes),
     costPremiums: normalizeCostPremiums(settings?.costPremiums),
     costRateApiUrl: normalizeCostRateApiUrl(settings?.costRateApiUrl),
-    notice: typeof settings?.notice === "string" ? settings.notice.trim() : "",
     adminNickname:
       typeof settings?.adminNickname === "string"
         ? settings.adminNickname.replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 40)
