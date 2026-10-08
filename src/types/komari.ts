@@ -288,6 +288,8 @@ export interface LoadRecordsResponse {
   rangeStartMs?: number;
   rangeEndMs?: number;
   intervalSeconds?: number;
+  hasConnectionHistory?: boolean;
+  hasProcessHistory?: boolean;
 }
 
 export interface PingRecordsResponse {

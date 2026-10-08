@@ -427,6 +427,17 @@ export async function getLoadRecords(
 
   try {
     const data = await apiFetch<MonitorMetricsHistoryResponse>(path, options);
+    const hasConnectionHistory = (data.metrics ?? []).some(
+      (m: MonitorHistoryPoint) =>
+        (typeof m.tcp === "number" && m.tcp > 0) ||
+        (typeof m.connections === "number" && m.connections > 0),
+    );
+    const hasProcessHistory = (data.metrics ?? []).some(
+      (m: MonitorHistoryPoint) =>
+        (typeof m.procs === "number" && m.procs > 0) ||
+        (typeof m.process === "number" && m.process > 0),
+    );
+
     const records: LoadRecord[] = (data.metrics ?? []).map((m: MonitorHistoryPoint) => ({
       cpu: m.cpu,
       cpu_max: m.cpu_max,
@@ -435,7 +446,7 @@ export async function getLoadRecords(
       gpu: 0,
       ram: m.mem_used,
       ram_total: 0,
-      swap: 0,
+      swap: typeof m.swap_used === "number" ? m.swap_used : 0,
       swap_total: 0,
       load: 0,
       temp: 0,
@@ -445,9 +456,9 @@ export async function getLoadRecords(
       net_out: m.net_tx,
       net_total_up: 0,
       net_total_down: 0,
-      process: 0,
-      connections: 0,
-      connections_udp: 0,
+      process: typeof m.procs === "number" ? m.procs : (m.process ?? 0),
+      connections: typeof m.tcp === "number" ? m.tcp : (m.connections ?? 0),
+      connections_udp: typeof m.udp === "number" ? m.udp : (m.connections_udp ?? 0),
       time: m.ts * 1000,
       client: uuid,
     }));
@@ -455,6 +466,8 @@ export async function getLoadRecords(
     return {
       count: records.length,
       records,
+      hasConnectionHistory,
+      hasProcessHistory,
     };
   } catch (_error) {
     return {

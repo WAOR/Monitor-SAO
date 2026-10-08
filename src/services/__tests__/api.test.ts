@@ -243,6 +243,41 @@ describe("Monitor API Service", () => {
       expect(res.records[0].minutes).toBe(60);
       expect(res.records[0].step).toBe(3600);
       expect(res.records[0].time).toBe(1700000000 * 1000);
+      expect(res.hasConnectionHistory).toBe(false);
+      expect(res.hasProcessHistory).toBe(false);
+    });
+
+    it("detects and maps connection and process history when provided by backend", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          step: 60,
+          metrics: [
+            {
+              ts: 1700000000,
+              cpu: 10,
+              mem_used: 512,
+              disk_used: 1024,
+              net_rx: 50,
+              net_tx: 60,
+              tcp: 25,
+              udp: 5,
+              procs: 90,
+              swap_used: 64,
+            },
+          ],
+        }),
+      });
+
+      const res = await getLoadRecords("1", 1);
+      expect(res.count).toBe(1);
+      expect(res.hasConnectionHistory).toBe(true);
+      expect(res.hasProcessHistory).toBe(true);
+      expect(res.records[0].connections).toBe(25);
+      expect(res.records[0].connections_udp).toBe(5);
+      expect(res.records[0].process).toBe(90);
+      expect(res.records[0].swap).toBe(64);
     });
 
     it("fetches ping metrics history and probes", async () => {

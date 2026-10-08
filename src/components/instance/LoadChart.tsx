@@ -497,6 +497,31 @@ export function LoadChart({
     [data, isRealtime, points],
   );
 
+  const hasConnectionHistory = useMemo(
+    () =>
+      Boolean(
+        data?.hasConnectionHistory ||
+          (data?.records ?? []).some(
+            (r) =>
+              (typeof r.connections === "number" && r.connections > 0) ||
+              (typeof r.connections_udp === "number" && r.connections_udp > 0),
+          ),
+      ),
+    [data],
+  );
+  const hasProcessHistory = useMemo(
+    () =>
+      Boolean(
+        data?.hasProcessHistory ||
+          (data?.records ?? []).some((r) => typeof r.process === "number" && r.process > 0),
+      ),
+    [data],
+  );
+
+  const showConnections = isRealtime || hasConnectionHistory;
+  const showProcess = isRealtime || hasProcessHistory;
+  const isFourUp = !showConnections && !showProcess;
+
   if (isLoading) {
     return <InstanceChartLoading title="负载图表" />;
   }
@@ -561,7 +586,7 @@ export function LoadChart({
       }
       className="instance-chart-panel"
     >
-      <div className="instance-chart-grid">
+      <div className={`instance-chart-grid ${isFourUp ? "is-four-up" : ""}`}>
         <ChartCard
           icon={<Cpu size={13} />}
           title="CPU"
@@ -665,54 +690,58 @@ export function LoadChart({
           axisSize={78}
           xRange={requestedXRange}
         />
-        <ChartCard
-          icon={<Workflow size={13} />}
-          title="连接数"
-          uuid={uuid}
-          value={
-            isRealtime && node
-              ? `TCP ${node.connectionsTcp} / UDP ${node.connectionsUdp}`
-              : latestHistoryRecord
-                ? `TCP ${Math.round(latestHistoryRecord.connections ?? 0)} / UDP ${Math.round(latestHistoryRecord.connections_udp ?? 0)}`
-                : "—"
-          }
-          note="连接"
-          points={points}
-          keys={CONNECTION_KEYS}
-          colors={CONNECTION_COLORS}
-          resolvedAppearance={resolvedAppearance}
-          rangeHours={hours}
-          spanGaps={connectNulls}
-          axisKind="count"
-          xRange={requestedXRange}
-        />
-        <ChartCard
-          icon={<Gauge size={13} />}
-          title="进程"
-          uuid={uuid}
-          value={
-            isRealtime && node
-              ? node.process.toString()
-              : latestHistoryRecord
-                ? Math.round(latestHistoryRecord.process ?? 0).toString()
-                : "—"
-          }
-          note={
-            isRealtime && node
-              ? `负载 ${node.load1.toFixed(2)} | ${node.load5.toFixed(2)} | ${node.load15.toFixed(2)}`
-              : latestHistoryRecord
-                ? `负载 ${(latestHistoryRecord.load ?? 0).toFixed(2)}`
-                : "—"
-          }
-          points={points}
-          keys={PROCESS_KEYS}
-          colors={PROCESS_COLORS}
-          resolvedAppearance={resolvedAppearance}
-          rangeHours={hours}
-          spanGaps={connectNulls}
-          axisKind="count"
-          xRange={requestedXRange}
-        />
+        {showConnections && (
+          <ChartCard
+            icon={<Workflow size={13} />}
+            title="连接数"
+            uuid={uuid}
+            value={
+              isRealtime && node
+                ? `TCP ${node.connectionsTcp} / UDP ${node.connectionsUdp}`
+                : latestHistoryRecord
+                  ? `TCP ${Math.round(latestHistoryRecord.connections ?? 0)} / UDP ${Math.round(latestHistoryRecord.connections_udp ?? 0)}`
+                  : "—"
+            }
+            note="连接"
+            points={points}
+            keys={CONNECTION_KEYS}
+            colors={CONNECTION_COLORS}
+            resolvedAppearance={resolvedAppearance}
+            rangeHours={hours}
+            spanGaps={connectNulls}
+            axisKind="count"
+            xRange={requestedXRange}
+          />
+        )}
+        {showProcess && (
+          <ChartCard
+            icon={<Gauge size={13} />}
+            title="进程"
+            uuid={uuid}
+            value={
+              isRealtime && node
+                ? node.process.toString()
+                : latestHistoryRecord
+                  ? Math.round(latestHistoryRecord.process ?? 0).toString()
+                  : "—"
+            }
+            note={
+              isRealtime && node
+                ? `负载 ${node.load1.toFixed(2)} | ${node.load5.toFixed(2)} | ${node.load15.toFixed(2)}`
+                : latestHistoryRecord
+                  ? `负载 ${(latestHistoryRecord.load ?? 0).toFixed(2)}`
+                  : "—"
+            }
+            points={points}
+            keys={PROCESS_KEYS}
+            colors={PROCESS_COLORS}
+            resolvedAppearance={resolvedAppearance}
+            rangeHours={hours}
+            spanGaps={connectNulls}
+            axisKind="count"
+            xRange={requestedXRange}
+          />
+        )}
       </div>
     </InstancePanel>
   );

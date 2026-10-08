@@ -82,6 +82,13 @@ export interface MonitorHistoryPoint {
   net_rx_max?: number;
   net_tx_max?: number;
   minutes?: number;
+  tcp?: number;
+  udp?: number;
+  procs?: number;
+  process?: number;
+  connections?: number;
+  connections_udp?: number;
+  swap_used?: number;
 }
 
 export interface MonitorPingPoint {
