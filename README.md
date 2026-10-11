@@ -80,7 +80,11 @@
 | :---: | :---: |
 | <img src="./docs/images/matrix-light.png" alt="浅色模式 EVA 配色" width="100%" /> | <img src="./docs/images/matrix-dark.png" alt="深色模式 EVA 配色" width="100%" /> |
 | **开屏激光扫光与点阵文字** | **主题管理：微型点阵画板与矩阵设置** |
-| <img src="./docs/images/matrix-opening.png" alt="开屏扫光动效" width="100%" /> | <img src="./docs/images/matrix-settings.png" alt="主题设置与点阵画板" width="100%" /> |
+| <img src="./docs/images/matrix-opening.png" alt="开屏扫光动效" width="100%" /> | <img src="./docs/images/theme-manage.png" alt="主题设置与点阵画板" width="100%" /> |
+
+| **⏳ 命运石之门 (Steins;Gate) 配色方案 · 赛博故障 (Cyber Glitch) 开屏动效** |
+| :---: |
+| <img src="./docs/images/Steins;Gate+Cyber Glitch.gif" alt="Steins;Gate 配色方案与 Cyber Glitch 动效" width="100%" /> |
 
 ### 📱 移动端窄屏精细适配 (Mobile)
 | 移动端深色矩阵全貌 | 移动端开屏点阵动效 | 移动端主题管理与点阵画板 |
