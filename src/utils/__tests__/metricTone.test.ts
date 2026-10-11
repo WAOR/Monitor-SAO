@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildTrafficHeatSpectrum,
+  buildTrafficQuotaSegmentColors,
   latencyHeatColor,
   lossHeatColor,
+  resolveCustomLatencyColor,
+  resolveCustomLossColor,
+  resolveTrafficSegmentColor,
   speedRateColor,
   speedRateColorFromBytes,
+  trafficQuotaLitCount,
   trafficQuotaSegmentColor,
   trafficUsageColor,
 } from "@/utils/metricTone";
@@ -20,6 +26,50 @@ function oklchHue(color: string): number {
   return Number(match[1]);
 }
 
+
+describe("resolveCustomLatencyColor", () => {
+  it("resolves according to custom thresholds and colors", () => {
+    const thresholds = { excellent: 30, good: 70, moderate: 120, elevated: 180 };
+    const colors = {
+      excellent: "#00ff00",
+      good: "#88ff00",
+      moderate: "#ffff00",
+      elevated: "#ff8800",
+      critical: "#ff0000",
+    };
+
+    expect(resolveCustomLatencyColor(null, thresholds, colors)).toBe("var(--text-tertiary)");
+    expect(resolveCustomLatencyColor(20, thresholds, colors)).toBe("#00ff00");
+    expect(resolveCustomLatencyColor(30, thresholds, colors)).toBe("#00ff00");
+    expect(resolveCustomLatencyColor(31, thresholds, colors)).toBe("#88ff00");
+    expect(resolveCustomLatencyColor(70, thresholds, colors)).toBe("#88ff00");
+    expect(resolveCustomLatencyColor(71, thresholds, colors)).toBe("#ffff00");
+    expect(resolveCustomLatencyColor(120, thresholds, colors)).toBe("#ffff00");
+    expect(resolveCustomLatencyColor(121, thresholds, colors)).toBe("#ff8800");
+    expect(resolveCustomLatencyColor(180, thresholds, colors)).toBe("#ff8800");
+    expect(resolveCustomLatencyColor(181, thresholds, colors)).toBe("#ff0000");
+  });
+});
+
+describe("resolveCustomLossColor", () => {
+  it("resolves according to custom loss thresholds and colors", () => {
+    const thresholds = { low: 2, medium: 8 };
+    const colors = {
+      zero: "#00ff00",
+      low: "#ffff00",
+      medium: "#ff8800",
+      high: "#ff0000",
+    };
+
+    expect(resolveCustomLossColor(null, thresholds, colors)).toBe("var(--text-tertiary)");
+    expect(resolveCustomLossColor(0, thresholds, colors)).toBe("#00ff00");
+    expect(resolveCustomLossColor(1.5, thresholds, colors)).toBe("#ffff00");
+    expect(resolveCustomLossColor(2, thresholds, colors)).toBe("#ffff00");
+    expect(resolveCustomLossColor(5, thresholds, colors)).toBe("#ff8800");
+    expect(resolveCustomLossColor(8, thresholds, colors)).toBe("#ff8800");
+    expect(resolveCustomLossColor(8.1, thresholds, colors)).toBe("#ff0000");
+  });
+});
 
 describe("latencyHeatColor", () => {
   it("treats 0ms (sub-millisecond success) as the greenest latency, not neutral", () => {
@@ -137,5 +187,68 @@ describe("speedRateColor", () => {
   it("speedRateColorFromBytes routes raw bytes/sec through the unit tier", () => {
     expect(speedRateColorFromBytes(0)).toBe("var(--speed-idle)");
     expect(speedRateColorFromBytes(5 * 1024 * 1024)).toBe("var(--speed-high)");
+  });
+});
+
+describe("custom traffic spectrum interpolation", () => {
+  const customColors = {
+    start: "#00f0ff", // 电光青
+    mid: "#e0f542",   // 霓虹黄
+    high: "#ff7700",  // 橙
+    end: "#ef4444",   // 警报红
+  };
+
+  it("resolveTrafficSegmentColor anchors exactly at key points and preserves end red", () => {
+    // 0% ~ 15% 保持 start
+    expect(resolveTrafficSegmentColor(0, customColors)).toBe("#00f0ff");
+    expect(resolveTrafficSegmentColor(0.15, customColors)).toBe("#00f0ff");
+
+    // 50% 严格为 mid
+    expect(resolveTrafficSegmentColor(0.5, customColors)).toBe("#e0f542");
+
+    // 80% 严格为 high
+    expect(resolveTrafficSegmentColor(0.8, customColors)).toBe("#ff7700");
+
+    // 100% 严格为 end 警报红
+    expect(resolveTrafficSegmentColor(1.0, customColors)).toBe("#ef4444");
+    expect(resolveTrafficSegmentColor(1.5, customColors)).toBe("#ef4444");
+  });
+
+  it("interpolates smoothly without jump or abrupt cutoffs", () => {
+    // 检查 0.15 到 0.5 之间的插值
+    const colorA = resolveTrafficSegmentColor(0.3, customColors);
+    expect(colorA).toMatch(/^#[0-9a-f]{6}$/);
+
+    // 检查 0.8 到 1.0 之间的过渡色
+    const colorB = resolveTrafficSegmentColor(0.9, customColors);
+    expect(colorB).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it("buildTrafficHeatSpectrum produces a smooth linear-gradient including all 4 anchors", () => {
+    const gradient = buildTrafficHeatSpectrum(customColors);
+    expect(gradient).toContain("#00f0ff 0%");
+    expect(gradient).toContain("#00f0ff 15%");
+    expect(gradient).toContain("#e0f542 50%");
+    expect(gradient).toContain("#ff7700 80%");
+    expect(gradient).toContain("#ef4444 100%");
+  });
+
+  it("buildTrafficQuotaSegmentColors outputs 18 smoothly transitioning colors", () => {
+    const segments = buildTrafficQuotaSegmentColors(customColors);
+    expect(segments).toHaveLength(18);
+    // 第一段应在 start 附近
+    expect(segments[0]).toBe("#00f0ff");
+    // 最后一段（17.5 / 18 ≈ 0.97）应接近 end 红
+    expect(segments[17]).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it("trafficQuotaLitCount calculates correct lit segments and sentinel -1 for minimal usage", () => {
+    expect(trafficQuotaLitCount(0)).toBe(0);
+    // 极小用量返回 -1（细边哨兵值）
+    expect(trafficQuotaLitCount(0.001)).toBe(-1);
+    // 超过第一段中点 (0.5/18 ≈ 0.0278) 点亮 1 段
+    expect(trafficQuotaLitCount(0.03)).toBe(1);
+    // 100% 全部点亮 18 段
+    expect(trafficQuotaLitCount(1.0)).toBe(18);
   });
 });

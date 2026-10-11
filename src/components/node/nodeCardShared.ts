@@ -139,20 +139,44 @@ export function healthBarInteractionModel(
   };
 }
 
+import type {
+  PingLatencyColors,
+  PingLatencyThresholds,
+  PingLossColors,
+  PingLossThresholds,
+} from "@/types/komari";
+import { resolveCustomLatencyColor, resolveCustomLossColor } from "@/utils/metricTone";
+
+export interface HealthBarOptions {
+  latencyThresholds?: PingLatencyThresholds;
+  latencyColors?: PingLatencyColors;
+  lossThresholds?: PingLossThresholds;
+  lossColors?: PingLossColors;
+}
+
 const HEALTH_LOSS_BAR_HEIGHT = 0.84;
 const HEALTH_INACTIVE_BAR_HEIGHT = 0.25;
 
 export function healthBarSlotModel(
   bucket: PingOverviewBucket,
   kind: "latency" | "loss",
+  options?: HealthBarOptions,
 ): HealthBarSlotModel {
   if (kind === "latency") {
     const value = bucket.value;
     if (value != null && Number.isFinite(value) && value >= 0) {
+      const color =
+        options?.latencyThresholds || options?.latencyColors
+          ? resolveCustomLatencyColor(
+              value,
+              options?.latencyThresholds,
+              options?.latencyColors,
+            )
+          : latencyHeatColor(value);
       return {
         active: true,
         heightFraction: HEALTH_LOSS_BAR_HEIGHT,
-        color: latencyHeatColor(value),
+        color,
         alpha: 0.94,
       };
     }
@@ -165,10 +189,18 @@ export function healthBarSlotModel(
   }
   const loss = bucket.loss;
   if (loss != null && Number.isFinite(loss) && bucket.total > 0) {
+    const color =
+      options?.lossThresholds || options?.lossColors
+        ? resolveCustomLossColor(
+            loss,
+            options?.lossThresholds,
+            options?.lossColors,
+          )
+        : lossHeatColor(loss);
     return {
       active: true,
       heightFraction: HEALTH_LOSS_BAR_HEIGHT,
-      color: lossHeatColor(loss),
+      color,
       alpha: 0.94,
     };
   }

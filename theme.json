@@ -1,8 +1,8 @@
 {
   "name": "SAO",
   "short": "sao",
-  "description": "极简立体仪表盘主题 · 适配 Monitor 探针 (v1.4.0+)",
-  "version": "1.1.5",
+  "description": "极简立体仪表盘主题 · 适配极简探针 1.4.1",
+  "version": "1.2.0",
   "author": "WAOR",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -107,6 +107,14 @@
         {
           "value": "eva",
           "label": "EVA 初号机 (紫 · 荧光绿 · 橙红)"
+        },
+        {
+          "value": "cyberpunk",
+          "label": "夜之城 2077 (电光青 · 亮黄 · 绯红)"
+        },
+        {
+          "value": "divergence",
+          "label": "命运石之门 (暖杏橙 · 氖气橙 · 烈焰红橙)"
         }
       ]
     },
@@ -116,6 +124,31 @@
       "label": "方格矩阵 SAO 主题开场动画",
       "help": "进入首页时方格矩阵是否播放光束横扫与开场点阵动画",
       "default": true
+    },
+    {
+      "key": "matrixBootEffect",
+      "type": "select",
+      "label": "方格矩阵开屏动效形式",
+      "help": "设置进入首页时方格矩阵的开场显影动效",
+      "default": "laser-scan",
+      "options": [
+        {
+          "value": "laser-scan",
+          "label": "激光横扫 (Laser Scan)"
+        },
+        {
+          "value": "digital-rain",
+          "label": "数码雨流 (Digital Rain)"
+        },
+        {
+          "value": "cyber-glitch",
+          "label": "神经故障 (Cyber Glitch)"
+        },
+        {
+          "value": "divergence-flux",
+          "label": "世界线跳变 (Divergence Flux)"
+        }
+      ]
     },
     {
       "key": "matrixMockFill",

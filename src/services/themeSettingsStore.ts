@@ -9,12 +9,8 @@ let cache: Record<string, unknown> | null = null;
 
 function readStorage(): Record<string, unknown> {
   if (cache) return cache;
-  if (typeof window === "undefined" || !window.localStorage) {
-    cache = {};
-    return cache;
-  }
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
     if (!raw) {
       cache = {};
       return cache;
@@ -40,12 +36,12 @@ export function saveLocalThemeSettings(
   settings: (ThemeSettings & Record<string, unknown>) | Record<string, unknown>,
 ): void {
   cache = { ...readStorage(), ...settings };
-  if (typeof window !== "undefined" && window.localStorage) {
-    try {
+  try {
+    if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
-    } catch (error) {
-      console.warn("[Monitor-SAO] 主题设置写入本地失败", error);
     }
+  } catch (error) {
+    console.warn("[Monitor-SAO] 主题设置写入本地失败", error);
   }
   emit();
 }
@@ -55,12 +51,12 @@ export function replaceLocalThemeSettings(
   settings: (ThemeSettings & Record<string, unknown>) | Record<string, unknown>,
 ): void {
   cache = { ...settings };
-  if (typeof window !== "undefined" && window.localStorage) {
-    try {
+  try {
+    if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
-    } catch (error) {
-      console.warn("[Monitor-SAO] 主题设置替换本地失败", error);
     }
+  } catch (error) {
+    console.warn("[Monitor-SAO] 主题设置替换本地失败", error);
   }
   emit();
 }
@@ -68,11 +64,11 @@ export function replaceLocalThemeSettings(
 /** 重置本地主题设置 */
 export function resetLocalThemeSettings(): void {
   cache = {};
-  if (typeof window !== "undefined" && window.localStorage) {
-    try {
+  try {
+    if (typeof window !== "undefined") {
       window.localStorage.removeItem(STORAGE_KEY);
-    } catch {}
-  }
+    }
+  } catch {}
   emit();
 }
 

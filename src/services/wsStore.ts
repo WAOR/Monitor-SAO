@@ -458,6 +458,11 @@ function startWsConnection() {
     return;
   }
 
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+
   // 1.4.0+ 新特性：支持 gzip 压缩二进制帧（?gzip）。不支持 DecompressionStream 时回退到未压缩
   const canGzip = typeof DecompressionStream === "function";
   const gzipQuery = canGzip ? "?gzip" : "";
@@ -467,7 +472,9 @@ function startWsConnection() {
   try {
     wsSocket = new WebSocket(wsUrl);
   } catch {
+    fetchOnce();
     if (!pollTimer) pollTimer = setInterval(fetchOnce, 2000);
+    if (!reconnectTimer) reconnectTimer = setTimeout(startWsConnection, 3000);
     return;
   }
 
@@ -501,8 +508,9 @@ function startWsConnection() {
   wsSocket.onclose = () => {
     if (!isStarted) return;
     if (typeof document !== "undefined" && document.hidden) return;
+    fetchOnce();
     if (!pollTimer) pollTimer = setInterval(fetchOnce, 2000);
-    reconnectTimer = setTimeout(startWsConnection, 3000);
+    if (!reconnectTimer) reconnectTimer = setTimeout(startWsConnection, 3000);
   };
 }
 

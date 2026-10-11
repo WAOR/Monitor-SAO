@@ -458,6 +458,20 @@
               inset 0 0 5px color-mix(in srgb, var(--current-metric-color, #7c3aed) 16%, transparent);
 }
 
+:root[data-appearance="dark"] [data-palette="cyberpunk"] .mao-stat-icon-hud {
+  background: color-mix(in srgb, var(--current-metric-color, #00f0ff) 18%, rgba(13, 13, 17, 0.75));
+  border: 1px solid color-mix(in srgb, var(--current-metric-color, #fcee0a) 40%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--current-metric-color, #00f0ff) 36%, transparent),
+              inset 0 0 6px color-mix(in srgb, var(--current-metric-color, #fcee0a) 18%, transparent);
+}
+
+:root[data-appearance="dark"] [data-palette="divergence"] .mao-stat-icon-hud {
+  background: color-mix(in srgb, var(--current-metric-color, #ff7700) 18%, rgba(22, 19, 17, 0.75));
+  border: 1px solid color-mix(in srgb, var(--current-metric-color, #ff7700) 38%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--current-metric-color, #ff7700) 35%, transparent),
+              inset 0 0 5px color-mix(in srgb, var(--current-metric-color, #facc15) 18%, transparent);
+}
+
 /* 深色模式下悬停微互动：HUD 微底框微妙提亮与微光扩散 */
 :root[data-appearance="dark"] .mao-stat-card:hover .mao-stat-icon-hud {
   border-color: color-mix(in srgb, var(--current-metric-color, var(--text-primary)) 50%, transparent);
@@ -628,6 +642,56 @@
   color: #f97316;
   background: color-mix(in srgb, #f97316 15%, transparent);
   border-color: color-mix(in srgb, #f97316 35%, transparent);
+}
+
+/* 赛博朋克 2077：集群状态徽章（全健康=斯安威斯坦电光青；存在离线=夜之城警告亮黄） */
+.mao-progress-container[data-palette="cyberpunk"] .mao-status-pill.is-healthy {
+  background: color-mix(in srgb, #0891b2 10%, transparent);
+  color: #0891b2;
+  border-color: color-mix(in srgb, #0891b2 35%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="cyberpunk"] .mao-status-pill.is-healthy {
+  color: #00f0ff;
+  background: color-mix(in srgb, #00f0ff 14%, transparent);
+  border-color: color-mix(in srgb, #00f0ff 38%, transparent);
+}
+
+.mao-progress-container[data-palette="cyberpunk"] .mao-status-pill.is-warning {
+  background: color-mix(in srgb, #ca8a04 12%, transparent);
+  color: #ca8a04;
+  border-color: color-mix(in srgb, #ca8a04 35%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="cyberpunk"] .mao-status-pill.is-warning {
+  color: #fcee0a;
+  background: color-mix(in srgb, #fcee0a 15%, transparent);
+  border-color: color-mix(in srgb, #fcee0a 38%, transparent);
+}
+
+/* 命运石之门：集群状态徽章（全健康=纯正氖气暖橙；存在离线=世界线收敛警报红，彻底告别与 ACTIVE 撞金黄色） */
+.mao-progress-container[data-palette="divergence"] .mao-status-pill.is-healthy {
+  background: color-mix(in srgb, #ea580c 10%, transparent);
+  color: #ea580c;
+  border-color: color-mix(in srgb, #ea580c 35%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="divergence"] .mao-status-pill.is-healthy {
+  color: #ff7700;
+  background: color-mix(in srgb, #ff7700 15%, transparent);
+  border-color: color-mix(in srgb, #ff7700 38%, transparent);
+}
+
+.mao-progress-container[data-palette="divergence"] .mao-status-pill.is-warning {
+  background: color-mix(in srgb, #dc2626 12%, transparent);
+  color: #dc2626;
+  border-color: color-mix(in srgb, #dc2626 35%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="divergence"] .mao-status-pill.is-warning {
+  color: #ef4444;
+  background: color-mix(in srgb, #ef4444 15%, transparent);
+  border-color: color-mix(in srgb, #ef4444 38%, transparent);
 }
 
 .mao-status-dot {
@@ -963,6 +1027,96 @@
   box-shadow: 0 0 5px rgba(239, 68, 68, 0.6);
 }
 
+/* 赛博朋克 2077：低载=电光青(#00f0ff) · 中载=霓虹亮黄(#fcee0a) · 高载=超频绯红(#ff0055) · 离线=赛博警报红(#ef4444) */
+.mao-matrix-section[data-palette="cyberpunk"] .mao-heatmap-cell.is-low-load:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit),
+.mao-matrix-section[data-palette="cyberpunk"] .mao-legend-box.is-low-load {
+  background: #00f0ff;
+  box-shadow: 0 0 4px rgba(0, 240, 255, 0.4);
+}
+
+.mao-matrix-section[data-palette="cyberpunk"] .mao-heatmap-cell.is-medium-load:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit),
+.mao-matrix-section[data-palette="cyberpunk"] .mao-legend-box.is-medium-load {
+  background: #fcee0a;
+  box-shadow: 0 0 5px rgba(252, 238, 10, 0.5);
+}
+
+.mao-matrix-section[data-palette="cyberpunk"] .mao-heatmap-cell.is-high-load:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit),
+.mao-matrix-section[data-palette="cyberpunk"] .mao-legend-box.is-high-load {
+  background: #ff0055;
+  box-shadow: 0 0 6px rgba(255, 0, 85, 0.6);
+}
+
+.mao-matrix-section[data-palette="cyberpunk"] .mao-heatmap-cell.is-offline:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit) {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+}
+
+
+/* 命运石之门：低载=深邃休眠暗琥珀(#78350f) · 中载=高亮氖气放电暖橙(#ff7700，带强光晕) · 高载=电离白炽金黄(#facc15) · 离线=警报红(#ef4444) */
+.mao-matrix-section[data-palette="divergence"] .mao-heatmap-cell.is-low-load:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit),
+.mao-matrix-section[data-palette="divergence"] .mao-legend-box.is-low-load {
+  background: #6b2f0a !important;
+  border: 1px solid rgba(245, 158, 11, 0.28) !important;
+  box-shadow: none !important;
+  opacity: 0.85;
+}
+
+:root:not([data-appearance="dark"]) .mao-matrix-section[data-palette="divergence"] .mao-heatmap-cell.is-low-load:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit),
+:root:not([data-appearance="dark"]) .mao-matrix-section[data-palette="divergence"] .mao-legend-box.is-low-load {
+  background: #fdba74 !important;
+  border: 1px solid #fb923c !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+.mao-matrix-section[data-palette="divergence"] .mao-heatmap-cell.is-medium-load:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit),
+.mao-matrix-section[data-palette="divergence"] .mao-legend-box.is-medium-load {
+  background: #ff7700 !important;
+  border: 1px solid #ff9933 !important;
+  box-shadow: 0 0 8px rgba(255, 119, 0, 0.85) !important;
+  opacity: 1 !important;
+}
+
+:root:not([data-appearance="dark"]) .mao-matrix-section[data-palette="divergence"] .mao-heatmap-cell.is-medium-load:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit),
+:root:not([data-appearance="dark"]) .mao-matrix-section[data-palette="divergence"] .mao-legend-box.is-medium-load {
+  background: #f97316 !important;
+  border: 1px solid #ea580c !important;
+  box-shadow: 0 0 4px rgba(249, 115, 22, 0.4) !important;
+  opacity: 1 !important;
+}
+
+.mao-matrix-section[data-palette="divergence"] .mao-heatmap-cell.is-high-load:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit),
+.mao-matrix-section[data-palette="divergence"] .mao-legend-box.is-high-load {
+  background: #facc15 !important;
+  border: 1px solid #fef08a !important;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.95), 0 0 3px #fef08a !important;
+  opacity: 1 !important;
+}
+
+:root:not([data-appearance="dark"]) .mao-matrix-section[data-palette="divergence"] .mao-heatmap-cell.is-high-load:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit),
+:root:not([data-appearance="dark"]) .mao-matrix-section[data-palette="divergence"] .mao-legend-box.is-high-load {
+  background: #ea580c !important;
+  border: 1px solid #c2410c !important;
+  box-shadow: 0 0 5px rgba(234, 88, 12, 0.45) !important;
+  opacity: 1 !important;
+}
+
+.mao-matrix-section[data-palette="divergence"] .mao-heatmap-cell.is-offline:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit) {
+  background: #ef4444 !important;
+  border: 1px solid #f87171 !important;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.85) !important;
+  opacity: 1 !important;
+}
+
+:root:not([data-appearance="dark"]) .mao-matrix-section[data-palette="divergence"] .mao-heatmap-cell.is-offline:not(.is-sao-pixel):not(.is-sao-beam):not(.is-sao-bg):not(.is-sao-unlit) {
+  background: #ef4444 !important;
+  border: 1px solid #dc2626 !important;
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.45) !important;
+  animation: mao-pulse-offline 2s infinite ease-in-out !important;
+  opacity: 1 !important;
+}
+
+
 .mao-heatmap-cell.is-unknown {
   background: color-mix(in srgb, var(--text-tertiary) 20%, transparent);
 }
@@ -997,6 +1151,15 @@
   --matrix-boot-beam-glow: #ff9600;
   --matrix-boot-pulse-anim: sao-boot-pulse;
 
+  /* 动效专用典故色谱调度令牌 (默认经典 SAO：暖金橙 + 闪烁白炽金) */
+  --matrix-boot-fx-channel-a: #ff9600;
+  --matrix-boot-fx-channel-b: #ffd700;
+  --matrix-boot-fx-glow-a: rgba(255, 150, 0, 0.9);
+  --matrix-boot-fx-glow-b: rgba(255, 215, 0, 0.9);
+  --matrix-boot-fx-flux: #ff9600;
+  --matrix-boot-fx-flux-border: #ffd700;
+  --matrix-boot-fx-flux-glow: rgba(255, 150, 0, 0.95);
+
   /* 指标卡片 6 维标准图标色（深浅模式保持同一套色值，避免撞色） */
   --metric-connections-color: #10b981;
   --metric-cpu-color: #f59e0b;
@@ -1017,6 +1180,15 @@
   --matrix-boot-beam-glow: #7c3aed;
   --matrix-boot-pulse-anim: sao-boot-pulse-eva;
 
+  /* 动效专用典故色谱 (EVA：初号机深紫 ✕ 暴走荧光绿，电涌紫) */
+  --matrix-boot-fx-channel-a: #7c3aed;
+  --matrix-boot-fx-channel-b: #00ff66;
+  --matrix-boot-fx-glow-a: rgba(124, 58, 237, 0.92);
+  --matrix-boot-fx-glow-b: rgba(0, 255, 102, 0.92);
+  --matrix-boot-fx-flux: #a855f7;
+  --matrix-boot-fx-flux-border: #d8b4fe;
+  --matrix-boot-fx-flux-glow: rgba(168, 85, 247, 0.95);
+
   /* 指标卡片 EVA 初号机专属机能色系（默认 / 深色模式：高亮霓虹光感） */
   --metric-connections-color: #00ff66;
   --metric-cpu-color: #f97316;
@@ -1027,37 +1199,180 @@
   --metric-asset-color: #f59e0b;
 }
 
-/* EVA 浅色模式特化：活跃连接换为沉稳护眼的高对比机能绿，内存用量换为严肃专业的高对比科技钴蓝，舒适且不刺眼 */
+/* EVA 浅色模式特化：活跃连接换为沉稳护眼的高对比机能绿，内存用量换为初号机深紫，舒适且不刺眼 */
 :root:not([data-appearance="dark"]) [data-palette="eva"] {
   --metric-connections-color: #16a34a;
   --metric-ram-color: #2563eb;
   --metric-uptime-color: #0891b2;
 }
 
+/* 3. 赛博朋克 2077 配色（斯安威斯坦电光青 + 霓虹亮黄 + 义体过载绯红）Tokens */
+[data-palette="cyberpunk"],
+.mao-pattern-canvas[data-palette="cyberpunk"] {
+  --matrix-boot-pixel-bg: #00f0ff;
+  --matrix-boot-pixel-border: #a5f3fc;
+  --matrix-boot-pixel-shadow: 0 0 12px rgba(0, 240, 255, 0.85), 0 0 3px rgba(165, 243, 252, 0.95);
+  --matrix-boot-beam-glow: #00f0ff;
+  --matrix-boot-pulse-anim: sao-boot-pulse-cyberpunk;
+
+  /* 动效专用典故色谱 (赛博朋克：斯安威斯坦青 ✕ 义眼品红，超载金黄) */
+  --matrix-boot-fx-channel-a: #00f0ff;
+  --matrix-boot-fx-channel-b: #ff007f;
+  --matrix-boot-fx-glow-a: rgba(0, 240, 255, 0.95);
+  --matrix-boot-fx-glow-b: rgba(255, 0, 127, 0.95);
+  --matrix-boot-fx-flux: #ff007f;
+  --matrix-boot-fx-flux-border: #f472b6;
+  --matrix-boot-fx-flux-glow: rgba(255, 0, 127, 0.95);
+
+  /* 指标卡片：电光青、霓虹黄、过载粉红、夜总会紫 */
+  --metric-connections-color: #00f0ff;
+  --metric-cpu-color: #fcee0a;
+  --metric-ram-color: #ff0055;
+  --metric-disk-color: #a855f7;
+  --metric-traffic-color: #00e5ff;
+  --metric-uptime-color: #facc15;
+  --metric-asset-color: #fbbf24;
+}
+
+:root:not([data-appearance="dark"]) [data-palette="cyberpunk"] {
+  --metric-connections-color: #0891b2;
+  --metric-cpu-color: #ca8a04;
+  --metric-ram-color: #e11d48;
+}
+
+
+/* 7. 命运石之门 · 辉光数码管配色（纯正真空管放电琥珀暖橙，彻底消灭孤立杂色）Tokens */
+[data-palette="divergence"],
+.mao-pattern-canvas[data-palette="divergence"] {
+  --matrix-boot-pixel-bg: #ff7700;
+  --matrix-boot-pixel-border: #fed7aa;
+  --matrix-boot-pixel-shadow: 0 0 12px rgba(255, 119, 0, 0.85), 0 0 3px rgba(254, 215, 170, 0.95);
+  --matrix-boot-beam-glow: #ff7700;
+  --matrix-boot-pulse-anim: sao-boot-pulse-divergence;
+
+  /* 动效专用典故色谱 (命运石之门：氖气暖橙 ✕ 电离白炽金，深邃赤橙电火花) */
+  --matrix-boot-fx-channel-a: #ff7700;
+  --matrix-boot-fx-channel-b: #facc15;
+  --matrix-boot-fx-glow-a: rgba(255, 119, 0, 0.92);
+  --matrix-boot-fx-glow-b: rgba(250, 204, 21, 0.92);
+  --matrix-boot-fx-flux: #ea580c;
+  --matrix-boot-fx-flux-border: #fdba74;
+  --matrix-boot-fx-flux-glow: rgba(234, 88, 12, 0.95);
+
+  /* 全部 6 个指标卡片统一为纯正通透的辉光管放电暖橙，消除 CPU/资产发黄的突兀感 */
+  --metric-connections-color: #ff7700;
+  --metric-cpu-color: #ff7700;
+  --metric-ram-color: #ff7700;
+  --metric-disk-color: #ff7700;
+  --metric-traffic-color: #ff7700;
+  --metric-uptime-color: #ff7700;
+  --metric-asset-color: #ff7700;
+}
+
+:root:not([data-appearance="dark"]) [data-palette="divergence"] {
+  --metric-connections-color: #ea580c;
+  --metric-cpu-color: #ea580c;
+  --metric-ram-color: #ea580c;
+  --metric-disk-color: #ea580c;
+  --metric-traffic-color: #ea580c;
+  --metric-uptime-color: #ea580c;
+  --metric-asset-color: #ea580c;
+}
+
+
 /* SAO 正体开屏点阵动效：统一重置所有槽位与节点的底色、边框、透明度与动画，杜绝深浅不一 */
 .mao-matrix-section .mao-heatmap-cell.is-sao-pixel,
 .mao-matrix-section .mao-heatmap-cell.is-sao-bg,
 .mao-matrix-section .mao-heatmap-cell.is-sao-unlit,
 .mao-matrix-section .mao-heatmap-cell.is-sao-beam,
+.mao-matrix-section .mao-heatmap-cell.is-cyber-glitch-channel-a,
+.mao-matrix-section .mao-heatmap-cell.is-cyber-glitch-channel-b,
+.mao-matrix-section .mao-heatmap-cell.is-cyber-glitch-cyan,
+.mao-matrix-section .mao-heatmap-cell.is-cyber-glitch-magenta,
+.mao-matrix-section .mao-heatmap-cell.is-flux-jumping,
 .mao-heatmap-cell.is-sao-pixel,
 .mao-heatmap-cell.is-sao-bg,
 .mao-heatmap-cell.is-sao-unlit,
-.mao-heatmap-cell.is-sao-beam {
+.mao-heatmap-cell.is-sao-beam,
+.mao-heatmap-cell.is-cyber-glitch-channel-a,
+.mao-heatmap-cell.is-cyber-glitch-channel-b,
+.mao-heatmap-cell.is-cyber-glitch-cyan,
+.mao-heatmap-cell.is-cyber-glitch-magenta,
+.mao-heatmap-cell.is-flux-jumping {
   border-style: solid !important;
   border-width: 1px !important;
   animation: none !important;
-  transform: none !important;
   transition: none !important;
 }
 
 .mao-heatmap-cell.is-sao-pixel::after,
 .mao-heatmap-cell.is-sao-bg::after,
 .mao-heatmap-cell.is-sao-unlit::after,
-.mao-heatmap-cell.is-sao-beam::after {
+.mao-heatmap-cell.is-sao-beam::after,
+.mao-heatmap-cell.is-cyber-glitch-channel-a::after,
+.mao-heatmap-cell.is-cyber-glitch-channel-b::after,
+.mao-heatmap-cell.is-cyber-glitch-cyan::after,
+.mao-heatmap-cell.is-cyber-glitch-magenta::after,
+.mao-heatmap-cell.is-flux-jumping::after {
   display: none !important;
 }
 
-/* 1. 光束横扫列：浅色模式下呈现饱满耀眼的主题能量激光柱，深色模式下呈现高能白炽激光束，杜绝浅色底板上的亮白空洞失真 */
+/* 赛博朋克：行撕裂水平位移 */
+.mao-heatmap-cell.is-cyber-glitch-shift-left {
+  transform: translateX(-3.5px) !important;
+}
+.mao-heatmap-cell.is-cyber-glitch-shift-right {
+  transform: translateX(3.5px) !important;
+}
+
+/* 动效专用色谱调度：神经故障爆闪色散（双通道：主通道 Channel A ✕ 辅助对比通道 Channel B）
+   100% 由当前主题的典故色谱驱动，EVA下为紫绿，赛博朋克下为青粉，石头门下为橙金，SAO下为橙黄 */
+.mao-heatmap-cell.is-cyber-glitch-channel-a,
+.mao-pattern-cell.is-cyber-glitch-channel-a,
+.mao-heatmap-cell.is-cyber-glitch-cyan,
+.mao-pattern-cell.is-cyber-glitch-cyan {
+  background: var(--matrix-boot-fx-channel-a, #00f0ff) !important;
+  border-color: var(--matrix-boot-fx-channel-a, #38bdf8) !important;
+  box-shadow: 0 0 12px var(--matrix-boot-fx-glow-a, rgba(0, 240, 255, 0.95)), 0 0 3px var(--matrix-boot-fx-channel-a, #0284c7) !important;
+  opacity: 1 !important;
+  z-index: 5;
+}
+
+.mao-heatmap-cell.is-cyber-glitch-channel-b,
+.mao-pattern-cell.is-cyber-glitch-channel-b,
+.mao-heatmap-cell.is-cyber-glitch-magenta,
+.mao-pattern-cell.is-cyber-glitch-magenta {
+  background: var(--matrix-boot-fx-channel-b, #ff007f) !important;
+  border-color: var(--matrix-boot-fx-channel-b, #f43f5e) !important;
+  box-shadow: 0 0 12px var(--matrix-boot-fx-glow-b, rgba(255, 0, 127, 0.95)), 0 0 3px var(--matrix-boot-fx-channel-b, #e11d48) !important;
+  opacity: 1 !important;
+  z-index: 5;
+}
+
+/* 世界线变动率放电跳变态：与当前主题色谱完全一体化，纯粹高能放电，杜绝杂色边框与异色光晕 */
+.mao-heatmap-cell.is-flux-jumping,
+.mao-pattern-cell.is-flux-jumping {
+  --_flux-color: var(--matrix-boot-fx-flux, var(--matrix-boot-pixel-bg));
+  background: var(--_flux-color) !important;
+  border-color: var(--matrix-boot-fx-flux-border, color-mix(in srgb, var(--_flux-color) 75%, #ffffff)) !important;
+  box-shadow: 0 0 10px var(--matrix-boot-fx-flux-glow, color-mix(in srgb, var(--_flux-color) 75%, transparent)),
+              0 0 3px var(--matrix-boot-fx-flux-border, color-mix(in srgb, var(--_flux-color) 75%, #ffffff)) !important;
+  opacity: 0.95 !important;
+  z-index: 4;
+}
+
+:root[data-appearance="dark"] .mao-heatmap-cell.is-flux-jumping,
+:root[data-appearance="dark"] .mao-pattern-cell.is-flux-jumping {
+  --_flux-color: var(--matrix-boot-fx-flux, var(--matrix-boot-pixel-bg));
+  background: var(--_flux-color) !important;
+  border-color: var(--matrix-boot-fx-flux-border, color-mix(in srgb, var(--_flux-color) 85%, #ffffff)) !important;
+  box-shadow: 0 0 12px var(--matrix-boot-fx-flux-glow, color-mix(in srgb, var(--_flux-color) 85%, transparent)),
+              0 0 4px var(--matrix-boot-fx-flux-border, color-mix(in srgb, var(--_flux-color) 85%, #ffffff)) !important;
+  opacity: 1 !important;
+  z-index: 4;
+}
+
+/* 1. 光束横扫列：统一呈现当前主题的高能离子光束，杜绝白炽惨白与生硬色块 */
 .mao-matrix-section .mao-heatmap-cell.is-sao-beam,
 .mao-heatmap-cell.is-sao-beam {
   background: var(--matrix-boot-pixel-bg) !important;
@@ -1071,9 +1386,9 @@
 
 :root[data-appearance="dark"] .mao-matrix-section .mao-heatmap-cell.is-sao-beam,
 :root[data-appearance="dark"] .mao-heatmap-cell.is-sao-beam {
-  background: #ffffff !important;
-  border-color: #ffffff !important;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.95), 0 0 6px var(--matrix-boot-beam-glow) !important;
+  background: var(--matrix-boot-pixel-bg) !important;
+  border-color: var(--matrix-boot-pixel-border) !important;
+  box-shadow: 0 0 14px var(--matrix-boot-beam-glow), 0 0 4px var(--matrix-boot-pixel-border) !important;
 }
 
 /* 2. 开屏文字像素：统一由配色设计令牌（Tokens）驱动，杜绝写死颜色与层叠权重竞争 */
@@ -1109,6 +1424,7 @@
   opacity: 0.25 !important;
   transition: background-color 0.2s ease-out, opacity 0.2s ease-out, box-shadow 0.2s ease-out !important;
 }
+
 
 /* 5. 未被光束扫到的区域：规整机架底板，具备清晰且克制的机位槽位轮廓，绝不产生白茫茫一片的空白感 */
 .mao-heatmap-cell.is-sao-unlit {
@@ -1150,6 +1466,28 @@
   50% {
     filter: brightness(1.25);
     box-shadow: 0 0 16px rgba(168, 85, 247, 0.95), 0 0 4px #c084fc;
+  }
+}
+
+@keyframes sao-boot-pulse-cyberpunk {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow: 0 0 7px rgba(0, 240, 255, 0.65), 0 0 2px rgba(165, 243, 252, 0.7);
+  }
+  50% {
+    filter: brightness(1.3);
+    box-shadow: 0 0 17px rgba(0, 240, 255, 0.95), 0 0 4px #fcee0a;
+  }
+}
+
+@keyframes sao-boot-pulse-divergence {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow: 0 0 7px rgba(255, 119, 0, 0.65), 0 0 2px rgba(254, 215, 170, 0.7);
+  }
+  50% {
+    filter: brightness(1.3);
+    box-shadow: 0 0 17px rgba(255, 119, 0, 0.95), 0 0 4px #facc15;
   }
 }
 
@@ -2533,6 +2871,168 @@
   animation-name: bandwidth-pulse-eva-3;
 }
 
+/* 赛博朋克 2077：带宽评级徽章专属配色（斯安威斯坦冷青 -> 霓虹亮黄 -> 义眼超频品红 -> 义体过载绯红） */
+.mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="0"] {
+  --badge-color: #0891b2;
+  --badge-glow: rgba(8, 145, 178, 0.45);
+  color: #0891b2;
+  border-color: color-mix(in srgb, #0891b2 35%, transparent);
+  background: color-mix(in srgb, #0891b2 10%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="0"] {
+  --badge-color: #00f0ff;
+  --badge-glow: rgba(0, 240, 255, 0.7);
+  color: #67e8f9;
+  border-color: color-mix(in srgb, #00f0ff 40%, transparent);
+  background: color-mix(in srgb, #00f0ff 16%, transparent);
+}
+
+.mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="1"] {
+  --badge-color: #ca8a04;
+  --badge-glow: rgba(202, 138, 4, 0.45);
+  color: #ca8a04;
+  border-color: color-mix(in srgb, #ca8a04 35%, transparent);
+  background: color-mix(in srgb, #ca8a04 10%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="1"] {
+  --badge-color: #fcee0a;
+  --badge-glow: rgba(252, 238, 10, 0.7);
+  color: #fcee0a;
+  border-color: color-mix(in srgb, #fcee0a 40%, transparent);
+  background: color-mix(in srgb, #fcee0a 16%, transparent);
+}
+
+.mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="2"] {
+  --badge-color: #e11d48;
+  --badge-glow: rgba(225, 29, 72, 0.45);
+  color: #e11d48;
+  border-color: color-mix(in srgb, #e11d48 35%, transparent);
+  background: color-mix(in srgb, #e11d48 10%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="2"] {
+  --badge-color: #ff007f;
+  --badge-glow: rgba(255, 0, 127, 0.75);
+  color: #ff007f;
+  border-color: color-mix(in srgb, #ff007f 40%, transparent);
+  background: color-mix(in srgb, #ff007f 16%, transparent);
+}
+
+.mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="3"] {
+  --badge-color: #be123c;
+  --badge-glow: rgba(190, 18, 60, 0.45);
+  color: #be123c;
+  border-color: color-mix(in srgb, #be123c 35%, transparent);
+  background: color-mix(in srgb, #be123c 10%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="3"] {
+  --badge-color: #ff0055;
+  --badge-glow: rgba(255, 0, 85, 0.8);
+  color: #ff0055;
+  border-color: color-mix(in srgb, #ff0055 42%, transparent);
+  background: color-mix(in srgb, #ff0055 18%, transparent);
+}
+
+.mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="0"] .mao-status-dot {
+  animation-name: bandwidth-pulse-cp-0;
+}
+
+.mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="1"] .mao-status-dot {
+  animation-name: bandwidth-pulse-cp-1;
+}
+
+.mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="2"] .mao-status-dot {
+  animation-name: bandwidth-pulse-cp-2;
+}
+
+.mao-progress-container[data-palette="cyberpunk"] .overview-card-rating.is-bandwidth-badge[data-rating-level="3"] .mao-status-dot {
+  animation-name: bandwidth-pulse-cp-3;
+}
+
+/* 命运石之门：带宽评级徽章专属配色（冷阴极休眠灰 -> 初级辉光琥珀 -> 高能炽热电离金 -> 超频赤红） */
+.mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="0"] {
+  --badge-color: #78716c;
+  --badge-glow: rgba(120, 113, 108, 0.35);
+  color: #78716c;
+  border-color: color-mix(in srgb, #78716c 30%, transparent);
+  background: color-mix(in srgb, #78716c 10%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="0"] {
+  --badge-color: #a8a29e;
+  --badge-glow: rgba(168, 162, 158, 0.45);
+  color: #d6d3d1;
+  border-color: color-mix(in srgb, #a8a29e 35%, transparent);
+  background: color-mix(in srgb, #a8a29e 14%, transparent);
+}
+
+.mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="1"] {
+  --badge-color: #c2410c;
+  --badge-glow: rgba(194, 65, 12, 0.45);
+  color: #c2410c;
+  border-color: color-mix(in srgb, #c2410c 35%, transparent);
+  background: color-mix(in srgb, #c2410c 10%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="1"] {
+  --badge-color: #f97316;
+  --badge-glow: rgba(249, 115, 22, 0.65);
+  color: #fb923c;
+  border-color: color-mix(in srgb, #f97316 40%, transparent);
+  background: color-mix(in srgb, #f97316 16%, transparent);
+}
+
+.mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="2"] {
+  --badge-color: #ca8a04;
+  --badge-glow: rgba(202, 138, 4, 0.45);
+  color: #ca8a04;
+  border-color: color-mix(in srgb, #ca8a04 35%, transparent);
+  background: color-mix(in srgb, #ca8a04 10%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="2"] {
+  --badge-color: #facc15;
+  --badge-glow: rgba(250, 204, 21, 0.7);
+  color: #facc15;
+  border-color: color-mix(in srgb, #facc15 40%, transparent);
+  background: color-mix(in srgb, #facc15 16%, transparent);
+}
+
+.mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="3"] {
+  --badge-color: #be123c;
+  --badge-glow: rgba(190, 18, 60, 0.45);
+  color: #be123c;
+  border-color: color-mix(in srgb, #be123c 35%, transparent);
+  background: color-mix(in srgb, #be123c 10%, transparent);
+}
+
+:root[data-appearance="dark"] .mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="3"] {
+  --badge-color: #f43f5e;
+  --badge-glow: rgba(244, 63, 94, 0.75);
+  color: #f43f5e;
+  border-color: color-mix(in srgb, #f43f5e 42%, transparent);
+  background: color-mix(in srgb, #f43f5e 18%, transparent);
+}
+
+.mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="0"] .mao-status-dot {
+  animation-name: bandwidth-pulse-div-0;
+}
+
+.mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="1"] .mao-status-dot {
+  animation-name: bandwidth-pulse-div-1;
+}
+
+.mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="2"] .mao-status-dot {
+  animation-name: bandwidth-pulse-div-2;
+}
+
+.mao-progress-container[data-palette="divergence"] .overview-card-rating.is-bandwidth-badge[data-rating-level="3"] .mao-status-dot {
+  animation-name: bandwidth-pulse-div-3;
+}
+
 /* 指示圆点呼吸闪烁效果：位置绝对钉死在左侧 9px 槽位，杜绝跟随评级文字长短发生水平位移与缩进抖动 */
 .overview-card-rating.is-bandwidth-badge .mao-status-dot {
   position: absolute;
@@ -2652,6 +3152,42 @@
 @keyframes bandwidth-pulse-eva-3 {
   0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(220, 38, 38, 0.45)); }
   50% { opacity: 0.35; box-shadow: 0 0 6px 2px var(--badge-glow, rgba(220, 38, 38, 0.45)); }
+}
+
+/* 赛博朋克 2077：带宽指示灯专属同步脉冲 */
+@keyframes bandwidth-pulse-cp-0 {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(0, 240, 255, 0.5)); }
+  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(0, 240, 255, 0.5)); }
+}
+@keyframes bandwidth-pulse-cp-1 {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(252, 238, 10, 0.5)); }
+  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(252, 238, 10, 0.5)); }
+}
+@keyframes bandwidth-pulse-cp-2 {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(255, 0, 127, 0.55)); }
+  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(255, 0, 127, 0.55)); }
+}
+@keyframes bandwidth-pulse-cp-3 {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(255, 0, 85, 0.6)); }
+  50% { opacity: 0.35; box-shadow: 0 0 6px 2px var(--badge-glow, rgba(255, 0, 85, 0.6)); }
+}
+
+/* 命运石之门：带宽指示灯专属同步脉冲 */
+@keyframes bandwidth-pulse-div-0 {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(168, 162, 158, 0.45)); }
+  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(168, 162, 158, 0.45)); }
+}
+@keyframes bandwidth-pulse-div-1 {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(255, 119, 0, 0.5)); }
+  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(255, 119, 0, 0.5)); }
+}
+@keyframes bandwidth-pulse-div-2 {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(250, 204, 21, 0.5)); }
+  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(250, 204, 21, 0.5)); }
+}
+@keyframes bandwidth-pulse-div-3 {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(244, 63, 94, 0.6)); }
+  50% { opacity: 0.35; box-shadow: 0 0 6px 2px var(--badge-glow, rgba(244, 63, 94, 0.6)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

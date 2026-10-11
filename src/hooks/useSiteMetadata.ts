@@ -15,9 +15,6 @@ export function updateMeta(selector: string, attr: "content", value: string) {
 }
 
 export function readStoredSiteMetadata() {
-  if (typeof localStorage === "undefined") {
-    return { siteName: null, description: null };
-  }
   try {
     const siteName = localStorage.getItem(SITENAME_STORAGE_KEY);
     const description = localStorage.getItem(DESCRIPTION_STORAGE_KEY);
@@ -31,7 +28,6 @@ export function readStoredSiteMetadata() {
 }
 
 export function persistSiteMetadata(siteName: string, description: string) {
-  if (typeof localStorage === "undefined") return;
   try {
     localStorage.setItem(SITENAME_STORAGE_KEY, siteName);
     localStorage.setItem(DESCRIPTION_STORAGE_KEY, description);

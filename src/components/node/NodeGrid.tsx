@@ -69,7 +69,7 @@ import { NodeCard } from "./NodeCard";
 import { OverviewTrafficChart } from "./OverviewTrafficChart";
 import { NodeListView } from "./NodeListView";
 import { RenewalReminder } from "./RenewalReminder";
-import type { NodeViewMode } from "@/utils/themeSettings";
+import type { NodeViewMode, MatrixColorTheme, MatrixBootEffect } from "@/utils/themeSettings";
 import { getRenewalReminders, type RenewalReminderSource } from "@/utils/renewalReminder";
 import { DiaTextReveal } from "@/components/ui/DiaTextReveal";
 
@@ -238,6 +238,7 @@ function HomeOverviewCards({
   matrixColorTheme = "default",
   matrixMockFill = false,
   matrixBootAnimation = true,
+  matrixBootEffect = "laser-scan",
   matrixCustomPattern = null,
 }: {
   overview: HomeOverview;
@@ -262,9 +263,10 @@ function HomeOverviewCards({
   visibleNodes?: HomeNodeSummary[];
   nameByUuid?: Map<string, string>;
   clusterOverviewMode?: "classic" | "nodes";
-  matrixColorTheme?: "default" | "eva";
+  matrixColorTheme?: MatrixColorTheme;
   matrixMockFill?: boolean;
   matrixBootAnimation?: boolean;
+  matrixBootEffect?: MatrixBootEffect;
   matrixCustomPattern?: number[] | null;
 }) {
   const queryClient = useQueryClient();
@@ -367,7 +369,7 @@ function HomeOverviewCards({
     <section
       className={`mao-dashboard-hero home-overview${dense ? " is-dense" : ""}`}
       aria-label="首页总览"
-      data-palette={matrixColorTheme === "eva" ? "eva" : "default"}
+      data-palette={matrixColorTheme || "default"}
     >
       {/* 左侧主要区域：问候语 + 6 宫格指标小卡片 */}
       <div className="mao-hero-main">
@@ -579,7 +581,7 @@ function HomeOverviewCards({
       <div className="mao-hero-side">
         <div
           className="mao-progress-container"
-          data-palette={matrixColorTheme === "eva" ? "eva" : "default"}
+          data-palette={matrixColorTheme || "default"}
         >
           <div className="mao-progress-head">
             <div className="mao-progress-title-wrap">
@@ -699,6 +701,7 @@ function HomeOverviewCards({
                   colorTheme={matrixColorTheme}
                   mockFill={matrixMockFill}
                   bootAnimation={matrixBootAnimation}
+                  bootEffect={matrixBootEffect}
                   customPattern={matrixCustomPattern}
                 />
               </div>
@@ -1238,6 +1241,7 @@ export function NodeGrid() {
           matrixColorTheme={themeSettings.matrixColorTheme}
           matrixMockFill={themeSettings.matrixMockFill}
           matrixBootAnimation={themeSettings.matrixBootAnimation}
+          matrixBootEffect={themeSettings.matrixBootEffect}
           matrixCustomPattern={themeSettings.matrixCustomPattern}
         />
       )}
@@ -1262,7 +1266,7 @@ export function NodeGrid() {
       <section
         className="mao-cluster-card"
         aria-label="服务器集群与监控列表"
-        data-palette={themeSettings.matrixColorTheme === "eva" ? "eva" : "default"}
+        data-palette={themeSettings.matrixColorTheme || "default"}
       >
         {showHomeOverview && (
           <div className="mao-section-header">

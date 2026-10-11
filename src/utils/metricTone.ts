@@ -1,5 +1,19 @@
 import { clamp, toHsl, toOklch } from "@/utils/hsl";
 import { formatByteRate } from "@/utils/format";
+import type {
+  PingLatencyColors,
+  PingLatencyThresholds,
+  PingLossColors,
+  PingLossThresholds,
+  TrafficSpectrumColors,
+} from "@/types/komari";
+import {
+  DEFAULT_PING_LATENCY_COLORS,
+  DEFAULT_PING_LATENCY_THRESHOLDS,
+  DEFAULT_PING_LOSS_COLORS,
+  DEFAULT_PING_LOSS_THRESHOLDS,
+  DEFAULT_TRAFFIC_SPECTRUM_COLORS,
+} from "@/utils/themeSettings";
 
 // 丢包使用连续 HSL 热力渐变；延迟使用下方独立的离散监控状态阶梯。
 const HEAT_RAMP_SEGMENTS = [
@@ -22,6 +36,23 @@ function heatRamp(
   if (value <= b2) return HEAT_RAMP_SEGMENTS[2](clamp((value - b1) / (b2 - b1), 0, 1));
   if (value <= b3) return HEAT_RAMP_SEGMENTS[3](clamp((value - b2) / (b3 - b2), 0, 1));
   return HEAT_RAMP_SEGMENTS[4](clamp((value - b3) / tailSpan, 0, 1));
+}
+
+export function resolveCustomLatencyColor(
+  ms: number | null | undefined,
+  thresholds?: PingLatencyThresholds,
+  colors?: PingLatencyColors,
+): string {
+  if (ms == null || !Number.isFinite(ms) || ms < 0) {
+    return "var(--text-tertiary)";
+  }
+  const t = thresholds ?? DEFAULT_PING_LATENCY_THRESHOLDS;
+  const c = colors ?? DEFAULT_PING_LATENCY_COLORS;
+  if (ms <= t.excellent) return c.excellent;
+  if (ms <= t.good) return c.good;
+  if (ms <= t.moderate) return c.moderate;
+  if (ms <= t.elevated) return c.elevated;
+  return c.critical;
 }
 
 export function latencyHeatColor(ms: number | null | undefined): string {
@@ -84,6 +115,71 @@ export function trafficQuotaSegmentColor(pos: number): string {
   return toOklch(0.6, 0.22, 27);
 }
 
+function parseHexColor(hex: string): [number, number, number] {
+  const clean = hex.replace("#", "");
+  const num = parseInt(clean, 16);
+  if (Number.isNaN(num)) return [0, 0, 0];
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+export function interpolateHex(hexA: string, hexB: string, t: number): string {
+  const factor = clamp(t, 0, 1);
+  const [r1, g1, b1] = parseHexColor(hexA);
+  const [r2, g2, b2] = parseHexColor(hexB);
+  const r = Math.round(r1 + (r2 - r1) * factor);
+  const g = Math.round(g1 + (g2 - g1) * factor);
+  const b = Math.round(b1 + (b2 - b1) * factor);
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+export function resolveTrafficSegmentColor(
+  pos: number,
+  colors?: TrafficSpectrumColors,
+): string {
+  const p = clamp(pos, 0, 1);
+  if (!colors) {
+    return trafficQuotaSegmentColor(p);
+  }
+  const { start, mid, high, end } = colors;
+  if (p <= 0.15) return start;
+  if (p <= 0.50) {
+    const t = (p - 0.15) / 0.35;
+    return interpolateHex(start, mid, t);
+  }
+  if (p <= 0.80) {
+    const t = (p - 0.50) / 0.30;
+    return interpolateHex(mid, high, t);
+  }
+  const t = (p - 0.80) / 0.20;
+  return interpolateHex(high, end, t);
+}
+
+export function buildTrafficHeatSpectrum(colors?: TrafficSpectrumColors): string {
+  const c = colors ?? DEFAULT_TRAFFIC_SPECTRUM_COLORS;
+  return `linear-gradient(to right, ${c.start} 0%, ${c.start} 15%, ${c.mid} 50%, ${c.high} 80%, ${c.end} 100%)`;
+}
+
+export const TRAFFIC_QUOTA_SEGMENTS = 18;
+
+export function buildTrafficQuotaSegmentColors(colors?: TrafficSpectrumColors): string[] {
+  return Array.from({ length: TRAFFIC_QUOTA_SEGMENTS }, (_, i) =>
+    resolveTrafficSegmentColor((i + 0.5) / TRAFFIC_QUOTA_SEGMENTS, colors),
+  );
+}
+
+export function trafficQuotaLitCount(
+  fraction: number,
+  segments: number = TRAFFIC_QUOTA_SEGMENTS,
+): number {
+  let count = 0;
+  for (let i = 0; i < segments; i++) {
+    if ((i + 0.5) / segments <= fraction) count += 1;
+    else break;
+  }
+  if (count === 0 && fraction > 0) return -1;
+  return count;
+}
+
 // 速率按 B/KB/MB/GB 四档着色，TB/PB 沿用最高档。
 const SPEED_RATE_COLOR: Record<string, string> = {
   "B/s": "var(--speed-idle)",
@@ -100,6 +196,22 @@ export function speedRateColor(unit: string): string {
 
 export function speedRateColorFromBytes(bytesPerSec: number): string {
   return speedRateColor(formatByteRate(bytesPerSec).unit);
+}
+
+export function resolveCustomLossColor(
+  pct: number | null | undefined,
+  thresholds?: PingLossThresholds,
+  colors?: PingLossColors,
+): string {
+  if (pct == null || !Number.isFinite(pct) || pct < 0) {
+    return "var(--text-tertiary)";
+  }
+  const t = thresholds ?? DEFAULT_PING_LOSS_THRESHOLDS;
+  const c = colors ?? DEFAULT_PING_LOSS_COLORS;
+  if (pct === 0) return c.zero;
+  if (pct <= t.low) return c.low;
+  if (pct <= t.medium) return c.medium;
+  return c.high;
 }
 
 export function lossHeatColor(pct: number | null | undefined): string {

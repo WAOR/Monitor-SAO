@@ -692,6 +692,7 @@
 .setting-mode-card[data-active="true"] .setting-mode-card-radio {
   border-color: var(--accent-500);
   background: var(--accent-500);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent-500) 60%, transparent);
 }
 
 .setting-mode-card-radio-dot {
@@ -774,7 +775,8 @@
   border-color: rgba(255, 255, 255, 0.32);
 }
 
-.setting-color-theme-card[data-active="true"] .setting-color-theme-radio {
+.setting-color-theme-card[data-active="true"] .setting-color-theme-radio,
+.setting-spectrum-preset-card[data-active="true"] .setting-color-theme-radio {
   border-color: var(--accent-500);
   background: var(--accent-500);
 }
@@ -789,6 +791,44 @@
   height: 6px;
   border-radius: 999px;
   background: #ffffff;
+}
+
+
+/* 流量色谱预设按钮卡片（清晰可见的边框与激活高亮，浅色/深色模式全面适配） */
+.setting-spectrum-preset-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  cursor: pointer;
+  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+  outline: none;
+  width: 100%;
+}
+
+:root:not([data-appearance="dark"]) .setting-spectrum-preset-card {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+}
+
+.setting-spectrum-preset-card:hover {
+  border-color: color-mix(in srgb, var(--accent-500) 50%, var(--border-color));
+  transform: translateY(-1px);
+}
+
+.setting-spectrum-preset-card[data-active="true"] {
+  border-color: var(--accent-500);
+  background: color-mix(in srgb, var(--accent-500) 10%, var(--bg-card));
+  box-shadow: 0 0 0 1px var(--accent-500), 0 3px 10px -2px color-mix(in srgb, var(--accent-500) 25%, transparent);
+}
+
+.setting-spectrum-preset-card:focus,
+.setting-spectrum-preset-card:focus-visible {
+  outline: none;
 }
 
 .theme-manage-toolbar-actions {
@@ -1383,6 +1423,10 @@
 
 .instance-segmented.is-scrollable {
   overflow-x: auto;
+}
+
+.instance-segmented.is-scrollable > button {
+  flex-shrink: 0;
 }
 
 .instance-segmented.is-even {

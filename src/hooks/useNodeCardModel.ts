@@ -18,11 +18,12 @@ import {
   formatByteRate,
   formatExpireDays,
   formatUptimeDays,
+  joinDisplayParts,
   parseTags,
 } from "@/utils/format";
 import {
-  latencyHeatColor,
-  lossHeatColor,
+  resolveCustomLatencyColor,
+  resolveCustomLossColor,
   trafficUsageColor,
 } from "@/utils/metricTone";
 import { resolveTrafficUsage, trafficTypeLabel, type TrafficDisplay } from "@/utils/traffic";
@@ -58,33 +59,30 @@ export function useNodeCardModel(
     homepagePingBindings,
     enableHomepageMultiPing,
     homepageMultiPingTaskIds,
+    pingLatencyThresholds,
+    pingLatencyColors,
+    pingLossThresholds,
+    pingLossColors,
   } = useThemeSettings();
   const { isPriceVisible } = usePriceVisibility();
   const multiPingConfigured =
     enableHomepageMultiPing &&
     isHomepageMultiPingConfigured(homepageMultiPingTaskIds);
-  const realPingLines = useNodePingOverviewLines(uuid, true);
-  const hasAutoMultiPing = !multiPingConfigured && realPingLines.length >= 2;
-  const multiPingActive = includeMultiPing && (multiPingConfigured || hasAutoMultiPing);
-  const singlePingOverview = useNodePingOverview(uuid, !multiPingActive);
+  const multiPingActive = includeMultiPing && multiPingConfigured;
+  const singlePingOverview = useNodePingOverview(uuid, !multiPingConfigured);
+  const realPingLines = useNodePingOverviewLines(uuid, multiPingConfigured);
   const primaryMultiPingLine = useMemo(() => {
-    if (!multiPingActive) return undefined;
-    if (multiPingConfigured) {
-      const primaryTaskId = homepageMultiPingTaskIds[0];
-      return realPingLines.find((line) => line.taskId === primaryTaskId);
-    }
-    return realPingLines[0];
+    if (!multiPingConfigured || multiPingActive) return undefined;
+    const primaryTaskId = homepageMultiPingTaskIds[0];
+    return realPingLines.find((line) => line.taskId === primaryTaskId);
   }, [homepageMultiPingTaskIds, multiPingActive, multiPingConfigured, realPingLines]);
 
   const realPing = primaryMultiPingLine ?? singlePingOverview;
 
   const hasRealHomepagePingBinding = useMemo(
     () =>
-      multiPingConfigured ||
-      hasAutoMultiPing ||
-      hasHomepagePingTaskBinding(uuid, homepagePingBindings) ||
-      Boolean(realPing?.isAssigned),
-    [homepagePingBindings, multiPingConfigured, hasAutoMultiPing, realPing?.isAssigned, uuid],
+      multiPingConfigured || hasHomepagePingTaskBinding(uuid, homepagePingBindings),
+    [homepagePingBindings, multiPingConfigured, uuid],
   );
   const now = useHourlyClock();
   const ping = useFakePingFallback(
@@ -112,37 +110,34 @@ export function useNodeCardModel(
   // 与 usePingBuckets 同理:窗口按分钟前移,不依赖数据刷新才滑动。
   const bucketNow = useMinuteClock(multiPingActive);
   const homepagePingLines = useMemo<HomepagePingDisplayLine[]>(() => {
-    if (!multiPingActive) {
+    if (
+      !multiPingActive
+    ) {
       return [];
     }
-    const sourceLines = multiPingConfigured
-      ? homepageMultiPingTaskIds.map((taskId) => {
-          const loaded = realPingLines.find((line) => line.taskId === taskId);
-          const line: HomepagePingLine =
-            loaded ?? {
-              taskId,
-              taskName: `任务 #${taskId}`,
-              client: uuid,
-              isAssigned: true,
-              loadState: "pending",
-              lastValue: null,
-              samples: [],
-              max: 1,
-              loss: null,
-            };
-          return line;
-        })
-      : realPingLines;
-
-    return sourceLines.map((line) => ({
-      ...line,
-      buckets: buildPingBuckets(line, pingBucketCount, bucketNow),
-    }));
+    return homepageMultiPingTaskIds.map((taskId) => {
+      const loaded = realPingLines.find((line) => line.taskId === taskId);
+      const line: HomepagePingLine =
+        loaded ?? {
+          taskId,
+          taskName: `任务 #${taskId}`,
+          client: uuid,
+          isAssigned: true,
+          loadState: "pending",
+          lastValue: null,
+          samples: [],
+          max: 1,
+          loss: null,
+        };
+      return {
+        ...line,
+        buckets: buildPingBuckets(line, pingBucketCount, bucketNow),
+      };
+    });
   }, [
     bucketNow,
     homepageMultiPingTaskIds,
     multiPingActive,
-    multiPingConfigured,
     pingBucketCount,
     realPingLines,
     uuid,
@@ -151,24 +146,27 @@ export function useNodeCardModel(
   const metaModel = useMemo(() => {
     if (!meta) return null;
     const tags = parseTags(meta.tags);
-    const group = showCardGroup ? meta.group?.trim() : undefined;
-    const subtitle = group || "";
-    const filteredTags = tags.filter(
-      (tag) => !subtitle || tag.label.trim().toLowerCase() !== subtitle.toLowerCase(),
+    const group = showCardGroup ? meta.group : undefined;
+    const subtitleParts = [group, meta.public_remark]
+      .map((part) => part?.trim())
+      .filter((part): part is string => Boolean(part));
+    const subtitleLabels = new Set(subtitleParts.map((part) => part.toLowerCase()));
+    const compactFooterTags = tags.filter(
+      (tag) => !subtitleLabels.has(tag.label.trim().toLowerCase()),
     );
-    const footerTags =
-      filteredTags.length > 0
-        ? filteredTags
-        : !subtitle && group
+    const fallbackFooterTags =
+      tags.length > 0
+        ? tags
+        : group
           ? [{ label: group, color: "gray" }]
           : [];
     return {
-      tags: filteredTags,
-      footerTags,
-      compactFooterTags: footerTags,
-      subtitle,
-      expire: formatExpireDays(meta.expired_at, now, meta.expires_in),
-      expireColor: getExpireTextColor(meta.expired_at, now, meta.expires_in),
+      tags,
+      footerTags: fallbackFooterTags,
+      compactFooterTags,
+      subtitle: joinDisplayParts(subtitleParts),
+      expire: formatExpireDays(meta.expired_at, now),
+      expireColor: getExpireTextColor(meta.expired_at, now),
       isPriceVisible,
       renewalPrice: isPriceVisible ? formatRenewalPrice(meta) : null,
       compactRenewalPrice: isPriceVisible ? formatCompactRenewalPrice(meta) : null,
@@ -177,11 +175,19 @@ export function useNodeCardModel(
     };
   }, [isPriceVisible, meta, now, showCardGroup]);
 
-  // ping 派生的颜色只在 ping item 变化时才变。
+  // ping 派生的颜色只在 ping item 或主题 ping 配置变化时才变。
   const pingModel = useMemo(
     () => ({
-      latencyColor: latencyHeatColor(ping.lastValue),
-      lossColor: lossHeatColor(ping.loss),
+      latencyColor: resolveCustomLatencyColor(
+        ping.lastValue,
+        pingLatencyThresholds,
+        pingLatencyColors,
+      ),
+      lossColor: resolveCustomLossColor(
+        ping.loss,
+        pingLossThresholds,
+        pingLossColors,
+      ),
       hasRealHomepagePingBinding,
       // 保留旧字段供外部模型消费者兼容；它表示真实配置状态。
       hasHomepagePingBinding: hasRealHomepagePingBinding,
@@ -193,7 +199,11 @@ export function useNodeCardModel(
       hasRealHomepagePingBinding,
       ping,
       pingError,
+      pingLatencyColors,
+      pingLatencyThresholds,
       pingLoading,
+      pingLossColors,
+      pingLossThresholds,
       shouldRenderPingBars,
     ],
   );

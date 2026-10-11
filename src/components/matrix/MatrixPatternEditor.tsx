@@ -10,7 +10,10 @@ import {
   saveUserMatrixPresets,
   type UserMatrixPreset,
   MAX_USER_PRESETS,
+  MATRIX_RAIN_DELAYS,
+  MATRIX_RAIN_TOTAL_STEPS,
 } from "@/utils/matrixPatterns";
+import type { MatrixColorTheme, MatrixBootEffect } from "@/utils/themeSettings";
 
 export interface MatrixPatternEditorProps {
   /** 全站当前生效的点阵图案 */
@@ -23,7 +26,8 @@ export interface MatrixPatternEditorProps {
   onApply?: (pattern: number[] | null) => void;
   /** 保存或删除用户预设时触发（精准 1 次同步到云端） */
   onSaveUserPresets?: (presets: UserMatrixPreset[]) => void;
-  colorTheme?: "default" | "eva";
+  colorTheme?: MatrixColorTheme;
+  bootEffect?: MatrixBootEffect;
 }
 
 export function MatrixPatternEditor({
@@ -33,6 +37,7 @@ export function MatrixPatternEditor({
   onApply,
   onSaveUserPresets,
   colorTheme = "default",
+  bootEffect = "laser-scan",
 }: MatrixPatternEditorProps) {
   // 当前画板像素点亮集合（纯本地草稿状态，绘制过程绝不自动向云端发请求）
   const [pixels, setPixels] = useState<Set<number>>(() => getPatternPixelSet(value));
@@ -160,10 +165,24 @@ export function MatrixPatternEditor({
     setPreviewCol(-1);
 
     let current = 0;
+    let maxStep: number = GRID_COLUMNS;
+    let stepInterval = 28;
+
+    if (bootEffect === "digital-rain") {
+      maxStep = MATRIX_RAIN_TOTAL_STEPS;
+      stepInterval = 45;
+    } else if (bootEffect === "cyber-glitch") {
+      maxStep = 18;
+      stepInterval = 42;
+    } else if (bootEffect === "divergence-flux") {
+      maxStep = GRID_COLUMNS;
+      stepInterval = 45;
+    }
+
     const interval = setInterval(() => {
       setPreviewCol(current);
       current++;
-      if (current > GRID_COLUMNS) {
+      if (current > maxStep) {
         clearInterval(interval);
         setPreviewPhase("hold");
         setTimeout(() => {
@@ -172,7 +191,7 @@ export function MatrixPatternEditor({
           setPreviewCol(-1);
         }, 1500);
       }
-    }, 28);
+    }, stepInterval);
     previewTimerRef.current = interval;
   };
 
@@ -182,9 +201,49 @@ export function MatrixPatternEditor({
       return pixels.has(index) ? "is-lit" : "";
     }
     const col = index % GRID_COLUMNS;
+    const row = Math.floor(index / GRID_COLUMNS);
     const isLit = pixels.has(index);
 
     if (previewPhase === "scan") {
+      if (bootEffect === "digital-rain") {
+        const delay = MATRIX_RAIN_DELAYS[col] ?? 0;
+        const headRow = previewCol - delay;
+        if (headRow < 0) return "is-unlit";
+        if (row === headRow) return "is-scan-beam";
+        if (row < headRow) return isLit ? "is-lit" : "";
+        return "is-unlit";
+      }
+
+      if (bootEffect === "cyber-glitch") {
+        if (previewCol <= 12) {
+          const noiseSeed = ((index * 19 + previewCol * 23) ^ (row * 7)) % 100;
+          const noiseClass =
+            noiseSeed % 2 === 0 ? "is-cyber-glitch-channel-a" : "is-cyber-glitch-channel-b";
+          if (isLit) {
+            if (previewCol >= 6 && noiseSeed < 70) return "is-lit";
+            if (noiseSeed < 35) return noiseClass;
+            return "is-unlit";
+          }
+          if (noiseSeed < 9) return noiseClass;
+          return "is-unlit";
+        }
+        return isLit ? "is-lit" : "";
+      }
+
+      if (bootEffect === "divergence-flux") {
+        if (col < previewCol) {
+          return isLit ? "is-lit" : "";
+        }
+        if (col === previewCol) {
+          return "is-scan-beam";
+        }
+        const fluxRand = (index * 13 + previewCol * 17 + row * 7) % 5;
+        if (fluxRand === 0) {
+          return "is-flux-jumping";
+        }
+        return "is-unlit";
+      }
+
       if (col === previewCol) return "is-scan-beam";
       if (col < previewCol) return isLit ? "is-lit" : "";
       return "is-unlit";

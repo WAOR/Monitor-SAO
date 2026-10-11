@@ -109,7 +109,7 @@
 **SAO 探针主题家族**目前涵盖 [Komari-Theme-SAO](https://github.com/WAOR/Komari-Theme-SAO)、[CFSM-SAO](https://github.com/WAOR/CFSM-SAO) 与 [Monitor-SAO](https://github.com/WAOR/Monitor-SAO) 三个版本。为兼顾**跨端核心功能演进的一致性**与**单一探针平台差异化适配的灵活性**，三端主题版本号遵循以下维护约定：
 
 ```text
-v 主版本 . 次版本 . 修订版本  (例: v1.1.5)
+v 主版本 . 次版本 . 修订版本  (例: v1.2.0)
    │        │        │
    │        │        └── 单端专属补丁/小修小补（Patch，各端按需独立递增，不追求一致）
    └────────┴─────────── 跨端核心功能与架构重塑（Major.Minor，三端严格对齐）

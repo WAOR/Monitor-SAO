@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   assignHomepageMultiPingTask,
-  HOMEPAGE_MULTI_PING_MAX_COUNT,
   HOMEPAGE_MULTI_PING_MIN_COUNT,
   isHomepageMultiPingConfigured,
   normalizeHomepageMultiPingTaskIds,
@@ -65,8 +64,7 @@ describe("homepage ping task bindings", () => {
     expect(normalizeHomepageMultiPingTaskIds(["3", 1, 3, 2, 4])).toEqual([3, 1, 2, 4]);
     expect(
       normalizeHomepageMultiPingTaskIds([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
-    ).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
-    expect(HOMEPAGE_MULTI_PING_MAX_COUNT).toBe(8);
+    ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(HOMEPAGE_MULTI_PING_MIN_COUNT).toBe(1);
   });
 

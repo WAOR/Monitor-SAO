@@ -6,7 +6,10 @@ import {
   MIN_RACK_ROWS,
   DEFAULT_PATTERN_SET,
   getPatternPixelSet,
+  MATRIX_RAIN_DELAYS,
+  MATRIX_RAIN_TOTAL_STEPS,
 } from "@/utils/matrixPatterns";
+import type { MatrixColorTheme, MatrixBootEffect } from "@/utils/themeSettings";
 import type { HomeNodeSummary } from "@/services/wsStore";
 
 export const SAO_PIXEL_INDICES = DEFAULT_PATTERN_SET;
@@ -18,9 +21,10 @@ interface ClusterHeatmapProps {
   onlineNodes: number;
   offlineNodes: number;
   totalNodes: number;
-  colorTheme?: "default" | "eva";
+  colorTheme?: MatrixColorTheme;
   mockFill?: boolean;
   bootAnimation?: boolean;
+  bootEffect?: MatrixBootEffect;
   customPattern?: number[] | null;
 }
 
@@ -112,6 +116,7 @@ export function ClusterHeatmap({
   colorTheme = "default",
   mockFill = false,
   bootAnimation = true,
+  bootEffect = "laser-scan",
   customPattern = null,
 }: ClusterHeatmapProps) {
   const [hoverInfo, setHoverInfo] = useState<HoverState | null>(null);
@@ -121,20 +126,21 @@ export function ClusterHeatmap({
     return getPatternPixelSet(customPattern);
   }, [customPattern]);
 
-  // 开屏横扫点阵动效状态机
+  // 开屏横扫/数字雨点阵动效状态机
   const [bootPhase, setBootPhase] = useState<"idle" | "scan" | "hold" | "dissolve">(() =>
     bootAnimation ? "scan" : "idle",
   );
-  const [scanCol, setScanCol] = useState<number>(-1);
+  // scanStep: 当前扫描/动效演进阶段的 step
+  const [scanStep, setScanStep] = useState<number>(-1);
 
   useEffect(() => {
     if (!bootAnimation) {
       setBootPhase("idle");
       return;
     }
-    // 页面载入时从左向右横扫点亮正体 "SAO" 字符点阵，呼吸三下后平滑过渡至真实节点数据
+    // 页面载入时播放开屏动效：普通模式为从左向右横扫，黑客帝国模式为自上而下数据流雨滴下落
     setBootPhase("scan");
-    setScanCol(-1);
+    setScanStep(-1);
 
     let interval: ReturnType<typeof setInterval> | null = null;
     let holdTimer: ReturnType<typeof setTimeout> | null = null;
@@ -143,18 +149,28 @@ export function ClusterHeatmap({
     let raf1: number | null = null;
     let raf2: number | null = null;
 
-    // 先通过双重 requestAnimationFrame 确保浏览器已经完整完成首屏 DOM 布局、样式计算与初次渲染合成（Paint），
-    // 随后再保留 360ms 的静默就绪缓冲，使用户清晰看到 100 槽机架底板已稳固就位，
-    // 彻底杜绝在浅色模式或页面初始加载卡顿阶段扫光提前“偷跑”导致前几列未能被肉眼捕获的问题。
-    // 扫光步进间隔微调至 36ms，呈现从容优雅的雷达激光横扫质感（20 列耗时约 720ms）。
     raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
         startDelayTimer = setTimeout(() => {
           let current = 0;
+          let stepIntervalMs = 36;
+          let maxStep: number = GRID_COLUMNS;
+
+          if (bootEffect === "digital-rain") {
+            stepIntervalMs = 46;
+            maxStep = MATRIX_RAIN_TOTAL_STEPS;
+          } else if (bootEffect === "cyber-glitch") {
+            stepIntervalMs = 42;
+            maxStep = 18;
+          } else if (bootEffect === "divergence-flux") {
+            stepIntervalMs = 46;
+            maxStep = GRID_COLUMNS;
+          }
+
           interval = setInterval(() => {
-            setScanCol(current);
+            setScanStep(current);
             current++;
-            if (current > GRID_COLUMNS) {
+            if (current > maxStep) {
               if (interval) clearInterval(interval);
               setBootPhase("hold");
               // 呼吸三下（每次 600ms，共 1800ms）后进入平滑溶解阶段
@@ -165,7 +181,7 @@ export function ClusterHeatmap({
                 }, 350);
               }, 1800);
             }
-          }, 36);
+          }, stepIntervalMs);
         }, 360);
       });
     });
@@ -178,7 +194,7 @@ export function ClusterHeatmap({
       if (holdTimer) clearTimeout(holdTimer);
       if (dissolveTimer) clearTimeout(dissolveTimer);
     };
-  }, [bootAnimation]);
+  }, [bootAnimation, bootEffect]);
 
   // 统计高吞吐节点数量（速率 >= 5 MB/s）
   const highThroughputCount = useMemo(() => {
@@ -326,11 +342,66 @@ export function ClusterHeatmap({
     if (bootPhase === "idle") return "";
     if (cellIndex >= 100) return "is-sao-unlit";
     const col = cellIndex % GRID_COLUMNS;
+    const row = Math.floor(cellIndex / GRID_COLUMNS);
     const isLit = litPixelSet.has(cellIndex);
 
     if (bootPhase === "scan") {
-      if (col === scanCol) return "is-sao-beam";
-      if (col < scanCol) return isLit ? "is-sao-pixel" : "is-sao-bg";
+      // 1. 数码雨流模式：自上而下的流动数据雨
+      if (bootEffect === "digital-rain") {
+        const delay = MATRIX_RAIN_DELAYS[col] ?? 0;
+        const headRow = scanStep - delay;
+        if (headRow < 0) return "is-sao-unlit";
+        if (row === headRow) return "is-sao-beam"; // 正在下落的数码流光雨滴前锋
+        if (row < headRow) return isLit ? "is-sao-pixel" : "is-sao-bg";
+        return "is-sao-unlit";
+      }
+
+      // 2. 赛博朋克：神经故障 / 协议入侵 (cyber-glitch)
+      if (bootEffect === "cyber-glitch") {
+        if (scanStep <= 12) {
+          const shiftClass =
+            scanStep % 4 === 1 && (row === 1 || row === 3)
+              ? " is-cyber-glitch-shift-left"
+              : scanStep % 4 === 3 && (row === 0 || row === 2)
+                ? " is-cyber-glitch-shift-right"
+                : "";
+
+          const noiseSeed = ((cellIndex * 19 + scanStep * 23) ^ (row * 7)) % 100;
+          const noiseColorClass =
+            noiseSeed % 2 === 0 ? "is-cyber-glitch-channel-a" : "is-cyber-glitch-channel-b";
+
+          if (isLit) {
+            if (scanStep >= 6 && noiseSeed < 70) return `is-sao-pixel${shiftClass}`;
+            if (noiseSeed < 35) return `${noiseColorClass}${shiftClass}`;
+            return `is-sao-unlit${shiftClass}`;
+          }
+          if (noiseSeed < 9) return `${noiseColorClass}${shiftClass}`;
+          return `is-sao-unlit${shiftClass}`;
+        }
+        if (isLit) {
+          return "is-sao-pixel";
+        }
+        return "is-sao-bg";
+      }
+
+      // 3. 命运石之门：世界线跳变 (divergence-flux)
+      if (bootEffect === "divergence-flux") {
+        if (col < scanStep) {
+          return isLit ? "is-sao-pixel" : "is-sao-bg";
+        }
+        if (col === scanStep) {
+          return "is-sao-beam";
+        }
+        const fluxRand = (cellIndex * 13 + scanStep * 17 + row * 7) % 5;
+        if (fluxRand === 0) {
+          return "is-flux-jumping";
+        }
+        return "is-sao-unlit";
+      }
+
+      // 4. 经典/EVA等模式：从左向右激光横扫 (laser-scan)
+      if (col === scanStep) return "is-sao-beam";
+      if (col < scanStep) return isLit ? "is-sao-pixel" : "is-sao-bg";
       return "is-sao-unlit";
     }
     if (bootPhase === "hold") {
@@ -542,7 +613,7 @@ export function ClusterHeatmap({
   return (
     <div
       className="mao-progress-section mao-matrix-section"
-      data-palette={colorTheme === "eva" ? "eva" : "default"}
+      data-palette={colorTheme || "default"}
     >
       <div className="mao-progress-section-header">
         <div className="flex items-baseline gap-1.5 min-w-0">

@@ -138,9 +138,8 @@ async function apiFetch<T>(path: string, options?: RequestOptions & RequestInit)
 
 /** 从 localStorage 读取管理员自定义昵称 */
 export function extractUsernameFromStorage(): string {
-  if (typeof window === "undefined" || !window.localStorage) return "";
   try {
-    const val = window.localStorage.getItem(ADMIN_USERNAME_KEY);
+    const val = typeof window !== "undefined" ? window.localStorage.getItem(ADMIN_USERNAME_KEY) : null;
     if (typeof val === "string") {
       const sanitized = val.replace(/[\x00-\x1F\x7F]/g, "").trim();
       if (sanitized && sanitized.toLowerCase() !== "admin" && sanitized.length <= 40) {
@@ -170,8 +169,8 @@ export function resolveAuthUsername(authed = true): string {
 /** 保存自定义昵称：本地即时响应 + 服务端官方接口持久化 */
 export function saveAdminUsername(nickname: string): Promise<void> {
   const sanitized = nickname.replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 40);
-  if (typeof window !== "undefined" && window.localStorage) {
-    try {
+  try {
+    if (typeof window !== "undefined") {
       if (sanitized) {
         window.localStorage.setItem(ADMIN_USERNAME_KEY, sanitized);
         saveLocalThemeSettings({ ...getLocalThemeSettings(), adminNickname: sanitized });
@@ -181,8 +180,8 @@ export function saveAdminUsername(nickname: string): Promise<void> {
         delete next.adminNickname;
         saveLocalThemeSettings(next);
       }
-    } catch {}
-  }
+    }
+  } catch {}
   if (serverThemeSettingsCache) {
     serverThemeSettingsCache.adminNickname = sanitized;
   }
@@ -339,8 +338,8 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
     }
 
     // 同步刷新本地存储，清理掉已被服务端删除或修改的 schema 字段（如已清空的昵称等）
-    if (typeof window !== "undefined" && window.localStorage) {
-      try {
+    try {
+      if (typeof window !== "undefined") {
         let localDirty = false;
         const nextLocal = { ...localSettings };
 
@@ -369,8 +368,8 @@ export async function getPublic(options?: RequestOptions): Promise<PublicConfig>
         if (localDirty) {
           replaceLocalThemeSettings(nextLocal);
         }
-      } catch {}
-    }
+      }
+    } catch {}
   } else {
     // 离线或服务端接口异常时：以本地快照垫底兜底
     mergedSettings = {
@@ -430,7 +429,9 @@ export async function getLoadRecords(
     const hasConnectionHistory = (data.metrics ?? []).some(
       (m: MonitorHistoryPoint) =>
         (typeof m.tcp === "number" && m.tcp > 0) ||
-        (typeof m.connections === "number" && m.connections > 0),
+        (typeof m.udp === "number" && m.udp > 0) ||
+        (typeof m.connections === "number" && m.connections > 0) ||
+        (typeof m.connections_udp === "number" && m.connections_udp > 0),
     );
     const hasProcessHistory = (data.metrics ?? []).some(
       (m: MonitorHistoryPoint) =>
@@ -448,7 +449,7 @@ export async function getLoadRecords(
       ram_total: 0,
       swap: typeof m.swap_used === "number" ? m.swap_used : 0,
       swap_total: 0,
-      load: 0,
+      load: typeof m.load === "number" ? m.load : 0,
       temp: 0,
       disk: m.disk_used,
       disk_total: 0,

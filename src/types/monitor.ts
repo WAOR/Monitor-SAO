@@ -89,6 +89,7 @@ export interface MonitorHistoryPoint {
   connections?: number;
   connections_udp?: number;
   swap_used?: number;
+  load?: number;
 }
 
 export interface MonitorPingPoint {

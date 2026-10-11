@@ -728,9 +728,9 @@ export function LoadChart({
             note={
               isRealtime && node
                 ? `负载 ${node.load1.toFixed(2)} | ${node.load5.toFixed(2)} | ${node.load15.toFixed(2)}`
-                : latestHistoryRecord
-                  ? `负载 ${(latestHistoryRecord.load ?? 0).toFixed(2)}`
-                  : "—"
+                : (latestHistoryRecord?.load ?? 0) > 0
+                  ? `负载 ${latestHistoryRecord.load.toFixed(2)}`
+                  : "进程数"
             }
             points={points}
             keys={PROCESS_KEYS}

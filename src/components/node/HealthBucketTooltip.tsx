@@ -11,9 +11,12 @@ export function HealthBucketTooltip({
 }) {
   if (!text || index == null || count <= 0) return null;
 
-  const position = ((index + 0.5) / count) * 100;
+  const ratio = (index + 0.5) / count;
+  const pct = Math.max(0, Math.min(100, ratio * 100));
   const style = {
-    "--node-health-tooltip-x": `clamp(42px, ${position}%, calc(100% - 42px))`,
+    "--node-health-tooltip-x": `${pct.toFixed(2)}%`,
+    "--node-health-tooltip-align": `${pct.toFixed(2)}%`,
+    "--node-health-arrow-x": `clamp(12px, ${pct.toFixed(2)}%, calc(100% - 12px))`,
   } as CSSProperties;
 
   return (
