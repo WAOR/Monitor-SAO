@@ -185,10 +185,14 @@
 
 /* V4/V6 双栈标识药丸：仅字样（不显示真实 IP）。data-tag="green" 复用绿色标签的 token，与标签统一 */
 .ip-stack-badge {
+  box-sizing: border-box;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
+  justify-content: center;
   height: 22px;
+  min-height: 22px;
+  max-height: 22px;
   padding: 0 0.5rem;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--tag-fg) 14%, transparent);
