@@ -101,6 +101,8 @@ export interface NodeMetrics {
   netDown: number;
   trafficUp: number;
   trafficDown: number;
+  totalUp?: number;
+  totalDown?: number;
   uptime: number;
   load1: number;
   load5: number;
@@ -293,6 +295,8 @@ export const LoadRecordSchema = z
     disk_total: z.number().default(0),
     net_in: z.number().default(0),
     net_out: z.number().default(0),
+    net_in_max: z.number().optional(),
+    net_out_max: z.number().optional(),
     net_total_up: z.number().default(0),
     net_total_down: z.number().default(0),
     process: z.number().default(0),

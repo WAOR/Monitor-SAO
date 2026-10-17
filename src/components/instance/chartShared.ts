@@ -107,10 +107,8 @@ export function buildPingTimeRangeOptions(maxHours: number | null | undefined): 
   const whole = Number.isFinite(maxHours) && maxHours && maxHours > 0
     ? Math.floor(maxHours)
     : 168;
-  const pingWindows = [1, 6, 24, 168];
-  const filtered = pingWindows.filter((h) => h * 1.25 <= whole);
-  const targetWhole = Math.min(whole, 168);
-  const hoursList = [...new Set([...filtered, targetWhole])];
+  const filteredWindows = STANDARD_HISTORY_WINDOWS.filter((h) => h * 1.25 <= whole);
+  const hoursList = [...new Set([...filteredWindows, whole])];
 
   return hoursList.map((h) => ({
     label: formatRangeLabel(h),

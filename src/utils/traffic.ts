@@ -18,7 +18,11 @@ export function computeTrafficUsed(
   type: string | null | undefined,
   up: number,
   down: number,
+  explicitUsed?: number | null,
 ): number {
+  if (typeof explicitUsed === "number" && Number.isFinite(explicitUsed) && explicitUsed >= 0) {
+    return explicitUsed;
+  }
   const safeUp = nonNegative(up);
   const safeDown = nonNegative(down);
   switch ((type ?? "").trim().toLowerCase()) {
@@ -50,8 +54,9 @@ export function resolveTrafficUsage(
   up: number,
   down: number,
   limit: number,
+  explicitUsed?: number | null,
 ): TrafficUsage {
-  const used = computeTrafficUsed(type, up, down);
+  const used = computeTrafficUsed(type, up, down, explicitUsed);
   const unlimited = !(limit > 0);
   const remaining = unlimited ? 0 : Math.max(0, limit - used);
   const fraction = unlimited ? 0 : Math.max(0, Math.min(1, used / limit));

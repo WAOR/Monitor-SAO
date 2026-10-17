@@ -334,6 +334,19 @@ describe("insertMetricGapSentinels — three-state ping semantics", () => {
     expect(p120!.A).toBeNull();
     expect(p120!.B).toBeNull();
   });
+
+  it("does not insert false null sentinels for multi-hour aggregate intervals (e.g. 120s, 300s)", () => {
+    // 6小时/1天长区间图表中，点按 120s 或 300s 步长聚合；当区间配置为 120s 时不应视为断点
+    const points: TimedMetricPoint[] = [
+      { time: 0, A: 20 },
+      { time: 120, A: 22 },
+      { time: 240, A: 21 },
+      { time: 360, A: 25 },
+    ];
+    const out = insertMetricGapSentinels(points, opts({ A: 120 }));
+    expect(out).toHaveLength(4);
+    expect(out.every((p) => typeof p.A === "number")).toBe(true);
+  });
 });
 
 describe("downsampleAligned", () => {

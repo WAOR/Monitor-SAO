@@ -103,9 +103,12 @@ async function apiFetch<T>(path: string, options?: RequestOptions & RequestInit)
     if (!res.ok) {
       const contentType = res.headers?.get?.("content-type") || "";
       let errText = "";
-      if (typeof res.text === "function") {
+      // 官方规范：hub 的错误回复一律是一行中文纯文本（Content-Type: text/plain），可以原样显示给访客。
+      // 不是 text/plain 的错误回复来自反代或 CDN，不要直接显示出来，按 HTTP 状态码提供友好提示。
+      const isPlain = contentType.toLowerCase().includes("text/plain");
+      if (isPlain && typeof res.text === "function") {
         const raw = await res.text().catch(() => "");
-        if ((contentType.startsWith("text/plain") || !/<[a-z][\s\S]*>/i.test(raw)) && raw.trim()) {
+        if (!/<[a-z][\s\S]*>/i.test(raw) && raw.trim()) {
           errText = raw.trim();
         }
       }
@@ -113,7 +116,9 @@ async function apiFetch<T>(path: string, options?: RequestOptions & RequestInit)
         if (res.status >= 500) {
           errText = `服务暂时无法访问（HTTP ${res.status}），稍后再试`;
         } else if (res.status === 401 || res.status === 403) {
-          errText = `请求被拦截或权限不足（HTTP ${res.status}）`;
+          errText = `需要登录或权限不足（HTTP ${res.status}）`;
+        } else if (res.status === 404) {
+          errText = `请求的资源不存在（HTTP 404）`;
         } else {
           errText = res.statusText || `请求失败（HTTP ${res.status}）`;
         }
@@ -455,6 +460,8 @@ export async function getLoadRecords(
       disk_total: 0,
       net_in: m.net_rx,
       net_out: m.net_tx,
+      net_in_max: m.net_rx_max,
+      net_out_max: m.net_tx_max,
       net_total_up: 0,
       net_total_down: 0,
       process: typeof m.procs === "number" ? m.procs : (m.process ?? 0),
@@ -467,6 +474,7 @@ export async function getLoadRecords(
     return {
       count: records.length,
       records,
+      intervalSeconds: typeof data.step === "number" && data.step > 0 ? data.step : undefined,
       hasConnectionHistory,
       hasProcessHistory,
     };
@@ -500,13 +508,16 @@ export async function getPingRecords(
       loss: p.loss != null ? p.loss : p.latency === null ? 100 : 0,
     }));
 
+    const intervalSeconds =
+      typeof data.step === "number" && data.step > 0 ? data.step : undefined;
+
     const tasks: PingTask[] = Object.entries(data.probes ?? {}).map(([idStr, name]) => {
       const id = Number(idStr);
       const loss = data.loss?.[idStr] ?? 0;
       return {
         id,
         name,
-        interval: 60,
+        interval: intervalSeconds ?? 60,
         loss,
         clients: [uuid],
         type: "icmp",
@@ -519,6 +530,7 @@ export async function getPingRecords(
       count: records.length,
       records,
       tasks,
+      intervalSeconds,
     };
   } catch (_error) {
     return {

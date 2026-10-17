@@ -27,6 +27,13 @@ describe("computeTrafficUsed", () => {
     expect(computeTrafficUsed("sum", -5, 70)).toBe(70);
     expect(computeTrafficUsed("min", -5, 70)).toBe(0);
   });
+
+  it("honors explicitUsed when provided", () => {
+    expect(computeTrafficUsed("sum", 30, 70, 85)).toBe(85);
+    expect(computeTrafficUsed("max", 30, 70, 0)).toBe(0);
+    expect(computeTrafficUsed("max", 30, 70, null)).toBe(70);
+    expect(computeTrafficUsed("max", 30, 70, undefined)).toBe(70);
+  });
 });
 
 describe("resolveTrafficUsage", () => {

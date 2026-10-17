@@ -16,6 +16,7 @@ export interface MonitorMetrics {
   total_tx: number;
   month_rx?: number;
   month_tx?: number;
+  month_used?: number;
   tcp: number;
   udp: number;
   procs: number;
@@ -52,11 +53,18 @@ export interface MonitorNode {
   total_tx?: number;
   month_rx?: number;
   month_tx?: number;
+  month_used?: number;
   month_start?: string;
   day_rx?: number;
   day_tx?: number;
   hostname?: string;
   ip?: string;
+  ipv4?: string;
+  ipv6?: string;
+  ip_other?: string;
+  ipv4_auto?: string;
+  ipv6_auto?: string;
+  addresses?: Array<{ address: string; source?: string }>;
   remark?: string;
   public_remark?: string;
   expires_in?: number | null;
@@ -190,6 +198,29 @@ export function safeMonitorNodes(raw: unknown): MonitorNode[] {
       -1
     );
 
+    const safeMonthRx = toSafeNum(
+      rawMetrics.month_rx ??
+        rawMetrics.net_rx_month ??
+        rawMetrics.rx_month ??
+        node.month_rx ??
+        rawNodeObj.net_rx_month ??
+        rawNodeObj.rx_month,
+      -1
+    );
+    const safeMonthTx = toSafeNum(
+      rawMetrics.month_tx ??
+        rawMetrics.net_tx_month ??
+        rawMetrics.tx_month ??
+        node.month_tx ??
+        rawNodeObj.net_tx_month ??
+        rawNodeObj.tx_month,
+      -1
+    );
+    const safeMonthUsed = toSafeNum(
+      rawMetrics.month_used ?? node.month_used ?? rawNodeObj.month_used,
+      -1
+    );
+
     const sanitizedMetrics: MonitorMetrics = {
       uptime: toSafeNum(m.uptime),
       cpu: toSafeNum(m.cpu),
@@ -207,19 +238,94 @@ export function safeMonitorNodes(raw: unknown): MonitorNode[] {
       tcp: toSafeNum(m.tcp),
       udp: toSafeNum(m.udp),
       procs: toSafeNum(m.procs),
-      month_rx: typeof m.month_rx === "number" ? m.month_rx : node.month_rx,
-      month_tx: typeof m.month_tx === "number" ? m.month_tx : node.month_tx,
+      month_rx: safeMonthRx >= 0 ? safeMonthRx : (typeof m.month_rx === "number" ? m.month_rx : node.month_rx),
+      month_tx: safeMonthTx >= 0 ? safeMonthTx : (typeof m.month_tx === "number" ? m.month_tx : node.month_tx),
+      month_used: safeMonthUsed >= 0 ? safeMonthUsed : (typeof m.month_used === "number" ? m.month_used : node.month_used),
     };
 
     return {
       ...node,
       total_rx: safeTotalRx > 0 ? safeTotalRx : node.total_rx,
       total_tx: safeTotalTx > 0 ? safeTotalTx : node.total_tx,
+      month_rx: safeMonthRx >= 0 ? safeMonthRx : node.month_rx,
+      month_tx: safeMonthTx >= 0 ? safeMonthTx : node.month_tx,
+      month_used: safeMonthUsed >= 0 ? safeMonthUsed : node.month_used,
       day_rx: safeDayRx >= 0 ? safeDayRx : node.day_rx,
       day_tx: safeDayTx >= 0 ? safeDayTx : node.day_tx,
       metrics: sanitizedMetrics,
     };
   });
+}
+
+function isIpv6(addr: string): boolean {
+  return addr.includes(":");
+}
+
+function isIpv4(addr: string): boolean {
+  return !addr.includes(":") && addr.includes(".");
+}
+
+/**
+ * 解析并矫正节点 IPv4 / IPv6 双栈信息
+ * 兼容显式字段、addresses 列表、自动探测字段以及主控出口 IP
+ */
+export function resolveNodeIpStack(node: Partial<MonitorNode>): { ipv4: string; ipv6: string } {
+  let ipv4 = "";
+  let ipv6 = "";
+
+  // 1. 优先读取显式字段 ipv4 / ipv6
+  if (typeof node.ipv4 === "string" && node.ipv4.trim()) {
+    ipv4 = node.ipv4.trim();
+  }
+  if (typeof node.ipv6 === "string" && node.ipv6.trim()) {
+    ipv6 = node.ipv6.trim();
+  }
+
+  // 2. 检查 addresses 列表 (monitor-hub full view 下发 [{'address': '...', 'source': '...'}])
+  if (Array.isArray(node.addresses)) {
+    for (const item of node.addresses) {
+      const addr = (typeof item === "string" ? item : (item as { address?: string })?.address)?.trim() ?? "";
+      if (!addr) continue;
+      if (isIpv6(addr) && !ipv6) {
+        ipv6 = addr;
+      } else if (isIpv4(addr) && !ipv4) {
+        ipv4 = addr;
+      }
+    }
+  }
+
+  // 3. 自动探测地址 fallback (ipv4_auto / ipv6_auto)
+  if (!ipv4 && typeof node.ipv4_auto === "string" && node.ipv4_auto.trim()) {
+    ipv4 = node.ipv4_auto.trim();
+  }
+  if (!ipv6 && typeof node.ipv6_auto === "string" && node.ipv6_auto.trim()) {
+    ipv6 = node.ipv6_auto.trim();
+  }
+
+  // 4. 检查主控直连出口 IP (ip / ip_other)
+  const candidateIps = [node.ip, node.ip_other].filter(
+    (ip): ip is string => typeof ip === "string" && ip.trim().length > 0,
+  );
+  for (const candidate of candidateIps) {
+    const trimmed = candidate.trim();
+    if (isIpv6(trimmed)) {
+      if (!ipv6) ipv6 = trimmed;
+    } else if (isIpv4(trimmed)) {
+      if (!ipv4) ipv4 = trimmed;
+    }
+  }
+
+  // 5. 格式互斥矫正（防御性修复：避免将 IPv6 误存进 ipv4，或将 IPv4 存进 ipv6）
+  if (ipv4 && isIpv6(ipv4)) {
+    if (!ipv6) ipv6 = ipv4;
+    ipv4 = "";
+  }
+  if (ipv6 && isIpv4(ipv6)) {
+    if (!ipv4) ipv4 = ipv6;
+    ipv6 = "";
+  }
+
+  return { ipv4, ipv6 };
 }
 
 /**
@@ -233,6 +339,7 @@ export function convertMonitorNodeToInfo(node: MonitorNode): NodeInfo {
   const memTotal = node.metrics?.mem_total ?? node.mem_total ?? 0;
   const swapTotal = node.metrics?.swap_total ?? node.swap_total ?? 0;
   const diskTotal = node.metrics?.disk_total ?? node.disk_total ?? 0;
+  const { ipv4, ipv6 } = resolveNodeIpStack(node);
 
   return {
     uuid,
@@ -262,8 +369,8 @@ export function convertMonitorNodeToInfo(node: MonitorNode): NodeInfo {
     last_seen_ago: node.last_seen_ago !== undefined ? node.last_seen_ago : undefined,
     traffic_limit: node.traffic_limit ?? 0,
     traffic_limit_type: node.traffic_mode || "",
-    ipv4: node.ip || "",
-    ipv6: "",
+    ipv4,
+    ipv6,
     created_at: "",
     updated_at: node.last_seen ? new Date(node.last_seen * 1000).toISOString() : "",
   };
@@ -280,6 +387,20 @@ export function convertMonitorNodeToMetrics(node: MonitorNode): NodeMetrics {
     (node.online as unknown) === "true" ||
     (node.online == null && m !== null);
 
+  const totalTx = m?.total_tx ?? node.total_tx ?? 0;
+  const totalRx = m?.total_rx ?? node.total_rx ?? 0;
+
+  // 周期月流量：优先使用服务端结算周期内的数据（month_tx/month_rx），若缺失则回退到累计总量（旧版本探针兜底）
+  const monthTx =
+    (typeof m?.month_tx === "number" && m.month_tx >= 0 ? m.month_tx : undefined) ??
+    (typeof node.month_tx === "number" && node.month_tx >= 0 ? node.month_tx : undefined);
+  const monthRx =
+    (typeof m?.month_rx === "number" && m.month_rx >= 0 ? m.month_rx : undefined) ??
+    (typeof node.month_rx === "number" && node.month_rx >= 0 ? node.month_rx : undefined);
+
+  const trafficUp = monthTx !== undefined ? monthTx : totalTx;
+  const trafficDown = monthRx !== undefined ? monthRx : totalRx;
+
   if (!m || !isOnline) {
     return {
       online: isOnline ? true : false,
@@ -294,8 +415,10 @@ export function convertMonitorNodeToMetrics(node: MonitorNode): NodeMetrics {
       diskPct: 0,
       netUp: 0,
       netDown: 0,
-      trafficUp: node.total_tx ?? 0,
-      trafficDown: node.total_rx ?? 0,
+      trafficUp,
+      trafficDown,
+      totalUp: totalTx,
+      totalDown: totalRx,
       uptime: 0,
       load1: 0,
       load5: 0,
@@ -310,8 +433,6 @@ export function convertMonitorNodeToMetrics(node: MonitorNode): NodeMetrics {
 
   const ramPct = m.mem_total > 0 ? (m.mem_used / m.mem_total) * 100 : 0;
   const diskPct = m.disk_total > 0 ? (m.disk_used / m.disk_total) * 100 : 0;
-  const trafficUp = m.total_tx ?? node.total_tx ?? 0;
-  const trafficDown = m.total_rx ?? node.total_rx ?? 0;
 
   return {
     online: true,
@@ -328,6 +449,8 @@ export function convertMonitorNodeToMetrics(node: MonitorNode): NodeMetrics {
     netDown: m.net_rx,
     trafficUp,
     trafficDown,
+    totalUp: totalTx,
+    totalDown: totalRx,
     uptime: m.uptime,
     load1: m.load?.[0] ?? 0,
     load5: m.load?.[1] ?? 0,

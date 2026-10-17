@@ -228,6 +228,8 @@ describe("Monitor API Service", () => {
                 disk_used: 1024,
                 net_rx: 50,
                 net_tx: 60,
+                net_rx_max: 500,
+                net_tx_max: 600,
               },
             ],
           }),
@@ -240,6 +242,8 @@ describe("Monitor API Service", () => {
       expect(res.count).toBe(1);
       expect(res.records[0].cpu).toBe(25.5);
       expect(res.records[0].cpu_max).toBe(88.0);
+      expect(res.records[0].net_in_max).toBe(500);
+      expect(res.records[0].net_out_max).toBe(600);
       expect(res.records[0].minutes).toBe(60);
       expect(res.records[0].step).toBe(3600);
       expect(res.records[0].time).toBe(1700000000 * 1000);
@@ -285,6 +289,7 @@ describe("Monitor API Service", () => {
         ok: true,
         status: 200,
         json: async () => ({
+          step: 300,
           ping: [
             {
               task_id: 101,
@@ -304,10 +309,12 @@ describe("Monitor API Service", () => {
 
       const res = await getPingRecords("1", 24);
       expect(res.count).toBe(1);
+      expect(res.intervalSeconds).toBe(300);
       expect(res.records[0].value).toBe(45);
       expect(res.tasks.length).toBe(1);
       expect(res.tasks[0].id).toBe(101);
       expect(res.tasks[0].name).toBe("Tokyo Probe");
+      expect(res.tasks[0].interval).toBe(300);
     });
   });
 
@@ -458,6 +465,28 @@ describe("Monitor API Service", () => {
 
       // 但流量积分依然按平均值 2000 * 60 = 120000 计算，不虚标累计流量
       expect(upSeries!.points[0].value).toBe(120000);
+    });
+
+    it("displays hub Chinese plaintext errors and sanitizes proxy/CDN HTML errors", async () => {
+      // 1. Hub 官方返回 text/plain
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        headers: new Headers({ "content-type": "text/plain; charset=utf-8" }),
+        text: async () => "需要登录后查看",
+      });
+
+      await expect(getNodes()).rejects.toThrow("需要登录后查看");
+
+      // 2. 反代或 CDN 返回 HTML (如 502 Bad Gateway)
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 502,
+        headers: new Headers({ "content-type": "text/html" }),
+        text: async () => "<html><body>502 Bad Gateway Cloudflare</body></html>",
+      });
+
+      await expect(getNodes()).rejects.toThrow("服务暂时无法访问（HTTP 502），稍后再试");
     });
   });
 });

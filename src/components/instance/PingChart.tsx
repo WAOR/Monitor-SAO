@@ -198,16 +198,25 @@ export function PingChart({
     const taskIntervals = tasks
       .map((task) => task.interval)
       .filter((value): value is number => typeof value === "number" && value > 0);
-    const detectedInterval = detectTypicalIntervalSeconds(
-      sortedRecords.map(({ time }) => time),
-      60,
-    );
+    const perTaskIntervals = tasks
+      .map((task) => {
+        const taskTimes = sortedRecords
+          .filter(({ record }) => record.task_id === task.id)
+          .map(({ time }) => time);
+        return taskTimes.length >= 2 ? detectTypicalIntervalSeconds(taskTimes) : null;
+      })
+      .filter((v): v is number => typeof v === "number" && v > 0);
+    const detectedInterval =
+      perTaskIntervals.length > 0
+        ? Math.min(...perTaskIntervals)
+        : detectTypicalIntervalSeconds(sortedRecords.map(({ time }) => time), 60);
+
     const fallbackInterval = resolvePingChartInterval(
       data.intervalSeconds,
-      taskIntervals.length > 0 ? Math.min(...taskIntervals) : null,
-      detectedInterval,
+      detectedInterval > 0 ? detectedInterval : (taskIntervals.length > 0 ? Math.min(...taskIntervals) : null),
+      60,
     );
-    const tolerance = Math.min(6, Math.max(0.8, fallbackInterval * 0.25));
+    const tolerance = Math.max(0.8, Math.min(fallbackInterval * 0.25, 60));
 
     // 升序游标把邻近任务采样合并到同一时间锚点，保持 O(n)。
     let lastAnchor = Number.NEGATIVE_INFINITY;
@@ -229,7 +238,11 @@ export function PingChart({
       intervals: new Map(
         tasks.map((task) => [
           String(task.id),
-          resolvePingChartInterval(data.intervalSeconds, task.interval, fallbackInterval),
+          Math.max(
+            task.interval ?? 0,
+            resolvePingChartInterval(data.intervalSeconds, task.interval, fallbackInterval),
+            fallbackInterval,
+          ),
         ] as const),
       ),
       defaultInterval: fallbackInterval,
