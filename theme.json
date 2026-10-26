@@ -1,8 +1,8 @@
 {
   "name": "SAO",
   "short": "sao",
-  "description": "极简立体仪表盘主题 · 适配极简探针 1.4.1",
-  "version": "1.2.2",
+  "description": "SAO系列探针主题的 Monitor 版本",
+  "version": "1.2.3",
   "author": "WAOR",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
