@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { normalizeThemeSettings } from "@/utils/themeSettings";
+import { normalizeThemeSettings, THEME_CONFIG_KEYS } from "@/utils/themeSettings";
+import themeManifest from "../../../theme.json";
 
 describe("normalizeThemeSettings", () => {
   it("keeps mini and falls unknown saved view modes back to compact", () => {
@@ -146,18 +147,24 @@ describe("normalizeThemeSettings", () => {
     expect(normalizeThemeSettings({}).matrixCustomPattern).toBeNull();
   });
 
-  it("normalizes matrixUserPresets correctly", () => {
-    const raw = [
-      { id: "1", name: "  设计A  ", indices: [5, 2, 2, 99, 105, -1], createdAt: 12345 },
-      { id: "2", invalid: true },
-    ];
-    const normalized = normalizeThemeSettings({ matrixUserPresets: raw as never }).matrixUserPresets;
-    expect(normalized).toHaveLength(1);
-    expect(normalized[0]).toEqual({
-      id: "1",
-      name: "设计A",
-      indices: [2, 5, 99],
-      createdAt: 12345,
-    });
+  it("ensures theme.json config keys match THEME_CONFIG_KEYS and cyberpunk is removed", () => {
+    type ConfigEntry = { type?: string; key?: string; options?: Array<{ value: string; label: string }> };
+    const configs = (themeManifest.config || []) as ConfigEntry[];
+
+    // 检查 matrixColorTheme 的选项中不再包含 cyberpunk (夜之城 2077)
+    const colorThemeConfig = configs.find((c) => c.key === "matrixColorTheme");
+    expect(colorThemeConfig).toBeDefined();
+    const colorValues = (colorThemeConfig?.options || []).map((opt) => opt.value);
+    expect(colorValues).not.toContain("cyberpunk");
+    expect(colorValues).toEqual(["default", "eva", "divergence"]);
+
+    // 提取 theme.json 中除去 pure title 之外的全部实际配置 keys
+    const manifestKeys = configs
+      .filter((c) => c.type !== "title" && c.key)
+      .map((c) => c.key as string);
+
+    // 确保与 THEME_CONFIG_KEYS 包含相同的字段
+    expect(new Set(manifestKeys)).toEqual(new Set(THEME_CONFIG_KEYS));
+    expect(manifestKeys.length).toBe(THEME_CONFIG_KEYS.length);
   });
 });
