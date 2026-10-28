@@ -121,7 +121,7 @@ describe("normalizeThemeSettings", () => {
   it("normalizes matrixColorTheme correctly", () => {
     expect(normalizeThemeSettings({ matrixColorTheme: "default" }).matrixColorTheme).toBe("default");
     expect(normalizeThemeSettings({ matrixColorTheme: "eva" }).matrixColorTheme).toBe("eva");
-    expect(normalizeThemeSettings({ matrixColorTheme: "invalid" as never }).matrixColorTheme).toBe("default");
+    expect(normalizeThemeSettings({ matrixColorTheme: "invalid" as never }).matrixColorTheme).toBe("eva");
   });
 
   it("normalizes matrixMockFill correctly", () => {

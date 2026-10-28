@@ -117,7 +117,6 @@ export interface NodeMetrics {
 export type MatrixColorTheme =
   | "default"
   | "eva"
-  | "cyberpunk"
   | "divergence";
 
 /** 方格矩阵开屏动效形式：laser-scan (激光横扫)、digital-rain (数码流雨) */
@@ -170,7 +169,21 @@ export interface UserMatrixPreset {
   createdAt: number;
 }
 
+export type OverviewCardId =
+  | "connections"
+  | "cpu"
+  | "ram"
+  | "disk"
+  | "traffic"
+  | "asset"
+  | "nodes"
+  | "bandwidth"
+  | "swap"
+  | "process"
+  | "cores";
+
 export interface ThemeSettings {
+  overviewCards?: OverviewCardId[];
   defaultAppearance?: "system" | "light" | "dark";
   desktopNodeViewMode?: "large" | "compact" | "mini" | "list";
   mobileNodeViewMode?: "large" | "compact" | "mini" | "list";

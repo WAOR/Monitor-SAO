@@ -747,6 +747,14 @@
   transform: translateY(-1px);
 }
 
+.setting-color-theme-card.is-eva:hover:not([data-active="true"]) {
+  border-color: color-mix(in srgb, #8b5cf6 50%, var(--border-color));
+}
+
+.setting-color-theme-card.is-divergence:hover:not([data-active="true"]) {
+  border-color: color-mix(in srgb, #f97316 50%, var(--border-color));
+}
+
 .setting-color-theme-card[data-active="true"] {
   border-color: var(--accent-500);
   background: color-mix(in srgb, var(--accent-500) 10%, var(--surface-sunken));
@@ -757,6 +765,12 @@
   border-color: #8b5cf6;
   background: color-mix(in srgb, #7c3aed 10%, var(--surface-sunken));
   box-shadow: 0 0 0 1px #8b5cf6, 0 3px 12px -2px rgba(124, 58, 237, 0.35);
+}
+
+.setting-color-theme-card.is-divergence[data-active="true"] {
+  border-color: #f97316;
+  background: color-mix(in srgb, #ea580c 10%, var(--surface-sunken));
+  box-shadow: 0 0 0 1px #f97316, 0 3px 12px -2px rgba(234, 88, 12, 0.35);
 }
 
 .setting-color-theme-radio {
@@ -784,6 +798,11 @@
 .setting-color-theme-card.is-eva[data-active="true"] .setting-color-theme-radio {
   border-color: #8b5cf6;
   background: #7c3aed;
+}
+
+.setting-color-theme-card.is-divergence[data-active="true"] .setting-color-theme-radio {
+  border-color: #f97316;
+  background: #ea580c;
 }
 
 .setting-color-theme-radio-dot {
@@ -836,6 +855,49 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* 高对比度胶囊按钮（同站点配置报错重试按钮规范：深色模式浅色按钮、浅色模式深色按钮、圆润胶囊形态） */
+.theme-reset-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--text-primary);
+  color: var(--bg-0);
+  border: 1px solid var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px -3px color-mix(in srgb, var(--text-primary) 28%, transparent);
+  transition:
+    opacity 160ms ease,
+    transform 160ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 160ms ease;
+}
+
+.theme-reset-pill-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -3px color-mix(in srgb, var(--text-primary) 38%, transparent);
+}
+
+.theme-reset-pill-btn:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.theme-reset-pill-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .theme-manage-button {
@@ -941,6 +1003,58 @@
 
 .theme-manage-inline-link:hover {
   color: color-mix(in srgb, var(--progress-cpu) 78%, white 22%);
+}
+
+/* 项目反馈面板仓库操作按钮 */
+.repo-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: transform 120ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  text-decoration: none;
+}
+
+.repo-action-btn:active {
+  transform: scale(0.98);
+}
+
+/* 主行动点：当前运行版本的 Issue 反馈按钮（纯正主题强调色，白字高亮，悬浮深一度） */
+.repo-action-btn.is-primary {
+  background: var(--accent-500, #3b82f6);
+  color: #ffffff !important;
+  border: 1px solid var(--accent-500, #3b82f6);
+  font-weight: 600;
+}
+
+.repo-action-btn.is-primary:hover {
+  background: var(--accent-strong, #2563eb);
+  border-color: var(--accent-strong, #2563eb);
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--accent-500, #3b82f6) 35%, transparent);
+}
+
+/* 次要行动点（查看已知问题、访问 GitHub，以及非当前版本的 Issue 按钮） */
+.repo-action-btn.is-secondary {
+  border: 1px solid var(--hairline);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+}
+
+.repo-action-btn.is-secondary:hover {
+  color: var(--accent-500, #3b82f6);
+  border-color: color-mix(in srgb, var(--accent-500, #3b82f6) 50%, transparent);
+  background: color-mix(in srgb, var(--accent-500, #3b82f6) 6%, var(--bg-card));
+  box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--accent-500, #3b82f6) 20%, transparent);
 }
 
 .theme-manage-empty-state {
@@ -2151,5 +2265,22 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+/* 指针特性自适应引导文案：鼠标/触控板 vs 纯触屏（手机/平板） */
+.theme-manage-guide-touch {
+  display: none;
+}
+.theme-manage-guide-mouse {
+  display: inline;
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+  .theme-manage-guide-touch {
+    display: inline;
+  }
+  .theme-manage-guide-mouse {
+    display: none;
   }
 }
