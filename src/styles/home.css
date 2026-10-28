@@ -380,6 +380,7 @@
   align-items: center;
   gap: 6px;
 }
+
 :root[data-appearance="dark"] .mao-stat-title-wrap {
   gap: 7px;
 }
@@ -403,42 +404,55 @@
 .mao-stat-icon-connections {
   --current-metric-color: var(--metric-connections-color);
 }
+
 .mao-stat-icon-cpu {
   --current-metric-color: var(--metric-cpu-color);
 }
+
 .mao-stat-icon-ram {
   --current-metric-color: var(--metric-ram-color);
 }
+
 .mao-stat-icon-disk {
   --current-metric-color: var(--metric-disk-color);
 }
+
 .mao-stat-icon-traffic {
   --current-metric-color: var(--metric-traffic-color);
 }
+
 .mao-stat-icon-uptime {
   --current-metric-color: var(--metric-uptime-color);
 }
+
 .mao-stat-icon-asset {
   --current-metric-color: var(--metric-asset-color);
 }
+
 .mao-stat-icon-nodes {
   --current-metric-color: var(--metric-nodes-color, #10b981);
 }
+
 .mao-stat-icon-bandwidth {
   --current-metric-color: var(--metric-bandwidth-color, #06b6d4);
 }
+
 .mao-stat-icon-swap {
   --current-metric-color: var(--metric-swap-color, #a855f7);
 }
+
 .mao-stat-icon-load {
   --current-metric-color: var(--metric-load-color, #f97316);
 }
+
 .mao-stat-icon-process {
   --current-metric-color: var(--metric-process-color, #6366f1);
 }
+
 .mao-stat-icon-cores {
   --current-metric-color: var(--metric-cores-color, #f59e0b);
 }
+
 .mao-stat-icon-ping {
   --current-metric-color: var(--metric-ping-color, #38bdf8);
 }
@@ -471,14 +485,14 @@
   background: color-mix(in srgb, var(--current-metric-color, #7c3aed) 16%, rgba(12, 12, 16, 0.7));
   border: 1px solid color-mix(in srgb, var(--current-metric-color, #7c3aed) 36%, transparent);
   box-shadow: 0 0 9px color-mix(in srgb, var(--current-metric-color, #7c3aed) 32%, transparent),
-              inset 0 0 5px color-mix(in srgb, var(--current-metric-color, #7c3aed) 16%, transparent);
+    inset 0 0 5px color-mix(in srgb, var(--current-metric-color, #7c3aed) 16%, transparent);
 }
 
 :root[data-appearance="dark"] [data-palette="divergence"] .mao-stat-icon-hud {
   background: color-mix(in srgb, var(--current-metric-color, #ff7700) 18%, rgba(22, 19, 17, 0.75));
   border: 1px solid color-mix(in srgb, var(--current-metric-color, #ff7700) 38%, transparent);
   box-shadow: 0 0 10px color-mix(in srgb, var(--current-metric-color, #ff7700) 35%, transparent),
-              inset 0 0 5px color-mix(in srgb, var(--current-metric-color, #facc15) 18%, transparent);
+    inset 0 0 5px color-mix(in srgb, var(--current-metric-color, #facc15) 18%, transparent);
 }
 
 
@@ -947,6 +961,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -1297,6 +1312,7 @@
 .mao-heatmap-cell.is-cyber-glitch-shift-left {
   transform: translateX(-3.5px) !important;
 }
+
 .mao-heatmap-cell.is-cyber-glitch-shift-right {
   transform: translateX(3.5px) !important;
 }
@@ -1332,7 +1348,7 @@
   background: var(--_flux-color) !important;
   border-color: var(--matrix-boot-fx-flux-border, color-mix(in srgb, var(--_flux-color) 75%, #ffffff)) !important;
   box-shadow: 0 0 10px var(--matrix-boot-fx-flux-glow, color-mix(in srgb, var(--_flux-color) 75%, transparent)),
-              0 0 3px var(--matrix-boot-fx-flux-border, color-mix(in srgb, var(--_flux-color) 75%, #ffffff)) !important;
+    0 0 3px var(--matrix-boot-fx-flux-border, color-mix(in srgb, var(--_flux-color) 75%, #ffffff)) !important;
   opacity: 0.95 !important;
   z-index: 4;
 }
@@ -1343,7 +1359,7 @@
   background: var(--_flux-color) !important;
   border-color: var(--matrix-boot-fx-flux-border, color-mix(in srgb, var(--_flux-color) 85%, #ffffff)) !important;
   box-shadow: 0 0 12px var(--matrix-boot-fx-flux-glow, color-mix(in srgb, var(--_flux-color) 85%, transparent)),
-              0 0 4px var(--matrix-boot-fx-flux-border, color-mix(in srgb, var(--_flux-color) 85%, #ffffff)) !important;
+    0 0 4px var(--matrix-boot-fx-flux-border, color-mix(in srgb, var(--_flux-color) 85%, #ffffff)) !important;
   opacity: 1 !important;
   z-index: 4;
 }
@@ -1424,10 +1440,13 @@
 }
 
 @keyframes sao-boot-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: brightness(1);
     box-shadow: 0 0 6px rgba(255, 150, 0, 0.5);
   }
+
   50% {
     filter: brightness(1.28);
     box-shadow: 0 0 15px rgba(255, 165, 0, 0.95), 0 0 3px rgba(255, 240, 180, 0.95);
@@ -1435,10 +1454,13 @@
 }
 
 @keyframes sao-boot-pulse-eva {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: brightness(1);
     box-shadow: 0 0 7px rgba(124, 58, 237, 0.65), 0 0 2px rgba(192, 132, 252, 0.7);
   }
+
   50% {
     filter: brightness(1.25);
     box-shadow: 0 0 16px rgba(168, 85, 247, 0.95), 0 0 4px #c084fc;
@@ -1446,10 +1468,13 @@
 }
 
 @keyframes sao-boot-pulse-divergence {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: brightness(1);
     box-shadow: 0 0 7px rgba(255, 119, 0, 0.65), 0 0 2px rgba(254, 215, 170, 0.7);
   }
+
   50% {
     filter: brightness(1.3);
     box-shadow: 0 0 17px rgba(255, 119, 0, 0.95), 0 0 4px #facc15;
@@ -3022,41 +3047,116 @@
 
 /* EVA 初号机：带宽指示灯专属同步脉冲 */
 @keyframes bandwidth-pulse-eva-0 {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(124, 58, 237, 0.45)); }
-  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(124, 58, 237, 0.45)); }
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 var(--badge-glow, rgba(124, 58, 237, 0.45));
+  }
+
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(124, 58, 237, 0.45));
+  }
 }
 
 @keyframes bandwidth-pulse-eva-1 {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(5, 150, 105, 0.45)); }
-  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(5, 150, 105, 0.45)); }
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 var(--badge-glow, rgba(5, 150, 105, 0.45));
+  }
+
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(5, 150, 105, 0.45));
+  }
 }
 
 @keyframes bandwidth-pulse-eva-2 {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(234, 88, 12, 0.45)); }
-  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(234, 88, 12, 0.45)); }
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 var(--badge-glow, rgba(234, 88, 12, 0.45));
+  }
+
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(234, 88, 12, 0.45));
+  }
 }
 
 @keyframes bandwidth-pulse-eva-3 {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(220, 38, 38, 0.45)); }
-  50% { opacity: 0.35; box-shadow: 0 0 6px 2px var(--badge-glow, rgba(220, 38, 38, 0.45)); }
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 var(--badge-glow, rgba(220, 38, 38, 0.45));
+  }
+
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 6px 2px var(--badge-glow, rgba(220, 38, 38, 0.45));
+  }
 }
 
 /* 命运石之门：带宽指示灯专属同步脉冲 */
 @keyframes bandwidth-pulse-div-0 {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(168, 162, 158, 0.45)); }
-  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(168, 162, 158, 0.45)); }
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 var(--badge-glow, rgba(168, 162, 158, 0.45));
+  }
+
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(168, 162, 158, 0.45));
+  }
 }
+
 @keyframes bandwidth-pulse-div-1 {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(255, 119, 0, 0.5)); }
-  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(255, 119, 0, 0.5)); }
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 var(--badge-glow, rgba(255, 119, 0, 0.5));
+  }
+
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(255, 119, 0, 0.5));
+  }
 }
+
 @keyframes bandwidth-pulse-div-2 {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(250, 204, 21, 0.5)); }
-  50% { opacity: 0.35; box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(250, 204, 21, 0.5)); }
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 var(--badge-glow, rgba(250, 204, 21, 0.5));
+  }
+
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 5px 1.5px var(--badge-glow, rgba(250, 204, 21, 0.5));
+  }
 }
+
 @keyframes bandwidth-pulse-div-3 {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--badge-glow, rgba(244, 63, 94, 0.6)); }
-  50% { opacity: 0.35; box-shadow: 0 0 6px 2px var(--badge-glow, rgba(244, 63, 94, 0.6)); }
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 var(--badge-glow, rgba(244, 63, 94, 0.6));
+  }
+
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 6px 2px var(--badge-glow, rgba(244, 63, 94, 0.6));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3261,6 +3361,14 @@
   max-width: 100%;
   padding: 4px 0;
   overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.home-region-capsule:active {
+  cursor: grabbing;
 }
 
 /* 溢出循环时视口限制与双端渐隐羽化遮罩 (Edge Fade Mask) */
@@ -3277,16 +3385,10 @@
   }
 }
 
-/* 非循环模式（<=6个地区）：在宽屏自然展开完整胶囊不截断，小屏自适应平滑横向滚动 */
+/* 非循环模式（<=6个地区）：在宽屏自然展开完整胶囊不截断 */
 .home-region-capsule[data-looping="false"] {
   max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.home-region-capsule[data-looping="false"]::-webkit-scrollbar {
-  display: none;
+  cursor: default;
 }
 
 /* 硬件加速无缝无限循环关键帧：通过合成器线程 (Compositor Thread) 完全独立于 JS 主线程运行 */
@@ -3295,7 +3397,7 @@
     transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translate3d(-50%, 0, 0);
+    transform: translate3d(-33.333333%, 0, 0);
   }
 }
 
@@ -3306,22 +3408,17 @@
   gap: 0;
   padding: 2px 2px;
   user-select: none;
-}
-
-.home-region-track.is-animated {
-  animation: home-region-marquee var(--marquee-duration, 40s) linear infinite;
+  -webkit-user-select: none;
   will-change: transform;
 }
 
-/* 鼠标悬浮或触摸时在合成器层即时暂停，移开后无缝恢复流动 */
-.home-region-capsule:hover .home-region-track.is-animated,
-.home-region-capsule:active .home-region-track.is-animated {
-  animation-play-state: paused;
+.home-region-track.is-animated {
+  animation: home-region-marquee var(--marquee-duration, 20s) linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .home-region-track.is-animated {
-    animation: none;
+    animation: none !important;
   }
 }
 
