@@ -48,7 +48,8 @@ import { QualityBars } from "@/components/node/QualityBars";
 import { OverviewStatCard, type OverviewData } from "@/components/node/OverviewStatCard";
 import { useHomeNodeSummaries } from "@/hooks/useNode";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
-import { useHourlyClock } from "@/hooks/useClock";
+import { useHourlyClock, useMinuteClock } from "@/hooks/useClock";
+import { useTodayTrafficStats } from "@/hooks/useTodayTrafficStats";
 import { useThemeUpdate } from "@/hooks/useThemeUpdate";
 import { queryClient } from "@/services/queryClient";
 import {
@@ -1581,6 +1582,17 @@ export function ThemeManage() {
     );
   }, [allMeta, draftCostIgnoredNodes, draft.costPremiums, now, premiumRateQuery.data]);
 
+  const trafficUuids = useMemo(() => allMeta.map((n) => n.uuid), [allMeta]);
+  const todayTrafficClock = useMinuteClock();
+  const todayTrafficQuery = useTodayTrafficStats(trafficUuids, todayTrafficClock, "summary");
+  const todayTrafficTotal = useMemo(() => {
+    if (!todayTrafficQuery.data) return null;
+    return todayTrafficQuery.data.rows.reduce(
+      (sum, row) => sum + row.trafficUp + row.trafficDown,
+      0,
+    );
+  }, [todayTrafficQuery.data]);
+
   const premiumDetailByUuid = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateCostSummary>["details"][number]>();
     if (!premiumRateQuery.data) return map;
@@ -2284,6 +2296,8 @@ function draftToThemeSettings(targetDraft: ThemeDraft): ThemeSettings {
                                     cardId={cardId}
                                     overview={realOverview}
                                     costSummary={realCostSummary}
+                                    todayTrafficTotal={todayTrafficTotal}
+                                    todayTrafficLoading={todayTrafficQuery.isPending}
                                     className="w-full pointer-events-none shadow-none"
                                   />
                                 </div>
@@ -2373,6 +2387,8 @@ function draftToThemeSettings(targetDraft: ThemeDraft): ThemeSettings {
                                   cardId={cardId}
                                   overview={realOverview}
                                   costSummary={realCostSummary}
+                                  todayTrafficTotal={todayTrafficTotal}
+                                  todayTrafficLoading={todayTrafficQuery.isPending}
                                   className="w-full pointer-events-none shadow-xs"
                                 />
                               </div>
