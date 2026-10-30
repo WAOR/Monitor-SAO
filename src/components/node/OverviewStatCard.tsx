@@ -133,18 +133,18 @@ export const OverviewStatCard: React.FC<OverviewStatCardProps> = ({
       ? ["—", ""]
       : formatBytes(todayTrafficBytes).split(" ");
 
-  const totalSwapUsed = overview?.totalSwapUsed ?? 7516192768; // 7.00 GB
-  const totalSwapTotal = overview?.totalSwapTotal ?? 23622320128; // 22.0 GB
+  const totalSwapUsed = overview ? (overview.totalSwapUsed ?? 0) : 7516192768; // 7.00 GB
+  const totalSwapTotal = overview ? (overview.totalSwapTotal ?? 0) : 23622320128; // 22.0 GB
   const [swapUsedValue, swapUsedUnit] = formatBytes(totalSwapUsed).split(" ");
-  const swapPct = totalSwapTotal > 0 ? (totalSwapUsed / totalSwapTotal) * 100 : 31.8;
+  const swapPct = overview?.swapPct ?? (totalSwapTotal > 0 ? (totalSwapUsed / totalSwapTotal) * 100 : (overview ? 0 : 31.8));
 
-  const netUp = overview?.netUp ?? 44459622; // 42.4 MB/s
-  const netDown = overview?.netDown ?? 64277708; // 61.3 MB/s
+  const netUp = overview ? (overview.netUp ?? 0) : 44459622; // 42.4 MB/s
+  const netDown = overview ? (overview.netDown ?? 0) : 64277708; // 61.3 MB/s
   const netTotal = netUp + netDown;
   const [bandwidthTotalValue, bandwidthTotalUnit] = formatBytes(netTotal).split(" ");
 
-  const totalProcesses = overview?.totalProcesses ?? 1842;
-  const totalCores = overview?.totalCores ?? 64;
+  const totalProcesses = overview ? (overview.totalProcesses ?? 0) : 1842;
+  const totalCores = overview ? (overview.totalCores ?? 0) : 64;
 
   const renderRating = (rating: OverviewRating | null) =>
     rating ? (
@@ -395,11 +395,34 @@ export const OverviewStatCard: React.FC<OverviewStatCardProps> = ({
             </div>
           </div>
           <div className="mao-stat-value">
-            {swapUsedValue} <span className="mao-stat-unit">{swapUsedUnit}</span>
+            {totalSwapTotal > 0 ? (
+              <>
+                {swapUsedValue} <span className="mao-stat-unit">{swapUsedUnit}</span>
+              </>
+            ) : overview ? (
+              <span className="mao-stat-unit text-[16px]">未配置</span>
+            ) : (
+              <>
+                {swapUsedValue} <span className="mao-stat-unit">{swapUsedUnit}</span>
+              </>
+            )}
           </div>
           <div className="mao-stat-footer">
-            <span className="mao-stat-caption" title={`已用: ${formatBytes(totalSwapUsed)} / 总量: ${formatBytes(totalSwapTotal)}`}>
-              共 {formatBytes(totalSwapTotal)} · {swapPct.toFixed(1)}%
+            <span
+              className="mao-stat-caption"
+              title={
+                totalSwapTotal > 0
+                  ? `已用: ${formatBytes(totalSwapUsed)} / 总量: ${formatBytes(totalSwapTotal)}`
+                  : overview
+                    ? "全网节点未分配 Swap"
+                    : `已用: ${formatBytes(totalSwapUsed)} / 总量: ${formatBytes(totalSwapTotal)}`
+              }
+            >
+              {totalSwapTotal > 0
+                ? `共 ${formatBytes(totalSwapTotal)} · ${swapPct.toFixed(1)}%`
+                : overview
+                  ? "Swap 未激活"
+                  : `共 ${formatBytes(totalSwapTotal)} · ${swapPct.toFixed(1)}%`}
             </span>
           </div>
         </div>

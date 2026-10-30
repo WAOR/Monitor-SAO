@@ -59,6 +59,7 @@ import {
   getNodes,
   saveThemeSettings,
 } from "@/services/api";
+import { getNodeMetricsSnapshot } from "@/services/wsStore";
 import type {
   AdminClient,
   OverviewCardId,
@@ -1402,66 +1403,6 @@ export function ThemeManage() {
     setSelectedSlotIndex(null);
   };
 
-  const nodeSummaries = useHomeNodeSummaries();
-  const realOverview = useMemo<OverviewData | undefined>(() => {
-    if (!nodeSummaries || nodeSummaries.length === 0) return undefined;
-    let onlineNodes = 0;
-    let offlineNodes = 0;
-    let trafficUp = 0;
-    let trafficDown = 0;
-    let netUp = 0;
-    let netDown = 0;
-    let totalCpu = 0;
-    let totalRamUsed = 0;
-    let totalRamTotal = 0;
-    let totalDiskUsed = 0;
-    let totalDiskTotal = 0;
-    let totalTcpConn = 0;
-    let totalUdpConn = 0;
-
-    for (const node of nodeSummaries) {
-      if (node.online === true) onlineNodes++;
-      else if (node.online === false) offlineNodes++;
-
-      trafficUp += node.trafficUp || 0;
-      trafficDown += node.trafficDown || 0;
-      netUp += node.netUp || 0;
-      netDown += node.netDown || 0;
-      totalCpu += node.cpuPct || 0;
-      totalRamUsed += node.ramUsed || 0;
-      totalRamTotal += node.ramTotal || 0;
-      // swap not in HomeNodeSummary
-      // swap not in HomeNodeSummary
-      totalDiskUsed += node.diskUsed || 0;
-      totalDiskTotal += node.diskTotal || 0;
-      totalTcpConn += node.connectionsTcp || 0;
-      totalUdpConn += node.connectionsUdp || 0;
-      // process not in HomeNodeSummary
-    }
-
-    const totalNodes = onlineNodes + offlineNodes;
-    const avgCpu = onlineNodes > 0 ? totalCpu / onlineNodes : 0;
-
-    return {
-      totalNodes,
-      onlineNodes,
-      offlineNodes,
-      trafficUp,
-      trafficDown,
-      netUp,
-      netDown,
-      avgCpu,
-      totalRamUsed,
-      totalRamTotal,
-      ramPct: totalRamTotal > 0 ? (totalRamUsed / totalRamTotal) * 100 : 0,
-      totalDiskUsed,
-      totalDiskTotal,
-      diskPct: totalDiskTotal > 0 ? (totalDiskUsed / totalDiskTotal) * 100 : 0,
-      totalTcpConn,
-      totalUdpConn,
-    };
-  }, [nodeSummaries]);
-
   
 
   const moveGroup = (index: number, direction: -1 | 1) => {
@@ -1559,6 +1500,84 @@ export function ThemeManage() {
     staleTime: 60_000,
     retry: 1,
   });
+
+  const nodeSummaries = useHomeNodeSummaries();
+  const realOverview = useMemo<OverviewData | undefined>(() => {
+    if (!nodeSummaries || nodeSummaries.length === 0) return undefined;
+    let onlineNodes = 0;
+    let offlineNodes = 0;
+    let trafficUp = 0;
+    let trafficDown = 0;
+    let netUp = 0;
+    let netDown = 0;
+    let totalCpu = 0;
+    let totalRamUsed = 0;
+    let totalRamTotal = 0;
+    let totalDiskUsed = 0;
+    let totalDiskTotal = 0;
+    let totalTcpConn = 0;
+    let totalUdpConn = 0;
+    let totalSwapUsed = 0;
+    let totalSwapTotal = 0;
+    let totalProcesses = 0;
+
+    for (const node of nodeSummaries) {
+      const metrics = getNodeMetricsSnapshot(node.uuid);
+      if (node.online === true) {
+        onlineNodes++;
+        totalCpu += node.cpuPct || 0;
+        totalRamUsed += node.ramUsed || 0;
+        totalDiskUsed += node.diskUsed || 0;
+        totalTcpConn += node.connectionsTcp || 0;
+        totalUdpConn += node.connectionsUdp || 0;
+        if (metrics) {
+          totalSwapUsed += metrics.swapUsed || 0;
+          totalProcesses += metrics.process || 0;
+        }
+      } else if (node.online === false) {
+        offlineNodes++;
+      }
+
+      totalRamTotal += node.ramTotal || 0;
+      totalDiskTotal += node.diskTotal || 0;
+      if (metrics) {
+        totalSwapTotal += metrics.swapTotal || 0;
+      }
+      trafficUp += node.trafficUp || 0;
+      trafficDown += node.trafficDown || 0;
+      netUp += node.netUp || 0;
+      netDown += node.netDown || 0;
+    }
+
+    const totalNodes = onlineNodes + offlineNodes;
+    const avgCpu = onlineNodes > 0 ? totalCpu / onlineNodes : 0;
+    const totalCores = allMeta.length > 0 ? allMeta.reduce((sum, n) => sum + (n.cpu_cores || 0), 0) : 0;
+    const swapPct = totalSwapTotal > 0 ? (totalSwapUsed / totalSwapTotal) * 100 : 0;
+
+    return {
+      totalNodes,
+      onlineNodes,
+      offlineNodes,
+      trafficUp,
+      trafficDown,
+      netUp,
+      netDown,
+      avgCpu,
+      totalRamUsed,
+      totalRamTotal,
+      ramPct: totalRamTotal > 0 ? (totalRamUsed / totalRamTotal) * 100 : 0,
+      totalDiskUsed,
+      totalDiskTotal,
+      diskPct: totalDiskTotal > 0 ? (totalDiskUsed / totalDiskTotal) * 100 : 0,
+      totalTcpConn,
+      totalUdpConn,
+      totalSwapUsed,
+      totalSwapTotal,
+      swapPct,
+      totalProcesses,
+      totalCores,
+    };
+  }, [nodeSummaries, allMeta]);
   const premiumRateQuery = useQuery({
     queryKey: ["cost-rates", sourceThemeSettings.costRateApiUrl],
     queryFn: ({ signal }) => getExchangeRates(sourceThemeSettings.costRateApiUrl, { signal }),
