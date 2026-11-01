@@ -200,12 +200,8 @@ function HomeOverviewCards({
   overview,
   costSummary,
   costLoading,
-  showTrafficRating,
   showBandwidthRating,
-  showAssetRating,
-  trafficRatingLabels,
   bandwidthRatingLabels,
-  assetRatingLabels,
   showTrafficDetailButton = true,
   showDetailButton,
   showAssetCard,
@@ -231,12 +227,8 @@ function HomeOverviewCards({
   costSummary: { remainingCny: number; totalOriginalPriceCny?: number } | null;
   costLoading: boolean;
   dense: boolean;
-  showTrafficRating: boolean;
   showBandwidthRating: boolean;
-  showAssetRating: boolean;
-  trafficRatingLabels: string;
   bandwidthRatingLabels: string;
-  assetRatingLabels: string;
   showTrafficDetailButton?: boolean;
   showDetailButton: boolean;
   showAssetCard: boolean;
@@ -279,33 +271,16 @@ function HomeOverviewCards({
     setIsEditingName(false);
   };
 
-  const todayTrafficBytes = todayTrafficTotal ?? 0;
   const onlinePct =
     overview.totalNodes > 0 ? (overview.onlineNodes / overview.totalNodes) * 100 : 0;
   const { isPriceVisible } = usePriceVisibility();
 
-  const trafficRating =
-    showTrafficRating && todayTrafficTotal !== null
-      ? getOverviewRating({
-        kind: "traffic",
-        value: todayTrafficBytes,
-        customLabels: trafficRatingLabels,
-      })
-      : null;
   const bandwidthRating =
     showBandwidthRating
       ? getOverviewRating({
         kind: "bandwidth",
         value: overview.netUp + overview.netDown,
         customLabels: bandwidthRatingLabels,
-      })
-      : null;
-  const assetRating =
-    isPriceVisible && showAssetRating && costSummary
-      ? getOverviewRating({
-        kind: "asset",
-        value: costSummary.totalOriginalPriceCny ?? 0,
-        customLabels: assetRatingLabels,
       })
       : null;
 
@@ -339,8 +314,6 @@ function HomeOverviewCards({
         costLoading={costLoading}
         showTrafficDetailButton={showTrafficDetailButton}
         showDetailButton={showDetailButton}
-        trafficRating={trafficRating}
-        assetRating={assetRating}
         renewalNodes={renewalNodes}
         onWarmTraffic={onWarmTraffic}
       />
@@ -1364,12 +1337,8 @@ export function NodeGrid() {
           renewalNodes={overviewRenewalNodes}
           costSummary={costSummary}
           costLoading={costLoading}
-          showTrafficRating={themeSettings.showTrafficRating}
           showBandwidthRating={themeSettings.showBandwidthRating}
-          showAssetRating={themeSettings.showAssetRating}
-          trafficRatingLabels={themeSettings.trafficRatingLabels}
           bandwidthRatingLabels={themeSettings.bandwidthRatingLabels}
-          assetRatingLabels={themeSettings.assetRatingLabels}
           onWarmTraffic={warmTrafficPage}
           username={loggedIn ? (themeSettings.adminNickname || me?.username || "Admin") : "Guest"}
           loggedIn={loggedIn}

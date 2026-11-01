@@ -1,8 +1,8 @@
 {
   "name": "SAO",
   "short": "sao",
-  "description": "SAO系列探针主题的 Monitor 版本",
-  "version": "1.3.3",
+  "description": "服务于探针数据呈现本身的高自由度模块化主题，更多主题卡片可安装后在设置页面自由组合搭配。",
+  "version": "1.3.4",
   "author": "WAOR",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -364,35 +364,7 @@
     },
     {
       "type": "title",
-      "label": "文字评级"
-    },
-    {
-      "key": "showTrafficRating",
-      "type": "boolean",
-      "label": "流量评级",
-      "help": "在今日流量小卡底部显示用量评价标签",
-      "default": false
-    },
-    {
-      "key": "trafficRatingLabels",
-      "type": "string",
-      "label": "流量词库",
-      "help": "从低到高填入4个评价词，以逗号隔开",
-      "default": ""
-    },
-    {
-      "key": "showAssetRating",
-      "type": "boolean",
-      "label": "资产评级",
-      "help": "在资产总值小卡底部显示总值评价标签",
-      "default": false
-    },
-    {
-      "key": "assetRatingLabels",
-      "type": "string",
-      "label": "资产词库",
-      "help": "从低到高填入4个评价词，以逗号隔开",
-      "default": ""
+      "label": "带宽评级"
     },
     {
       "key": "showBandwidthRating",

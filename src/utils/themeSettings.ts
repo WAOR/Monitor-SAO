@@ -271,12 +271,8 @@ export interface ResolvedThemeSettings {
   showCostSummaryFloatingButton: boolean;
   showPriceForGuests: boolean;
   showOverviewRatings: boolean;
-  showTrafficRating: boolean;
   showBandwidthRating: boolean;
-  showAssetRating: boolean;
-  trafficRatingLabels: string;
   bandwidthRatingLabels: string;
-  assetRatingLabels: string;
   compactShowTrafficTotal: boolean;
   compactShowBilling: boolean;
   compactShowUptime: boolean;
@@ -323,10 +319,6 @@ export const THEME_CONFIG_KEYS = [
   "compactShowUptime",
   "costRateApiUrl",
   "costIgnoredNodes",
-  "showTrafficRating",
-  "trafficRatingLabels",
-  "showAssetRating",
-  "assetRatingLabels",
   "showBandwidthRating",
   "bandwidthRatingLabels",
   "enableAdminButton",
@@ -375,12 +367,8 @@ export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   showCostSummaryFloatingButton: true,
   showPriceForGuests: false,
   showOverviewRatings: true,
-  showTrafficRating: false,
   showBandwidthRating: true,
-  showAssetRating: false,
-  trafficRatingLabels: "",
   bandwidthRatingLabels: "",
-  assetRatingLabels: "",
   compactShowTrafficTotal: true,
   compactShowBilling: true,
   compactShowUptime: true,
@@ -660,12 +648,8 @@ export function normalizeThemeSettings(
     // 默认关闭(向访客保密):需站长在主题设置中显式开启，未开启时向访客显示为保密。
     showPriceForGuests: settings?.showPriceForGuests === true,
     showOverviewRatings: enabledUnlessFalse(settings?.showOverviewRatings),
-    showTrafficRating: settings?.showTrafficRating === true,
     showBandwidthRating: enabledUnlessFalse(settings?.showBandwidthRating),
-    showAssetRating: settings?.showAssetRating === true,
-    trafficRatingLabels: normalizePlainText(settings?.trafficRatingLabels),
     bandwidthRatingLabels: normalizePlainText(settings?.bandwidthRatingLabels),
-    assetRatingLabels: normalizePlainText(settings?.assetRatingLabels),
     compactShowTrafficTotal: enabledUnlessFalse(settings?.compactShowTrafficTotal),
     compactShowBilling: enabledUnlessFalse(settings?.compactShowBilling),
     compactShowUptime: enabledUnlessFalse(settings?.compactShowUptime),
