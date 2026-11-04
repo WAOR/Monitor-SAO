@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "服务于探针数据呈现本身的高自由度模块化主题，更多主题卡片可安装后在设置页面自由组合搭配。",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "author": "WAOR",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
