@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearNodeMetricsHistoryCache,
+  clearNodePingMetricsCache,
   clearServerThemeSettingsCache,
   extractUsernameFromStorage,
+  fetchNodeMetricsHistoryShared,
   fetchServerThemeConfig,
   getLoadRecords,
   getMe,
   getNodes,
+  getPingOverview,
   getPingRecords,
   getPublic,
   resolveAuthUsername,
@@ -36,6 +39,7 @@ describe("Monitor API Service", () => {
   beforeEach(() => {
     localStorageMock.clear();
     clearServerThemeSettingsCache();
+    clearNodePingMetricsCache();
     clearNodeMetricsHistoryCache();
     vi.restoreAllMocks();
   });
@@ -487,6 +491,214 @@ describe("Monitor API Service", () => {
       });
 
       await expect(getNodes()).rejects.toThrow("服务暂时无法访问（HTTP 502），稍后再试");
+    });
+  });
+
+  describe("Metrics Concurrency, 503 Retry & Stale Cache Fallback", () => {
+    it("caps concurrent /metrics requests at 3 across many nodes in getPingOverview", async () => {
+      const nodeIds = Array.from({ length: 10 }, (_, idx) => `node-${idx + 1}`);
+      let inFlight = 0;
+      let maxInFlight = 0;
+
+      global.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+        if (url.includes("/api/nodes") && !url.includes("/metrics")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () =>
+              nodeIds.map((id) => ({ id, uuid: id, name: `Node-${id}`, status: "online" })),
+          };
+        }
+
+        const match = url.match(/\/api\/nodes\/([^/?]+)\/metrics/);
+        if (match) {
+          const nodeId = decodeURIComponent(match[1]);
+          inFlight += 1;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+          try {
+            await new Promise((resolve) => setTimeout(resolve, 15));
+            const index = Number(nodeId.replace("node-", "")) || 1;
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({
+                metrics: [],
+                ping: [{ task_id: 1, ts: 1700000000, latency: 20 + index }],
+                probes: { "1": "Probe-East" },
+                loss: { "1": 0 },
+              }),
+            };
+          } finally {
+            inFlight -= 1;
+          }
+        }
+
+        return { ok: false, status: 404 };
+      });
+
+      const res = await getPingOverview(1, undefined, { entityIds: nodeIds });
+
+      expect(maxInFlight).toBeGreaterThan(0);
+      expect(maxInFlight).toBeLessThanOrEqual(3);
+      expect(res.tasks).toHaveLength(1);
+      expect(new Set(res.records.map((r) => r.client)).size).toBe(10);
+    });
+
+    it("retries HTTP 503 responses with backoff and recovers all node ping records", async () => {
+      const nodeIds = ["node-1", "node-2", "node-3", "node-4"];
+      const attempts = new Map<string, number>();
+
+      global.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+        if (url.includes("/api/nodes") && !url.includes("/metrics")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () =>
+              nodeIds.map((id) => ({ id, uuid: id, name: `Node-${id}`, status: "online" })),
+          };
+        }
+
+        const match = url.match(/\/api\/nodes\/([^/?]+)\/metrics/);
+        if (match) {
+          const nodeId = decodeURIComponent(match[1]);
+          const attempt = (attempts.get(nodeId) ?? 0) + 1;
+          attempts.set(nodeId, attempt);
+
+          if ((nodeId === "node-1" || nodeId === "node-2") && attempt <= 2) {
+            return {
+              ok: false,
+              status: 503,
+              headers: new Headers({ "content-type": "text/plain; charset=utf-8" }),
+              text: async () => "查询历史的请求太多，稍后再试",
+            };
+          }
+
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              metrics: [],
+              ping: [{ task_id: 1, ts: 1700000060, latency: 42 }],
+              probes: { "1": "Probe-West" },
+              loss: { "1": 0 },
+            }),
+          };
+        }
+
+        return { ok: false, status: 404 };
+      });
+
+      const res = await getPingOverview(1, undefined, { entityIds: nodeIds });
+
+      expect(attempts.get("node-1")).toBe(3);
+      expect(attempts.get("node-2")).toBe(3);
+      expect(res.tasks).toHaveLength(1);
+      expect(new Set(res.records.map((r) => r.client)).size).toBe(4);
+    });
+
+    it("falls back to stale ping and metrics history cache when refresh fails after TTL expiry", async () => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date(1700000000 * 1000));
+        let failRefresh = false;
+
+        global.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+          const url =
+            typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+          if (url.includes("/api/nodes") && !url.includes("/metrics")) {
+            return {
+              ok: true,
+              status: 200,
+              json: async () => [
+                { id: "node-1", uuid: "node-1", name: "Node-1", status: "online" },
+                { id: "node-2", uuid: "node-2", name: "Node-2", status: "online" },
+              ],
+            };
+          }
+
+          const match = url.match(/\/api\/nodes\/([^/?]+)\/metrics/);
+          if (match) {
+            const nodeId = decodeURIComponent(match[1]);
+
+            if (nodeId === "node-history-1") {
+              if (failRefresh) {
+                return {
+                  ok: false,
+                  status: 502,
+                  headers: new Headers({ "content-type": "text/html" }),
+                  text: async () => "502",
+                };
+              }
+              return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                  metrics: [{ ts: 1700000000, cpu: 25 }],
+                  ping: [],
+                  probes: {},
+                }),
+              };
+            }
+
+            if (failRefresh && nodeId === "node-2") {
+              return {
+                ok: false,
+                status: 502,
+                headers: new Headers({ "content-type": "text/html" }),
+                text: async () => "502",
+              };
+            }
+
+            return {
+              ok: true,
+              status: 200,
+              json: async () => ({
+                metrics: [],
+                ping: [{ task_id: 1, ts: 1700000000, latency: nodeId === "node-1" ? 30 : 45 }],
+                probes: { "1": "Probe-North" },
+                loss: { "1": 0 },
+              }),
+            };
+          }
+
+          return { ok: false, status: 404 };
+        });
+
+        const firstOverview = await getPingOverview(1, undefined, {
+          entityIds: ["node-1", "node-2"],
+        });
+        expect(new Set(firstOverview.records.map((r) => r.client)).size).toBe(2);
+
+        const firstHistory = await fetchNodeMetricsHistoryShared("node-history-1", 1);
+        expect(firstHistory.metrics).toHaveLength(1);
+        expect(firstHistory.metrics[0].cpu).toBe(25);
+
+        // 超过 10s Ping 缓存和 30s 历史指标缓存 TTL，使两类缓存同时过期
+        failRefresh = true;
+        vi.advanceTimersByTime(31_000);
+
+        const secondOverview = await getPingOverview(1, undefined, {
+          entityIds: ["node-1", "node-2"],
+        });
+        expect(secondOverview.tasks).toHaveLength(1);
+        expect(secondOverview.tasks[0].name).toBe("Probe-North");
+        expect(new Set(secondOverview.records.map((r) => r.client)).size).toBe(2);
+        const node2Record = secondOverview.records.find((r) => r.client === "node-2");
+        expect(node2Record?.value).toBe(45);
+
+        const fallbackHistory = await fetchNodeMetricsHistoryShared("node-history-1", 1);
+        expect(fallbackHistory.metrics).toHaveLength(1);
+        expect(fallbackHistory.metrics[0].cpu).toBe(25);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });

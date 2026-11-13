@@ -72,10 +72,80 @@ export interface TodayTrafficMetricsResponse {
   intervalSeconds: number;
 }
 
+const MAX_METRICS_CONCURRENCY = 3;
+const MAX_503_RETRIES = 4;
+const RETRY_BASE_DELAY_MS = 60;
+
+let activeMetricsRequests = 0;
+const metricsWaitQueue: Array<() => void> = [];
+
+function createAbortError(): DOMException {
+  return new DOMException("Aborted", "AbortError");
+}
+
+function acquireMetricsSlot(signal?: AbortSignal): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(createAbortError());
+  }
+  if (activeMetricsRequests < MAX_METRICS_CONCURRENCY) {
+    activeMetricsRequests += 1;
+    return Promise.resolve();
+  }
+  return new Promise<void>((resolve, reject) => {
+    const wake = () => {
+      if (signal) {
+        signal.removeEventListener("abort", onAbort);
+      }
+      activeMetricsRequests += 1;
+      resolve();
+    };
+    const onAbort = () => {
+      const idx = metricsWaitQueue.indexOf(wake);
+      if (idx >= 0) {
+        metricsWaitQueue.splice(idx, 1);
+      }
+      reject(createAbortError());
+    };
+    if (signal) {
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+    metricsWaitQueue.push(wake);
+  });
+}
+
+function releaseMetricsSlot(): void {
+  activeMetricsRequests = Math.max(0, activeMetricsRequests - 1);
+  if (activeMetricsRequests < MAX_METRICS_CONCURRENCY && metricsWaitQueue.length > 0) {
+    const next = metricsWaitQueue.shift();
+    if (next) next();
+  }
+}
+
+function sleepWithSignal(ms: number, signal?: AbortSignal): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(createAbortError());
+  }
+  return new Promise<void>((resolve, reject) => {
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(createAbortError());
+    };
+    const timer = setTimeout(() => {
+      if (signal) {
+        signal.removeEventListener("abort", onAbort);
+      }
+      resolve();
+    }, ms);
+    if (signal) {
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+  });
+}
+
 /**
- * 基础 API fetch 工具
+ * 基础 API fetch 工具（原生实现）
  */
-async function apiFetch<T>(path: string, options?: RequestOptions & RequestInit): Promise<T> {
+async function rawApiFetch<T>(path: string, options?: RequestOptions & RequestInit): Promise<T> {
   const timeoutVal = options?.timeoutMs ?? options?.timeout ?? 15000;
   const { signal, ...restInit } = options || {};
   const controller = new AbortController();
@@ -139,6 +209,59 @@ async function apiFetch<T>(path: string, options?: RequestOptions & RequestInit)
     if (timeoutId) clearTimeout(timeoutId);
     if (signal) signal.removeEventListener("abort", handleAbort);
   }
+}
+
+/**
+ * 基础 API fetch 工具
+ * 对 /metrics 历史查询接口做最大并发 3 限流与 503 退避重试，以适配 Monitor Hub 并发槽位上限
+ */
+async function apiFetch<T>(path: string, options?: RequestOptions & RequestInit): Promise<T> {
+  if (!path.includes("/metrics")) {
+    return rawApiFetch<T>(path, options);
+  }
+
+  const signal = options?.signal;
+  for (let attempt = 0; attempt <= MAX_503_RETRIES; attempt++) {
+    try {
+      await acquireMetricsSlot(signal);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new ApiRequestError(msg, 0, path);
+    }
+
+    let released = false;
+    const releaseOnce = () => {
+      if (!released) {
+        released = true;
+        releaseMetricsSlot();
+      }
+    };
+
+    try {
+      return await rawApiFetch<T>(path, options);
+    } catch (error) {
+      releaseOnce();
+      if (
+        error instanceof ApiRequestError &&
+        error.status === 503 &&
+        attempt < MAX_503_RETRIES &&
+        !signal?.aborted
+      ) {
+        try {
+          await sleepWithSignal(RETRY_BASE_DELAY_MS * (attempt + 1), signal);
+        } catch (abortErr) {
+          const msg = abortErr instanceof Error ? abortErr.message : String(abortErr);
+          throw new ApiRequestError(msg, 0, path);
+        }
+        continue;
+      }
+      throw error;
+    } finally {
+      releaseOnce();
+    }
+  }
+
+  throw new ApiRequestError("请求失败", 503, path);
 }
 
 /** 从 localStorage 读取管理员自定义昵称 */
@@ -545,6 +668,25 @@ export async function getPingRecords(
 const nodePingMetricsCache = new Map<string, { data: MonitorMetricsHistoryResponse; expiresAt: number }>();
 const inFlightNodePingRequests = new Map<string, Promise<MonitorMetricsHistoryResponse>>();
 
+function clearNodeScopedCache(
+  cache: Map<string, { data: MonitorMetricsHistoryResponse; expiresAt: number }>,
+  uuid?: string,
+): void {
+  if (uuid) {
+    for (const key of cache.keys()) {
+      if (key.startsWith(`${uuid}:`)) {
+        cache.delete(key);
+      }
+    }
+  } else {
+    cache.clear();
+  }
+}
+
+export function clearNodePingMetricsCache(uuid?: string): void {
+  clearNodeScopedCache(nodePingMetricsCache, uuid);
+}
+
 async function fetchNodePingMetricsShared(
   uuid: string,
   hours: number,
@@ -572,6 +714,11 @@ async function fetchNodePingMetricsShared(
         expiresAt: Date.now() + 10_000,
       });
       return data;
+    } catch (error) {
+      if (cached && !options?.signal?.aborted) {
+        return cached.data;
+      }
+      throw error;
     } finally {
       inFlightNodePingRequests.delete(cacheKey);
     }
@@ -668,15 +815,7 @@ const nodeMetricsHistoryCache = new Map<string, { data: MonitorMetricsHistoryRes
 const inFlightNodeMetricsRequests = new Map<string, Promise<MonitorMetricsHistoryResponse>>();
 
 export function clearNodeMetricsHistoryCache(uuid?: string): void {
-  if (uuid) {
-    for (const key of nodeMetricsHistoryCache.keys()) {
-      if (key.startsWith(`${uuid}:`)) {
-        nodeMetricsHistoryCache.delete(key);
-      }
-    }
-  } else {
-    nodeMetricsHistoryCache.clear();
-  }
+  clearNodeScopedCache(nodeMetricsHistoryCache, uuid);
 }
 
 export async function fetchNodeMetricsHistoryShared(
@@ -687,11 +826,9 @@ export async function fetchNodeMetricsHistoryShared(
   const cacheKey = `${uuid}:${hours}`;
   const now = Date.now();
 
-  if (!options?.forceRefresh) {
-    const cached = nodeMetricsHistoryCache.get(cacheKey);
-    if (cached && cached.expiresAt > now) {
-      return cached.data;
-    }
+  const cached = nodeMetricsHistoryCache.get(cacheKey);
+  if (!options?.forceRefresh && cached && cached.expiresAt > now) {
+    return cached.data;
   }
 
   const inFlight = inFlightNodeMetricsRequests.get(cacheKey);
@@ -709,6 +846,11 @@ export async function fetchNodeMetricsHistoryShared(
         expiresAt: Date.now() + 30_000,
       });
       return data;
+    } catch (error) {
+      if (cached && !options?.signal?.aborted) {
+        return cached.data;
+      }
+      throw error;
     } finally {
       inFlightNodeMetricsRequests.delete(cacheKey);
     }
