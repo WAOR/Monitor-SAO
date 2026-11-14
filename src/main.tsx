@@ -28,10 +28,13 @@ async function bootstrap() {
     let isMock = mockParam === "1";
     if (!isMock && mockParam !== "0") {
       try {
-        isMock =
-          sessionStorage.getItem("monitor_dev_mock") === "1" ||
-          sessionStorage.getItem("komari_dev_mock") === "1";
-      } catch {}
+        const stored =
+          sessionStorage.getItem("monitor_dev_mock") ||
+          sessionStorage.getItem("komari_dev_mock");
+        isMock = stored ? stored === "1" : true;
+      } catch {
+        isMock = true;
+      }
     }
 
     if (isMock) {

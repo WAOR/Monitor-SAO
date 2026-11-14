@@ -32,6 +32,11 @@ import {
 
 export type Appearance = "system" | "light" | "dark";
 export type NodeViewMode = "large" | "compact" | "mini" | "list";
+export type ServerCardTemplate = "classic" | "layered";
+export const SERVER_CARD_TEMPLATES: readonly ServerCardTemplate[] = [
+  "classic",
+  "layered",
+] as const;
 export type ClusterOverviewMode = "classic" | "nodes";
 export type MatrixColorTheme =
   | "default"
@@ -43,6 +48,24 @@ export const MATRIX_COLOR_THEMES: readonly MatrixColorTheme[] = [
   "eva",
   "divergence",
 ] as const;
+
+export type OverviewCardVisualMode = "adaptive" | "visual" | "text";
+
+export const OVERVIEW_CARD_VISUAL_MODES = ["adaptive", "visual", "text"] as const;
+
+export type OverviewMicroVisualMode = "dynamic" | "static";
+
+export const OVERVIEW_MICRO_VISUAL_MODES = ["dynamic", "static"] as const;
+
+export function normalizeOverviewMicroVisualMode(val: unknown): OverviewMicroVisualMode {
+  return val === "static" ? "static" : "dynamic";
+}
+
+export function normalizeOverviewStaticCards(val: unknown): OverviewCardId[] {
+  if (!Array.isArray(val)) return [];
+  const valid = new Set<OverviewCardId>(ALL_OVERVIEW_CARD_IDS);
+  return val.filter((item): item is OverviewCardId => typeof item === "string" && valid.has(item as OverviewCardId));
+}
 
 export type MatrixBootEffect =
   | "laser-scan"
@@ -166,25 +189,27 @@ export type { OverviewCardId };
 export const OVERVIEW_CARD_SLOT_COUNT = 6;
 
 export const DEFAULT_OVERVIEW_CARDS: readonly OverviewCardId[] = [
-  "connections",
-  "cpu",
-  "ram",
-  "disk",
-  "traffic",
   "asset",
+  "disk",
+  "cpu",
+  "loss",
+  "bandwidth",
+  "traffic",
 ] as const;
 
 export const ALL_OVERVIEW_CARD_IDS: readonly OverviewCardId[] = [
-  "connections",
-  "cpu",
-  "ram",
-  "disk",
-  "traffic",
-  "asset",
   "nodes",
+  "asset",
+  "cpu",
   "bandwidth",
+  "loss",
+  "traffic",
+  "connections",
+  "ram",
   "swap",
+  "uptime",
   "process",
+  "disk",
   "cores",
 ] as const;
 
@@ -231,9 +256,11 @@ export function normalizeOverviewCards(raw: unknown): OverviewCardId[] {
 }
 
 export interface ResolvedThemeSettings {
+  [key: string]: unknown;
   defaultAppearance: Appearance;
   desktopNodeViewMode: NodeViewMode;
   mobileNodeViewMode: NodeViewMode;
+  serverCardTemplate: ServerCardTemplate;
   clusterOverviewMode: ClusterOverviewMode;
   matrixColorTheme: MatrixColorTheme;
   matrixMockFill: boolean;
@@ -256,6 +283,12 @@ export interface ResolvedThemeSettings {
   overviewCards: OverviewCardId[];
   overviewCardOrder: OverviewCardId[];
   overviewCardDisabled: OverviewCardId[];
+  /** 首页指标小卡视觉展现模式：智能切换(adaptive)、图形卡片(visual)、文字卡片(text) */
+  overviewCardVisualMode: OverviewCardVisualMode;
+  /** 首页易闲置指标卡（平均CPU/今日流量/活跃连接）微图呈现模式：动态真实数据(dynamic)、静态美化微图(static) */
+  overviewMicroVisualMode: OverviewMicroVisualMode;
+  /** 单卡片独立静态微图呈现列表：包含在此数组中的卡片强制呈现静态美化微图，未包含的默认保持动态 */
+  overviewStaticCards: OverviewCardId[];
   overviewFollowGroup: boolean;
   showGroupTabs: boolean;
   showUngroupedTab: boolean;
@@ -279,17 +312,20 @@ export interface ResolvedThemeSettings {
   showConnections: boolean;
   showTodayTrafficPopover: boolean;
   hiddenNodes: string[];
+  carrierLossIncludedNodes: string[];
   costIgnoredNodes: string[];
   costPremiums: Record<string, CostPremiumEntry>;
   costRateApiUrl: string;
+  costCurrency: "CNY" | "USD" | "EUR";
   adminNickname: string;
 }
 
-/** 后端 theme.json 中声明的官方配置字段清单 (共 39 项有效状态键，排除纯展示引导项 themeManageGuide) */
+/** 后端 theme.json 中声明的官方配置字段清单 (共 38 项有效状态键) */
 export const THEME_CONFIG_KEYS = [
   "defaultAppearance",
   "desktopNodeViewMode",
   "mobileNodeViewMode",
+  "serverCardTemplate",
   "clusterOverviewMode",
   "matrixColorTheme",
   "matrixBootAnimation",
@@ -305,6 +341,7 @@ export const THEME_CONFIG_KEYS = [
   "hiddenNodes",
   "showHomeOverview",
   "overviewFollowGroup",
+  "overviewCardVisualMode",
   "showTrafficPageButton",
   "showTrafficPageForGuests",
   "showCostSummary",
@@ -328,9 +365,10 @@ export const THEME_CONFIG_KEYS = [
 export const THEME_CONFIG_KEYS_SET: ReadonlySet<string> = new Set<string>(THEME_CONFIG_KEYS);
 
 export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
-  defaultAppearance: "dark",
+  defaultAppearance: "system",
   desktopNodeViewMode: "large",
   mobileNodeViewMode: "compact",
+  serverCardTemplate: "layered",
   clusterOverviewMode: "classic",
   matrixColorTheme: "eva",
   matrixMockFill: false,
@@ -352,6 +390,9 @@ export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   overviewCards: [...DEFAULT_OVERVIEW_CARDS],
   overviewCardOrder: [...DEFAULT_OVERVIEW_CARDS],
   overviewCardDisabled: [],
+  overviewCardVisualMode: "visual",
+  overviewMicroVisualMode: "dynamic",
+  overviewStaticCards: [],
   overviewFollowGroup: false,
   showGroupTabs: true,
   showUngroupedTab: false,
@@ -375,9 +416,11 @@ export const DEFAULT_THEME_SETTINGS: ResolvedThemeSettings = {
   showConnections: false,
   showTodayTrafficPopover: true,
   hiddenNodes: [],
+  carrierLossIncludedNodes: [],
   costIgnoredNodes: [],
   costPremiums: {},
   costRateApiUrl: DEFAULT_COST_RATE_API_URL,
+  costCurrency: "CNY",
   adminNickname: "",
 };
 
@@ -415,6 +458,17 @@ function normalizeMobileNodeViewMode(
   return mode === "list" ? fallback : mode;
 }
 
+export function isServerCardTemplate(value: unknown): value is ServerCardTemplate {
+  return value === "classic" || value === "layered";
+}
+
+export function normalizeServerCardTemplate(
+  value: unknown,
+  fallback: ServerCardTemplate = DEFAULT_THEME_SETTINGS.serverCardTemplate,
+): ServerCardTemplate {
+  return isServerCardTemplate(value) ? value : fallback;
+}
+
 export function isClusterOverviewMode(value: unknown): value is ClusterOverviewMode {
   return value === "classic" || value === "nodes";
 }
@@ -437,6 +491,12 @@ function normalizeMatrixColorTheme(
   fallback: MatrixColorTheme = DEFAULT_THEME_SETTINGS.matrixColorTheme,
 ): MatrixColorTheme {
   return isMatrixColorTheme(value) ? value : fallback;
+}
+
+function normalizeOverviewCardVisualMode(value: unknown): OverviewCardVisualMode {
+  return typeof value === "string" && (OVERVIEW_CARD_VISUAL_MODES as readonly string[]).includes(value)
+    ? (value as OverviewCardVisualMode)
+    : "visual";
 }
 
 function normalizeMatrixMockFill(value: unknown): boolean {
@@ -593,6 +653,13 @@ export function normalizeTrafficSpectrumColors(val: unknown): TrafficSpectrumCol
   };
 }
 
+export function normalizeCostCurrency(
+  value: unknown,
+): "CNY" | "USD" | "EUR" {
+  if (value === "USD" || value === "EUR") return value;
+  return "CNY";
+}
+
 export function normalizeThemeSettings(
   settings: (ThemeSettings & Record<string, unknown>) | null | undefined,
 ): ResolvedThemeSettings {
@@ -608,6 +675,10 @@ export function normalizeThemeSettings(
     mobileNodeViewMode: normalizeMobileNodeViewMode(
       settings?.mobileNodeViewMode,
       DEFAULT_THEME_SETTINGS.mobileNodeViewMode,
+    ),
+    serverCardTemplate: normalizeServerCardTemplate(
+      settings?.serverCardTemplate,
+      DEFAULT_THEME_SETTINGS.serverCardTemplate,
     ),
     clusterOverviewMode: normalizeClusterOverviewMode(settings?.clusterOverviewMode),
     matrixColorTheme: normalizeMatrixColorTheme(settings?.matrixColorTheme),
@@ -632,6 +703,9 @@ export function normalizeThemeSettings(
     overviewCards: normalizeOverviewCards(settings?.overviewCards ?? settings?.overviewCardOrder),
     overviewCardOrder: normalizeOverviewCards(settings?.overviewCards ?? settings?.overviewCardOrder),
     overviewCardDisabled: [],
+    overviewCardVisualMode: normalizeOverviewCardVisualMode(settings?.overviewCardVisualMode),
+    overviewMicroVisualMode: normalizeOverviewMicroVisualMode(settings?.overviewMicroVisualMode),
+    overviewStaticCards: normalizeOverviewStaticCards(settings?.overviewStaticCards),
     overviewFollowGroup: settings?.overviewFollowGroup === true,
     showGroupTabs: enabledUnlessFalse(settings?.showGroupTabs),
     showUngroupedTab: settings?.showUngroupedTab === true,
@@ -657,9 +731,11 @@ export function normalizeThemeSettings(
     showConnections: settings?.showConnections === true,
     showTodayTrafficPopover: enabledUnlessFalse(settings?.showTodayTrafficPopover),
     hiddenNodes: normalizeNodeIdentityList(settings?.hiddenNodes),
+    carrierLossIncludedNodes: normalizeNodeIdentityList(settings?.carrierLossIncludedNodes),
     costIgnoredNodes: normalizeCostIgnoredNodes(settings?.costIgnoredNodes),
     costPremiums: normalizeCostPremiums(settings?.costPremiums),
     costRateApiUrl: normalizeCostRateApiUrl(settings?.costRateApiUrl),
+    costCurrency: normalizeCostCurrency(settings?.costCurrency),
     adminNickname:
       typeof settings?.adminNickname === "string"
         ? settings.adminNickname.replace(/[\x00-\x1F\x7F]/g, "").trim().slice(0, 40)

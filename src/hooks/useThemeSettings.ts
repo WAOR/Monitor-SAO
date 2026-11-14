@@ -32,6 +32,7 @@ export function useThemeSettings(): ThemeSettingsState {
     const base = normalizeThemeSettings(merged);
     let overrideClusterMode: "classic" | "nodes" | undefined;
     let overrideColorTheme: "default" | "eva" | undefined;
+    let overrideMicroVisual: "dynamic" | "static" | undefined;
     if (typeof window !== "undefined") {
       const searchParams = new URLSearchParams(window.location.search);
       const clusterParam = searchParams.get("cluster");
@@ -47,11 +48,16 @@ export function useThemeSettings(): ThemeSettingsState {
       } else if (paletteParam === "default") {
         overrideColorTheme = "default";
       }
+      const microVisualParam = searchParams.get("microVisual");
+      if (microVisualParam === "dynamic" || microVisualParam === "static") {
+        overrideMicroVisual = microVisualParam;
+      }
     }
     return {
       ...base,
       ...(overrideClusterMode ? { clusterOverviewMode: overrideClusterMode } : {}),
       ...(overrideColorTheme ? { matrixColorTheme: overrideColorTheme } : {}),
+      ...(overrideMicroVisual ? { overviewMicroVisualMode: overrideMicroVisual } : {}),
       isReady,
       isLoading: isLoading && !hasConfig,
       isError,

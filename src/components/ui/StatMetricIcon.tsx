@@ -14,7 +14,8 @@ export type MetricType =
   | "load"
   | "process"
   | "cores"
-  | "ping";
+  | "ping"
+  | "loss";
 
 export interface StatMetricIconProps {
   metric: MetricType;

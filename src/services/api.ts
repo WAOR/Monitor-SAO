@@ -821,9 +821,10 @@ export function clearNodeMetricsHistoryCache(uuid?: string): void {
 export async function fetchNodeMetricsHistoryShared(
   uuid: string,
   hours: number,
-  options?: RequestOptions,
+  options?: RequestOptions & { points?: number },
 ): Promise<MonitorMetricsHistoryResponse> {
-  const cacheKey = `${uuid}:${hours}`;
+  const pointsParam = options?.points ? `&points=${options.points}` : "";
+  const cacheKey = `${uuid}:${hours}:${options?.points || "full"}`;
   const now = Date.now();
 
   const cached = nodeMetricsHistoryCache.get(cacheKey);
@@ -836,10 +837,31 @@ export async function fetchNodeMetricsHistoryShared(
     return inFlight;
   }
 
+  // 尝试命中 HTML 阶段流水线超前预取的 EARLY_DATA.metrics (适用于 7 小时轻量请求)
+  const earlyPromise =
+    !options?.forceRefresh && hours <= 7
+      ? (window as unknown as {
+          __EARLY_DATA__?: {
+            metrics?: Record<string, Promise<MonitorMetricsHistoryResponse | null>>;
+          };
+        })?.__EARLY_DATA__?.metrics?.[uuid]
+      : null;
+
   const promise = (async () => {
     try {
-      // 不传 points 参数，获取 Hub 原生完整时序粒度，避免突发测速被强行降采样稀释
-      const path = `/api/nodes/${encodeURIComponent(uuid)}/metrics?hours=${hours}&series=metrics`;
+      if (earlyPromise) {
+        const earlyData = await earlyPromise;
+        if (earlyData && Array.isArray(earlyData.metrics) && earlyData.metrics.length > 0) {
+          nodeMetricsHistoryCache.set(cacheKey, {
+            data: earlyData,
+            expiresAt: Date.now() + 30_000,
+          });
+          return earlyData;
+        }
+      }
+
+      // 未传 points 参数时获取 Hub 原生完整时序粒度；传 points 参数时走极速轻量采样
+      const path = `/api/nodes/${encodeURIComponent(uuid)}/metrics?hours=${hours}${pointsParam}&series=metrics`;
       const data = await apiFetch<MonitorMetricsHistoryResponse>(path, options);
       nodeMetricsHistoryCache.set(cacheKey, {
         data,
@@ -868,7 +890,7 @@ export async function getTodayTrafficMetrics(
   entityIds?: string[],
   startMs?: number,
   endMs?: number,
-  options?: RequestOptions,
+  options?: RequestOptions & { mode?: "full" | "summary" },
 ): Promise<TodayTrafficMetricsResponse> {
   const now = Date.now();
   const rangeStartMs = startMs ?? now - 86400000;
@@ -894,7 +916,18 @@ export async function getTodayTrafficMetrics(
   }
 
   const hoursDiff = (rangeEndMs - rangeStartMs) / (3600 * 1000);
-  const queryHours = Math.max(1, Math.min(24, Math.ceil(hoursDiff) + 1));
+  const isSummary = options?.mode === "summary";
+  // 检查是否所有节点均具备服务端原生 day_tx / day_rx 权威日统计
+  const allHaveServerDayTraffic = uuids.every((uuid) => {
+    const raw = getRawNode(uuid);
+    return raw != null && (typeof raw.day_tx === "number" || typeof raw.day_rx === "number");
+  });
+  // 当处于首页卡片 summary 模式且具备原生统计时，时序仅供右侧 7 阶微图使用，精准锁定 7 小时；
+  // 否则根据实际时间跨度拉取
+  const queryHours = isSummary && allHaveServerDayTraffic
+    ? 7
+    : Math.max(1, Math.min(24, Math.ceil(hoursDiff) + 1));
+  const queryOptions = isSummary ? { ...options, points: 120 } : options;
 
   const series: TrafficMetricSeries[] = [];
 
@@ -904,7 +937,7 @@ export async function getTodayTrafficMetrics(
         const rawNode = getRawNode(uuid);
         let historyData: MonitorMetricsHistoryResponse | null = null;
         try {
-          historyData = await fetchNodeMetricsHistoryShared(uuid, queryHours, options);
+          historyData = await fetchNodeMetricsHistoryShared(uuid, queryHours, queryOptions);
         } catch {
           // 容错单个节点网络异常
         }
@@ -963,25 +996,11 @@ export async function getTodayTrafficMetrics(
           }
         }
 
-        // 2. 流量累计计算（优先服务端权威原生统计 day_tx/day_rx，绝不使用采样推算）
-        const hasServerDayTraffic =
-          rawNode != null &&
-          (typeof rawNode.day_tx === "number" || typeof rawNode.day_rx === "number");
-
-        if (hasServerDayTraffic) {
-          const nowIso = new Date(rangeEndMs).toISOString();
-          trafficUpPoints.push({
-            time: nowIso,
-            value: Math.max(0, rawNode.day_tx ?? 0),
-            count: 1,
-          });
-          trafficDownPoints.push({
-            time: nowIso,
-            value: Math.max(0, rawNode.day_rx ?? 0),
-            count: 1,
-          });
-        } else if (todayPoints.length > 0) {
-          // 梯形积分计算今日流量消耗
+        // 2. 流量累计计算：
+        // 优先使用实际时序数据进行梯形数值积分，以获得精准的每小时分桶分布；
+        // 当节点具备服务端原生 day_tx/day_rx 时，大字总额直接使用原生权威值，
+        // 时序序列始终基于 todayPoints 积分，保证 7 阶微图呈现真实历史起伏，绝不伪造成单点全天挤压。
+        if (todayPoints.length > 0) {
           for (let i = 0; i < todayPoints.length; i++) {
             const curr = todayPoints[i];
             let dtSeconds = 60;
@@ -1008,6 +1027,19 @@ export async function getTodayTrafficMetrics(
               count: 1,
             });
           }
+        } else if (rawNode != null && (typeof rawNode.day_tx === "number" || typeof rawNode.day_rx === "number")) {
+          // 仅在完全没有历史采样点时，才回退以当前时间戳承载一次性总量
+          const nowIso = new Date(rangeEndMs).toISOString();
+          trafficUpPoints.push({
+            time: nowIso,
+            value: Math.max(0, rawNode.day_tx ?? 0),
+            count: 1,
+          });
+          trafficDownPoints.push({
+            time: nowIso,
+            value: Math.max(0, rawNode.day_rx ?? 0),
+            count: 1,
+          });
         }
 
         series.push({
@@ -1134,22 +1166,32 @@ export async function getAdminPingTasks(_options?: RequestOptions): Promise<Ping
     const rawList = Array.isArray(res) ? res : res?.tasks;
     if (Array.isArray(rawList) && rawList.length > 0) {
       return rawList
-        .map((t) => ({
-          id: Number(t.id),
-          name: typeof t.name === "string" && t.name ? t.name : `线路 #${t.id}`,
-          interval: typeof t.interval === "number" ? t.interval : 60,
-          loss: 0,
-          clients: Array.isArray(t.nodes)
-            ? t.nodes.map(String)
-            : Array.isArray(t.clients)
-              ? t.clients.map(String)
-              : [],
-          type: typeof t.type === "string" ? t.type : "icmp",
-          target: typeof t.target === "string" ? t.target : "",
-          weight: typeof t.weight === "number" ? t.weight : 0,
-        }))
-        .filter((t) => Number.isFinite(t.id) && t.id > 0)
-        .sort((a, b) => a.id - b.id);
+        .map((t, idx) => {
+          // Monitor 探针后台支持拖拽排序（通过 sort / weight / display_index 等字段或原始返回顺序）
+          const rawWeight = typeof t.weight === "number"
+            ? t.weight
+            : typeof t.sort === "number"
+              ? t.sort
+              : typeof t.order === "number"
+                ? t.order
+                : undefined;
+          return {
+            id: Number(t.id),
+            name: typeof t.name === "string" && t.name ? t.name : `线路 #${t.id}`,
+            interval: typeof t.interval === "number" ? t.interval : 60,
+            loss: 0,
+            clients: Array.isArray(t.nodes)
+              ? t.nodes.map(String)
+              : Array.isArray(t.clients)
+                ? t.clients.map(String)
+                : [],
+            type: typeof t.type === "string" ? t.type : "icmp",
+            target: typeof t.target === "string" ? t.target : "",
+            // 若后台未定义特定 weight，则默认继承后台列表本身的实际排列索引 (idx)，完整保留后台拖拽后的顺序！
+            weight: rawWeight ?? idx,
+          };
+        })
+        .filter((t) => Number.isFinite(t.id) && t.id > 0);
     }
   } catch (_err) {
     // 若非管理员会话或接口报错，继续尝试节点探测指标汇总回退

@@ -738,6 +738,7 @@ let activeConsumers = 0;
 // HMR dispose 后置真:阻止 in-flight 请求的 finally 恢复逻辑在旧模块实例上复活轮询。
 let pingPollingDisposed = false;
 const pingListeners = new Map<string, Set<Listener>>();
+const globalPingListeners = new Set<Listener>();
 
 function setPingOverviewStatus(
   status: PingOverviewLoadState,
@@ -1075,6 +1076,10 @@ function commitPingOverview(
     if (!listeners) continue;
     for (const listener of listeners) listener();
   }
+
+  if (touched.size > 0) {
+    for (const listener of globalPingListeners) listener();
+  }
 }
 
 async function refreshPingOverview() {
@@ -1355,6 +1360,21 @@ export function useNodePingOverviewLines(
     [enabled, uuid],
   );
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
+
+function subscribeToAllPing(listener: Listener) {
+  globalPingListeners.add(listener);
+  return () => {
+    globalPingListeners.delete(listener);
+  };
+}
+
+function getAllPingSnapshot(): PingOverviewStoreState {
+  return pingOverviewState;
+}
+
+export function useAllPingOverview(): PingOverviewStoreState {
+  return useSyncExternalStore(subscribeToAllPing, getAllPingSnapshot, getAllPingSnapshot);
 }
 
 export function buildPingBuckets(

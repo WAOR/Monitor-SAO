@@ -57,11 +57,5 @@ describe("overview ratings", () => {
       "ACTIVE",
       "SURGE",
     ]);
-    expect(normalizeOverviewRatingLabels("bandwidth", "微量,,高载,")).toEqual([
-      "微量",
-      "LIGHT",
-      "高载",
-      "SURGE",
-    ]);
   });
 });

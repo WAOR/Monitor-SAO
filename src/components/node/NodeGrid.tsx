@@ -21,7 +21,9 @@ import {
   useNodeOnlineSummaries,
   useNodeStoreStatus,
 } from "@/hooks/useNode";
-import { useHomepagePingOverview } from "@/hooks/usePingOverview";
+import { useHomepagePingOverview, useAllPingOverview } from "@/hooks/usePingOverview";
+import { calculateCarrierLoss, type CarrierLossSummary } from "@/utils/carrierLoss";
+import { isHomepageMultiPingConfigured } from "@/utils/pingTasks";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
 import { useThemeSettings } from "@/hooks/useThemeSettings";
 import { useViewMode } from "@/hooks/useViewMode";
@@ -64,7 +66,8 @@ import {
   type MatrixColorTheme,
   type MatrixBootEffect,
 } from "@/utils/themeSettings";
-import type { OverviewCardId } from "@/types/komari";
+import type { OverviewCardId, OverviewCardVisualMode, OverviewMicroVisualMode } from "@/types/komari";
+import type { HourlyTrafficBucket } from "@/utils/trafficStats";
 import { getRenewalReminders, type RenewalReminderSource } from "@/utils/renewalReminder";
 import { DiaTextReveal } from "@/components/ui/DiaTextReveal";
 
@@ -109,6 +112,8 @@ interface HomeOverview {
   swapPct: number;
   totalProcesses: number;
   totalCores: number;
+  recentRebootNode: { name: string; seconds: number } | null;
+  carrierLoss?: CarrierLossSummary | null;
 }
 
 function HomeBrand({ siteName }: { siteName: string }) {
@@ -212,6 +217,7 @@ function HomeOverviewCards({
   loggedIn,
   todayTrafficTotal,
   todayTrafficLoading,
+  todayTrafficHourly,
   visibleNodes = [],
   nameByUuid,
   clusterOverviewMode = "classic",
@@ -222,6 +228,11 @@ function HomeOverviewCards({
   matrixCustomPattern = null,
   overviewCards,
   overviewCardOrder,
+  overviewCardVisualMode,
+  overviewMicroVisualMode = "dynamic",
+  overviewStaticCards = [],
+  costCurrency = "CNY",
+  exchangeRates,
 }: {
   overview: HomeOverview;
   costSummary: { remainingCny: number; totalOriginalPriceCny?: number } | null;
@@ -238,6 +249,7 @@ function HomeOverviewCards({
   loggedIn?: boolean;
   todayTrafficTotal: number | null;
   todayTrafficLoading: boolean;
+  todayTrafficHourly?: HourlyTrafficBucket[] | null;
   visibleNodes?: HomeNodeSummary[];
   nameByUuid?: Map<string, string>;
   clusterOverviewMode?: "classic" | "nodes";
@@ -248,6 +260,11 @@ function HomeOverviewCards({
   matrixCustomPattern?: number[] | null;
   overviewCards?: OverviewCardId[];
   overviewCardOrder?: OverviewCardId[];
+  overviewCardVisualMode?: OverviewCardVisualMode;
+  overviewMicroVisualMode?: OverviewMicroVisualMode;
+  overviewStaticCards?: OverviewCardId[];
+  costCurrency?: import("@/utils/cost").CostTargetCurrency;
+  exchangeRates?: Record<string, number>;
 }) {
   const queryClient = useQueryClient();
   const [isEditingName, setIsEditingName] = useState(false);
@@ -296,6 +313,8 @@ function HomeOverviewCards({
     renewalCount,
   );
 
+  const [touchActiveCardId, setTouchActiveCardId] = useState<OverviewCardId | null>(null);
+
   const activeCardIds = useMemo(() => {
     return normalizeOverviewCards(overviewCards ?? overviewCardOrder);
   }, [overviewCards, overviewCardOrder]);
@@ -308,14 +327,26 @@ function HomeOverviewCards({
         overview={overview}
         todayTrafficTotal={todayTrafficTotal}
         todayTrafficLoading={todayTrafficLoading}
+        todayTrafficHourly={todayTrafficHourly}
         showAssetCard={showAssetCard}
         isPriceVisible={isPriceVisible}
         costSummary={costSummary}
         costLoading={costLoading}
+        costCurrency={costCurrency}
+        exchangeRates={exchangeRates}
         showTrafficDetailButton={showTrafficDetailButton}
         showDetailButton={showDetailButton}
         renewalNodes={renewalNodes}
         onWarmTraffic={onWarmTraffic}
+        isActive={touchActiveCardId === cardId}
+        onClick={() => {
+          setTouchActiveCardId(cardId);
+        }}
+        microVisualMode={
+          overviewStaticCards?.includes(cardId)
+            ? "static"
+            : overviewMicroVisualMode
+        }
       />
     );
   };
@@ -389,7 +420,11 @@ function HomeOverviewCards({
         </div>
 
         {/* 6 宫格指标卡片 */}
-        <div className="mao-stat-grid">
+        <div
+          className="mao-stat-grid"
+          data-visual-mode={overviewCardVisualMode || "adaptive"}
+          data-palette={matrixColorTheme || "default"}
+        >
           {activeCardIds.map((cardId) => renderCard(cardId))}
         </div>
       </div>
@@ -998,6 +1033,21 @@ export function NodeGrid() {
     if (!todayTrafficQuery.data) return null;
     return 0;
   }, [todayTrafficQuery.data, visibleMeta, visibleNodes]);
+
+  // 记忆锁定：一旦获取过有效数据，在用户未手动刷新页面的生命周期内永久记忆数值与微图，
+  // 避免切出 APP 重新激活或后台静默刷新时因短暂 pending 退化为朦胧骨架屏
+  const lastTrafficTotalRef = useRef<number | null>(null);
+  if (todayTrafficTotal !== null) {
+    lastTrafficTotalRef.current = todayTrafficTotal;
+  }
+  const finalTodayTrafficTotal = todayTrafficTotal ?? lastTrafficTotalRef.current;
+
+  const lastHourlyRef = useRef<HourlyTrafficBucket[] | null>(null);
+  if (todayTrafficQuery.data?.hourlyBuckets) {
+    lastHourlyRef.current = todayTrafficQuery.data.hourlyBuckets;
+  }
+  const todayTrafficHourly = todayTrafficQuery.data?.hourlyBuckets ?? lastHourlyRef.current;
+
   // 「名称」排序需要展示名(摘要无 name),从 meta 注入。
   const nameByUuid = useMemo(() => {
     const map = new Map<string, string>();
@@ -1030,6 +1080,36 @@ export function NodeGrid() {
     themeSettings.isReady && themeSettings.overviewFollowGroup
       ? groupFilteredNodes
       : visibleNodes;
+
+  const allPing = useAllPingOverview();
+  const carrierLoss = useMemo(() => {
+    let visibleUuids = visibleMeta.map((m) => m.uuid);
+    const included = themeSettings.carrierLossIncludedNodes;
+    if (included && included.length > 0) {
+      const includedSet = new Set(included);
+      visibleUuids = visibleUuids.filter((uuid) => {
+        const meta = visibleMeta.find((m) => m.uuid === uuid);
+        const name = meta?.name?.trim() || "";
+        return includedSet.has(uuid) || (name && includedSet.has(name));
+      });
+    }
+    const isMultiPingMode =
+      themeSettings.enableHomepageMultiPing &&
+      isHomepageMultiPingConfigured(themeSettings.homepageMultiPingTaskIds);
+    return calculateCarrierLoss(
+      allPing.multiLines,
+      allPing.singleItems,
+      visibleUuids,
+      isMultiPingMode,
+    );
+  }, [
+    allPing.multiLines,
+    allPing.singleItems,
+    visibleMeta,
+    themeSettings.carrierLossIncludedNodes,
+    themeSettings.enableHomepageMultiPing,
+    themeSettings.homepageMultiPingTaskIds,
+  ]);
 
   const overview = useMemo<HomeOverview>(() => {
     let onlineNodes = 0;
@@ -1077,8 +1157,21 @@ export function NodeGrid() {
     }
 
     let totalCores = 0;
+    let minUptimeSeconds = Number.POSITIVE_INFINITY;
+    let recentRebootNode: { name: string; seconds: number } | null = null;
+
     for (const meta of visibleMeta) {
       totalCores += meta.cpu_cores || 0;
+      const metrics = getNodeMetricsSnapshot(meta.uuid);
+      if (metrics && metrics.online === true && Number.isFinite(metrics.uptime) && metrics.uptime > 0) {
+        if (metrics.uptime < minUptimeSeconds) {
+          minUptimeSeconds = metrics.uptime;
+          recentRebootNode = {
+            name: meta.name?.trim() || meta.uuid,
+            seconds: metrics.uptime,
+          };
+        }
+      }
     }
 
     const avgCpu = onlineNodes > 0 ? totalCpu / onlineNodes : 0;
@@ -1108,8 +1201,10 @@ export function NodeGrid() {
       swapPct,
       totalProcesses,
       totalCores,
+      recentRebootNode,
+      carrierLoss,
     };
-  }, [overviewNodes, visibleMeta]);
+  }, [overviewNodes, visibleMeta, carrierLoss]);
 
   const overviewRenewalNodes = useMemo(() => {
     if (!themeSettings.isReady || !themeSettings.overviewFollowGroup) return renewalNodes;
@@ -1343,8 +1438,9 @@ export function NodeGrid() {
           onWarmTraffic={warmTrafficPage}
           username={loggedIn ? (themeSettings.adminNickname || me?.username || "Admin") : "Guest"}
           loggedIn={loggedIn}
-          todayTrafficTotal={todayTrafficTotal}
-          todayTrafficLoading={todayTrafficQuery.isPending}
+          todayTrafficTotal={finalTodayTrafficTotal}
+          todayTrafficLoading={finalTodayTrafficTotal === null && todayTrafficQuery.isPending}
+          todayTrafficHourly={todayTrafficHourly}
           visibleNodes={visibleNodes}
           nameByUuid={nameByUuid}
           clusterOverviewMode={themeSettings.clusterOverviewMode}
@@ -1355,6 +1451,11 @@ export function NodeGrid() {
           matrixCustomPattern={themeSettings.matrixCustomPattern}
           overviewCards={themeSettings.overviewCards}
           overviewCardOrder={themeSettings.overviewCardOrder}
+          overviewCardVisualMode={themeSettings.overviewCardVisualMode}
+          overviewMicroVisualMode={themeSettings.overviewMicroVisualMode}
+          overviewStaticCards={themeSettings.overviewStaticCards}
+          costCurrency={themeSettings.costCurrency}
+          exchangeRates={rateQuery.data?.rates}
         />
       )}
     </>

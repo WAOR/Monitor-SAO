@@ -212,21 +212,32 @@ function getMockNodes(): NodeInfo[] {
     return BASE_NODES;
   }
 
-  // 如果用户指定了像 ?mock=1&nodes=60 或 100，自动扩充复制
-  const DIVERSE_REGIONS = [
-    "NL", "GB", "FR", "KR", "CA", "TW", "SE", "CH", "IN", "BR", "RU", "ZA", "IT", "ES",
+  // 如果用户指定了像 ?mock=1&nodes=60 或 100，自动扩充丰富节点（城市名称与国家地区国旗严格对齐）
+  const DIVERSE_LOCATIONS: { city: string; region: string; role: string }[] = [
+    { city: "London", region: "GB", role: "Gateway" },
+    { city: "Paris", region: "FR", role: "Proxy" },
+    { city: "Amsterdam", region: "NL", role: "CDN" },
+    { city: "Seoul", region: "KR", role: "Edge" },
+    { city: "Toronto", region: "CA", role: "Worker" },
+    { city: "Taipei", region: "TW", role: "Cache" },
+    { city: "Stockholm", region: "SE", role: "Storage" },
+    { city: "Zurich", region: "CH", role: "Core" },
+    { city: "Mumbai", region: "IN", role: "API" },
+    { city: "São Paulo", region: "BR", role: "Cluster" },
+    { city: "Milan", region: "IT", role: "Host" },
+    { city: "Madrid", region: "ES", role: "Relay" },
   ];
   const result: NodeInfo[] = [...BASE_NODES];
   let i = BASE_NODES.length;
   while (result.length < targetCount) {
     const template = BASE_NODES[i % BASE_NODES.length]!;
-    const copyIndex = Math.floor(i / BASE_NODES.length) + 1;
-    const extraRegion = DIVERSE_REGIONS[(i - BASE_NODES.length) % DIVERSE_REGIONS.length];
+    const loc = DIVERSE_LOCATIONS[(i - BASE_NODES.length) % DIVERSE_LOCATIONS.length]!;
+    const cycle = Math.floor((i - BASE_NODES.length) / DIVERSE_LOCATIONS.length) + 1;
     result.push({
       ...template,
-      region: extraRegion,
-      uuid: `${template.uuid}-sub-${copyIndex}`,
-      name: `${template.name} #${copyIndex}`,
+      region: loc.region,
+      uuid: `${loc.city.toLowerCase().replace(/[^a-z0-9]/g, "-")}-sub-${cycle.toString().padStart(2, "0")}`,
+      name: `${loc.city} ${loc.role} #${cycle}`,
       weight: template.weight + i * 5,
       ipv4: `203.0.113.${(10 + i) % 250}`,
       ipv6: `2001:db8::${(10 + i).toString(16)}`,
@@ -502,16 +513,50 @@ function trafficMetricPayload(params: {
 }
 
 const pingTasks = [
-  { id: 1, name: "中国电信", target: "电信探针" },
-  { id: 2, name: "中国联通", target: "联通探针" },
-  { id: 3, name: "中国移动", target: "移动探针" },
+  {
+    id: 1,
+    name: "中国电信",
+    target: "电信探针",
+    clients: nodes.map((node) => node.uuid),
+  },
+  {
+    id: 2,
+    name: "中国联通",
+    target: "联通探针",
+    clients: nodes.map((node) => node.uuid),
+  },
+  {
+    id: 3,
+    name: "中国移动",
+    target: "移动探针",
+    clients: nodes.map((node) => node.uuid),
+  },
+  {
+    id: 4,
+    name: "香港 PCCW",
+    target: "香港探针",
+    // 模拟部分绑定：仅绑定亚太节点，法兰克福、纽约、悉尼未分配
+    clients: ["hong-kong-cache-01", "tokyo-edge-01", "singapore-api-01"],
+  },
+  {
+    id: 5,
+    name: "美西 HE",
+    target: "洛杉矶探针",
+    // 模拟部分绑定：仅绑定北美与东京节点，其它节点未分配
+    clients: ["new-york-worker-01", "tokyo-edge-01"],
+  },
+  {
+    id: 6,
+    name: "欧洲 TELIA",
+    target: "法兰克福探针",
+    clients: nodes.map((node) => node.uuid),
+  },
 ].map((task, index) => ({
-  ...task,
   interval: 60,
   loss: 0,
-  clients: nodes.map((node) => node.uuid),
   type: "icmp",
   weight: index + 1,
+  ...task,
 }));
 
 function pingMetricPayload(params: {
@@ -535,15 +580,31 @@ function pingMetricPayload(params: {
     const index = nodes.findIndex((node) => node.uuid === uuid);
     if (index < 0) return [];
     const profile = getNodeStatusProfile(index, nodes[index]);
-    return tasks.flatMap((task) =>
-      metricKeys.map((metricKey) => ({
+    return tasks.flatMap((task) => {
+      // 模拟探针后台：若此测速任务未分配给该节点，则不产生监控指标序列，触发前台「—」占位
+      if (task.clients && !task.clients.includes(uuid)) {
+        return [];
+      }
+      return metricKeys.map((metricKey) => ({
         metric_key: metricKey,
         entity_id: uuid,
         series_name: task.name,
         interval_seconds: intervalMs / 1000,
         points: Array.from({ length: pointCount }, (_, pointIndex) => {
           const time = new Date(start + (pointIndex + 1) * intervalMs).toISOString();
-          const lost = !profile[9] || (index % 11 === 0 && pointIndex % 17 === 0);
+          // 差异化模拟三网丢包：
+          // task.id === 1 (中国电信 CT): 极佳健康 (约 0.5% 丢包，低柱 极光紫)
+          // task.id === 2 (中国联通 CU): 轻度波动 (约 6.7% 丢包，中柱 警告黄)
+          // task.id === 3 (中国移动 CM): 严重拥塞 (约 25.0% 丢包，高柱 报警红)
+          const lost =
+            !profile[9] ||
+            (task.id === 1
+              ? index === 0 && pointIndex % 180 === 0
+              : task.id === 2
+                ? pointIndex % 15 === 0
+                : task.id === 3
+                  ? pointIndex % 4 === 0
+                  : index % 11 === 0 && pointIndex % 17 === 0);
           if (metricKey === "ping.loss") {
             return { time, value: lost ? 1 : 0, count: 1 };
           }
@@ -559,14 +620,16 @@ function pingMetricPayload(params: {
             count: 1,
           };
         }),
-      })),
-    );
+      }));
+    });
   });
   return series;
 }
 
 function pingRecords(uuid?: string, taskId = 1) {
-  const clients = uuid ? [uuid] : nodes.map((node) => node.uuid);
+  const task = pingTasks.find((t) => t.id === taskId);
+  const rawClients = uuid ? [uuid] : nodes.map((node) => node.uuid);
+  const clients = task?.clients ? rawClients.filter((c) => task.clients.includes(c)) : rawClients;
   const now = Date.now();
   return clients.flatMap((client) => {
     const index = Math.max(0, nodes.findIndex((node) => node.uuid === client));
@@ -595,17 +658,32 @@ function json(data: unknown, init?: ResponseInit) {
 
 export function installDevMockApi() {
   const nativeFetch = window.fetch.bind(window);
-  // ?mock=1 默认模拟已登录管理员,放开 /api/admin/*,ThemeManage 才可在 dev 正常保存。显式 ?admin=0 模拟未授权。
-  const adminMode = new URLSearchParams(window.location.search).get("admin") !== "0";
+  const searchParams = new URLSearchParams(window.location.search);
+  const adminMode = searchParams.get("admin") !== "0";
+  const urlTemplate = searchParams.get("template");
+  const urlViewMode = searchParams.get("viewMode");
+  const urlAppearance = searchParams.get("appearance");
   // 保存后的主题设置驻留内存与本地存储，让「保存 → /api/public refetch」以及刷新页面闭环。
   const defaultTheme = "SAO";
   const MOCK_STORAGE_KEY = "monitor_mock_theme_settings";
   const LEGACY_STORAGE_KEY = "komari_mock_theme_settings";
   const defaultMockThemeSettings: Record<string, unknown> = {
-    desktopNodeViewMode: "compact",
+    serverCardTemplate:
+      urlTemplate === "layered" || urlTemplate === "classic"
+        ? urlTemplate
+        : "layered",
+    desktopNodeViewMode:
+      urlViewMode === "large" || urlViewMode === "compact" || urlViewMode === "mini" || urlViewMode === "list"
+        ? urlViewMode
+        : "compact",
     mobileNodeViewMode: "compact",
+    ...(urlAppearance === "light" || urlAppearance === "dark" || urlAppearance === "system"
+      ? { defaultAppearance: urlAppearance }
+      : {}),
     clusterOverviewMode: "classic",
     showHomeOverview: true,
+    overviewCardVisualMode: "visual",
+    overviewMicroVisualMode: "dynamic",
     showGroupTabs: true,
     showRegionBar: true,
     showCardGroup: true,
@@ -621,7 +699,7 @@ export function installDevMockApi() {
     // 单任务刻意和三网首项不同，便于回归验证列表没有误读全局三网数据。
     homepagePingBindings: { "2": nodes.map((node) => node.uuid) },
     enableHomepageMultiPing:
-      new URLSearchParams(window.location.search).get("multiPing") === "1",
+      new URLSearchParams(window.location.search).get("multiPing") !== "0",
     homepageMultiPingTaskIds: [1, 2, 3],
   };
 
@@ -733,6 +811,93 @@ export function installDevMockApi() {
       return json(pingTasks);
     }
 
+    if (url.pathname === "/api/ping-tasks") {
+      return json({ tasks: pingTasks });
+    }
+
+    const nodeMetricsMatch = url.pathname.match(/^\/api\/nodes\/([^/]+)\/metrics$/);
+    if (nodeMetricsMatch) {
+      const targetUuid = decodeURIComponent(nodeMetricsMatch[1]);
+      const nodeIndex = Math.max(0, nodes.findIndex((n) => n.uuid === targetUuid));
+      const node = nodes[nodeIndex] || nodes[0];
+      const profile = getNodeStatusProfile(nodeIndex, node);
+      const isOnline = profile[9];
+      const baseLatency = profile[4];
+
+      const hours = Math.max(1, Math.min(Number(url.searchParams.get("hours")) || 1, 8760));
+      const requestedPoints = Math.max(10, Math.min(Number(url.searchParams.get("points")) || 60, 300));
+      const seriesType = url.searchParams.get("series"); // "ping" | "metrics" | null
+
+      const nowSec = Math.floor(Date.now() / 1000);
+      const intervalSec = Math.max(60, Math.floor((hours * 3600) / requestedPoints));
+      const pointCount = Math.min(requestedPoints, Math.floor((hours * 3600) / intervalSec));
+
+      const probes: Record<string, string> = {};
+      const loss: Record<string, number> = {};
+      for (const task of pingTasks) {
+        if (!task.clients || task.clients.includes(targetUuid)) {
+          probes[String(task.id)] = task.name;
+          loss[String(task.id)] = isOnline ? (nodeIndex % 7 === 1 && task.id === 2 ? 2.1 : 0) : 100;
+        }
+      }
+
+      const pingPoints: Array<{
+        task_id: number;
+        ts: number;
+        latency: number | null;
+        loss: number;
+      }> = [];
+
+      if (seriesType === "ping" || !seriesType) {
+        for (let i = 0; i < pointCount; i++) {
+          const ts = nowSec - (pointCount - 1 - i) * intervalSec;
+          for (const task of pingTasks) {
+            if (task.clients && !task.clients.includes(targetUuid)) {
+              continue;
+            }
+            const jitter = Math.sin((ts / 120) + task.id + nodeIndex) * 4;
+            const taskOffset = (task.id - 1) * 16;
+            const isLost = !isOnline || (nodeIndex % 11 === 0 && i % 17 === 0);
+            pingPoints.push({
+              task_id: task.id,
+              ts,
+              latency: isLost ? null : Math.max(2, Math.round(baseLatency + taskOffset + jitter)),
+              loss: isLost ? 100 : (nodeIndex % 7 === 1 && task.id === 2 ? 2.1 : 0),
+            });
+          }
+        }
+      }
+
+      const historyMetrics: Array<Record<string, unknown>> = [];
+      if (seriesType === "metrics" || !seriesType) {
+        for (let i = 0; i < pointCount; i++) {
+          const ts = nowSec - (pointCount - 1 - i) * intervalSec;
+          historyMetrics.push({
+            time: new Date(ts * 1000).toISOString(),
+            minutes: ts,
+            cpu: isOnline ? Math.round(clamp(profile[0] + Math.sin(i / 5) * 6, 2, 98)) : 0,
+            mem_used: isOnline ? Math.round((node.mem_total * 45) / 100) : 0,
+            swap_used: 0,
+            disk_used: Math.round((node.disk_total * profile[3]) / 100),
+            net_rx: isOnline ? Math.round(profile[6] * (0.8 + 0.4 * Math.sin(i / 3))) : 0,
+            net_tx: isOnline ? Math.round(profile[5] * (0.8 + 0.4 * Math.cos(i / 3))) : 0,
+            tcp: 42,
+            udp: 18,
+            procs: 120,
+            load: profile[1],
+          });
+        }
+      }
+
+      return json({
+        metrics: historyMetrics,
+        ping: pingPoints,
+        probes,
+        loss,
+        step: intervalSec,
+      });
+    }
+
     if (url.pathname === "/api/admin/theme/settings") {
       if (!adminMode) return json({ message: "unauthorized" }, { status: 401 });
       const theme = url.searchParams.get("theme") ?? defaultTheme;
@@ -811,6 +976,7 @@ export function installDevMockApi() {
             ...node,
             id: node.uuid,
             name: node.name,
+            expires_at: node.expired_at,
             group: node.group,
             sort: node.weight,
             public: true,
@@ -832,6 +998,8 @@ export function installDevMockApi() {
               net_tx: up,
               total_rx: totalDown,
               total_tx: totalUp,
+              day_rx: Math.round(totalDown * 0.08),
+              day_tx: Math.round(totalUp * 0.08),
               tcp: 32 + (index % 8) * 14,
               udp: 12 + (index % 5) * 6,
               procs: 80 + (index % 10) * 12,

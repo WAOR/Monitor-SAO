@@ -46,6 +46,7 @@ export interface MonitorNode {
   currency?: string;
   billing_cycle?: string;
   expires_at?: string | null;
+  expired_at?: string | null;
   traffic_limit?: number;
   traffic_mode?: string;
   traffic_reset_day?: number;
@@ -362,7 +363,7 @@ export function convertMonitorNodeToInfo(node: MonitorNode): NodeInfo {
     billing_cycle: node.billing_cycle || "",
     auto_renewal: false,
     currency: node.currency || "CNY",
-    expired_at: node.expires_at || "",
+    expired_at: node.expires_at || node.expired_at || "",
     tags: "",
     public_remark: (typeof node.public_remark === "string" ? node.public_remark : node.remark) || "",
     expires_in: node.expires_in !== undefined ? node.expires_in : undefined,

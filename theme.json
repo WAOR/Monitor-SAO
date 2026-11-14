@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "服务于探针数据呈现本身的高自由度模块化主题，更多主题卡片可安装后在设置页面自由组合搭配。",
-  "version": "1.3.5",
+  "version": "2.0.0",
   "author": "WAOR",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -13,9 +13,9 @@
     {
       "key": "defaultAppearance",
       "type": "select",
-      "label": "色彩模式",
-      "help": "设置深色、浅色或跟随系统外观",
-      "default": "dark",
+      "label": "色彩外观",
+      "help": "设定深色护眼、浅色明亮或跟随系统",
+      "default": "system",
       "options": [
         {
           "value": "system",
@@ -32,10 +32,27 @@
       ]
     },
     {
+      "key": "serverCardTemplate",
+      "type": "select",
+      "label": "卡片底座",
+      "help": "选择节点卡片的设计风格与层级结构",
+      "default": "layered",
+      "options": [
+        {
+          "value": "layered",
+          "label": "SAO 双层底座"
+        },
+        {
+          "value": "classic",
+          "label": "Lumina 经典版"
+        }
+      ]
+    },
+    {
       "key": "desktopNodeViewMode",
       "type": "select",
-      "label": "桌面视图",
-      "help": "电脑端服务器卡片的默认展示样式",
+      "label": "电脑排版",
+      "help": "设定桌面端服务器列表的默认排布样式",
       "default": "large",
       "options": [
         {
@@ -59,8 +76,8 @@
     {
       "key": "mobileNodeViewMode",
       "type": "select",
-      "label": "移动视图",
-      "help": "手机端服务器卡片的默认展示样式",
+      "label": "手机排版",
+      "help": "设定移动端服务器列表的默认排布样式",
       "default": "compact",
       "options": [
         {
@@ -78,55 +95,147 @@
       ]
     },
     {
+      "key": "showGroupTabs",
+      "type": "boolean",
+      "label": "分组标签",
+      "help": "在服务器卡片上方显示分组快捷切换栏",
+      "default": true
+    },
+    {
+      "key": "showUngroupedTab",
+      "type": "boolean",
+      "label": "未分类项",
+      "help": "在分组切换栏中独立展示未分类的服务器",
+      "default": false
+    },
+    {
+      "key": "showRegionBar",
+      "type": "boolean",
+      "label": "国家地区",
+      "help": "在卡片列表上方展示国旗与区域筛选栏",
+      "default": true
+    },
+    {
+      "key": "showCardGroup",
+      "type": "boolean",
+      "label": "节点分组",
+      "help": "在单张服务器卡片副标题标注所属分组",
+      "default": true
+    },
+    {
+      "key": "enableHomeSort",
+      "type": "boolean",
+      "label": "访客排序",
+      "help": "允许访客在首页下拉菜单中自主切换排序",
+      "default": true
+    },
+    {
+      "key": "homeSortField",
+      "type": "select",
+      "label": "默认排序",
+      "help": "首页未手动干预时的节点默认排列基准",
+      "default": "default",
+      "options": [
+        {
+          "value": "default",
+          "label": "后台权重"
+        },
+        {
+          "value": "name",
+          "label": "节点名称"
+        },
+        {
+          "value": "speed",
+          "label": "实时网速"
+        },
+        {
+          "value": "traffic",
+          "label": "今日流量"
+        },
+        {
+          "value": "price",
+          "label": "续费价格"
+        }
+      ]
+    },
+    {
+      "key": "homeSortDirection",
+      "type": "select",
+      "label": "排序规则",
+      "help": "设定首页节点列表按数值升序或降序排列",
+      "default": "asc",
+      "options": [
+        {
+          "value": "asc",
+          "label": "升序排列"
+        },
+        {
+          "value": "desc",
+          "label": "降序排列"
+        }
+      ]
+    },
+    {
+      "key": "hiddenNodes",
+      "type": "string",
+      "label": "隐藏节点",
+      "help": "在首页隐藏的机器名称，多个用逗号隔开",
+      "default": ""
+    },
+    {
+      "type": "title",
+      "label": "集群大盘"
+    },
+    {
       "key": "clusterOverviewMode",
       "type": "select",
-      "label": "展台模式",
-      "help": "选择经典双曲线或机架方格热力矩阵",
+      "label": "大盘形态",
+      "help": "选择双轨实时波形曲线或整屏机架方格",
       "default": "classic",
       "options": [
         {
           "value": "classic",
-          "label": "经典双层 (状态与流量)"
+          "label": "SAO 趋势大盘"
         },
         {
           "value": "nodes",
-          "label": "方格矩阵 (机架全景)"
+          "label": "SAO 方格矩阵"
         }
       ]
     },
     {
       "key": "matrixColorTheme",
       "type": "select",
-      "label": "配色风格",
-      "help": "展台与核心卡片的主题色彩风格",
+      "label": "机架配色",
+      "help": "设定方格矩阵与大盘核心模块的色彩风格",
       "default": "eva",
       "options": [
         {
           "value": "default",
-          "label": "经典监控 (绿·橙·红)"
+          "label": "经典标准 (绿·橙·红)"
         },
         {
           "value": "eva",
-          "label": "初号机 (紫·绿·橙)"
+          "label": "EVA 初号机 (紫·绿·橙)"
         },
         {
           "value": "divergence",
-          "label": "命运石 (暖杏橙)"
+          "label": "命运石之门 (暖杏橙)"
         }
       ]
     },
     {
       "key": "matrixBootAnimation",
       "type": "boolean",
-      "label": "开场动画",
-      "help": "进入首页时播放方格光束横扫动效",
+      "label": "入场扫光",
+      "help": "初次打开首页时播放方格光束入场扫光动效",
       "default": true
     },
     {
       "key": "matrixBootEffect",
       "type": "select",
       "label": "动效样式",
-      "help": "设置进入首页时的开场显影流光",
+      "help": "选择方格矩阵扫光显影时的动态光效表现",
       "default": "laser-scan",
       "options": [
         {
@@ -150,97 +259,9 @@
     {
       "key": "matrixMockFill",
       "type": "boolean",
-      "label": "虚位填满",
-      "help": "用动态模拟数据补齐未接入的空机位",
+      "label": "虚位补全",
+      "help": "用动态呼吸数据补齐方格矩阵未接入的机位",
       "default": false
-    },
-    {
-      "key": "showGroupTabs",
-      "type": "boolean",
-      "label": "分组筛选",
-      "help": "在卡片上方显示分组快捷切换标签",
-      "default": true
-    },
-    {
-      "key": "showUngroupedTab",
-      "type": "boolean",
-      "label": "未分组项",
-      "help": "在分组栏单独展示未分类的服务器",
-      "default": false
-    },
-    {
-      "key": "showRegionBar",
-      "type": "boolean",
-      "label": "地区筛选",
-      "help": "在卡片上方展示国旗地区快捷标签",
-      "default": true
-    },
-    {
-      "key": "showCardGroup",
-      "type": "boolean",
-      "label": "卡片分组",
-      "help": "在服务器卡片副标题标注所属分组",
-      "default": true
-    },
-    {
-      "key": "enableHomeSort",
-      "type": "boolean",
-      "label": "访客排序",
-      "help": "允许访客在首页下拉自主切换排序",
-      "default": true
-    },
-    {
-      "key": "homeSortField",
-      "type": "select",
-      "label": "排序指标",
-      "help": "首页未手动排序时的默认排列依据",
-      "default": "default",
-      "options": [
-        {
-          "value": "default",
-          "label": "默认权重"
-        },
-        {
-          "value": "name",
-          "label": "节点名称"
-        },
-        {
-          "value": "speed",
-          "label": "实时网速"
-        },
-        {
-          "value": "traffic",
-          "label": "今日流量"
-        },
-        {
-          "value": "price",
-          "label": "续费价格"
-        }
-      ]
-    },
-    {
-      "key": "homeSortDirection",
-      "type": "select",
-      "label": "排序方向",
-      "help": "设定默认由小到大或由大到小排布",
-      "default": "asc",
-      "options": [
-        {
-          "value": "asc",
-          "label": "升序排列"
-        },
-        {
-          "value": "desc",
-          "label": "降序排列"
-        }
-      ]
-    },
-    {
-      "key": "hiddenNodes",
-      "type": "string",
-      "label": "隐藏节点",
-      "help": "首页不显示的机器名称，逗号隔开",
-      "default": ""
     },
     {
       "type": "title",
@@ -249,99 +270,120 @@
     {
       "key": "showHomeOverview",
       "type": "boolean",
-      "label": "监控总览",
-      "help": "在首页顶部展示核心数据与资产卡片",
+      "label": "大盘总览",
+      "help": "在首页顶部展示六宫格核心指标与大盘模块",
       "default": true
     },
     {
       "key": "overviewFollowGroup",
       "type": "boolean",
       "label": "分组联动",
-      "help": "切换分组时总览卡片仅统计当前分组",
+      "help": "切换分组时总览大盘仅汇总当前分组节点",
       "default": false
+    },
+    {
+      "key": "overviewCardVisualMode",
+      "type": "select",
+      "label": "卡片形态",
+      "help": "设置指标小卡呈现形式（智能、纯图或文字）",
+      "default": "visual",
+      "options": [
+        {
+          "value": "adaptive",
+          "label": "智能排版"
+        },
+        {
+          "value": "visual",
+          "label": "纯图模式"
+        },
+        {
+          "value": "text",
+          "label": "文字模式"
+        }
+      ]
     },
     {
       "key": "showTrafficPageButton",
       "type": "boolean",
-      "label": "流量入口",
-      "help": "在今日流量卡片显示进入详情页按钮",
+      "label": "流量详情",
+      "help": "在今日流量卡片右上角显示详情跳转按键",
       "default": true
     },
     {
       "key": "showTrafficPageForGuests",
       "type": "boolean",
       "label": "访客流量",
-      "help": "允许未登录访客点击查看详细流量页",
+      "help": "允许未登录访客点击查看详细流量统计页",
       "default": false
     },
     {
       "key": "showCostSummary",
       "type": "boolean",
-      "label": "资产入口",
-      "help": "在资产总值卡片显示进入统计页按钮",
+      "label": "资产统计",
+      "help": "在资产总值卡片右上角显示统计跳转按键",
       "default": true
     },
     {
       "key": "showCostSummaryFloatingButton",
       "type": "boolean",
       "label": "悬浮资产",
-      "help": "未开资产卡片时在右下角悬浮显示入口",
+      "help": "未展示资产卡片时在屏幕右下角悬浮显示入口",
       "default": true
     },
     {
       "key": "showPriceForGuests",
       "type": "boolean",
-      "label": "公开资产",
-      "help": "允许访客查看机器价格与资产总金额",
+      "label": "公开价格",
+      "help": "允许未登录访客查看机器购置价格与续费花费",
       "default": false
     },
     {
       "key": "enableHomepageMultiPing",
       "type": "boolean",
-      "label": "多线延迟",
-      "help": "在卡片上直接呈现多线路延迟连通光柱",
+      "label": "多线测速",
+      "help": "在节点卡片网络区直接展示多线路测速光柱",
       "default": false
     },
     {
       "key": "fakePingForUnbound",
       "type": "boolean",
       "label": "平滑占位",
-      "help": "无探测数据时显示平滑占位保持工整",
+      "help": "节点无测速数据时显示平滑占位保持版面整齐",
       "default": false
     },
     {
       "key": "showTodayTrafficPopover",
       "type": "boolean",
       "label": "当日峰值",
-      "help": "在卡片网络区显示当日出入与峰值按键",
+      "help": "在卡片网络区显示当日出入与尖峰速率按键",
       "default": true
     },
     {
       "key": "showConnections",
       "type": "boolean",
-      "label": "连接数量",
-      "help": "在卡片网络区标注实时网络活跃连接数",
+      "label": "连接总数",
+      "help": "在卡片网络区标注实时网络活跃连接数量",
       "default": false
     },
     {
       "key": "compactShowTrafficTotal",
       "type": "boolean",
-      "label": "累计流量",
-      "help": "在紧凑卡片中展示月度或累计出入总计",
+      "label": "月度流量",
+      "help": "在紧凑卡片中展示月度或累计出入流量总计",
       "default": true
     },
     {
       "key": "compactShowBilling",
       "type": "boolean",
       "label": "计费周期",
-      "help": "在紧凑卡片中保留续费周期时间标注",
+      "help": "在紧凑卡片中标注服务器续费账单计费周期",
       "default": true
     },
     {
       "key": "compactShowUptime",
       "type": "boolean",
       "label": "在线时长",
-      "help": "在紧凑卡片中展示服务器连续开机时间",
+      "help": "在紧凑卡片中展示服务器开机持续运行时间",
       "default": true
     },
     {
@@ -352,14 +394,14 @@
       "key": "costRateApiUrl",
       "type": "string",
       "label": "汇率接口",
-      "help": "外币汇率接口，留空使用官方默认",
+      "help": "外币汇率数据源接口，留空使用官方默认接口",
       "default": "https://open.er-api.com/v6/latest/CNY"
     },
     {
       "key": "costIgnoredNodes",
       "type": "string",
-      "label": "排除机器",
-      "help": "不计入资产的机器名称，逗号隔开",
+      "label": "排除节点",
+      "help": "不计入资产统计的机器名称，多个用逗号隔开",
       "default": ""
     },
     {
@@ -370,14 +412,14 @@
       "key": "showBandwidthRating",
       "type": "boolean",
       "label": "带宽评级",
-      "help": "在集群展台顶部显示实时带宽状态徽章",
+      "help": "在集群大盘标题旁显示全站实时吞吐评级徽章",
       "default": true
     },
     {
       "key": "bandwidthRatingLabels",
       "type": "string",
-      "label": "带宽词库",
-      "help": "从低到高填入4个评价词，以逗号隔开",
+      "label": "评级词库",
+      "help": "从低到高填入 4 个带宽评价词，用逗号隔开",
       "default": ""
     },
     {
@@ -387,15 +429,15 @@
     {
       "key": "enableAdminButton",
       "type": "boolean",
-      "label": "登录入口",
-      "help": "在首页右上角显示管理员登录管理按键",
+      "label": "管理入口",
+      "help": "在首页导航右上角常驻显示管理员登录入口",
       "default": true
     },
     {
       "key": "adminNickname",
       "type": "string",
-      "label": "管理昵称",
-      "help": "登录后在顶部问候语处展示的昵称",
+      "label": "站长昵称",
+      "help": "登录后在页面顶部问候语处呈现的管理员昵称",
       "default": ""
     }
   ]
