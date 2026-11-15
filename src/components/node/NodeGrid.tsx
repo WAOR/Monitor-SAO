@@ -1099,7 +1099,7 @@ export function NodeGrid() {
     return calculateCarrierLoss(
       allPing.multiLines,
       allPing.singleItems,
-      visibleUuids,
+      visibleUuids.length > 0 ? visibleUuids : undefined,
       isMultiPingMode,
     );
   }, [
@@ -1110,6 +1110,14 @@ export function NodeGrid() {
     themeSettings.enableHomepageMultiPing,
     themeSettings.homepageMultiPingTaskIds,
   ]);
+
+  const lastCarrierLossRef = useRef<CarrierLossSummary | null>(null);
+  if (carrierLoss.hasAnyData) {
+    lastCarrierLossRef.current = carrierLoss;
+  }
+  const effectiveCarrierLoss = carrierLoss.hasAnyData
+    ? carrierLoss
+    : (lastCarrierLossRef.current ?? carrierLoss);
 
   const overview = useMemo<HomeOverview>(() => {
     let onlineNodes = 0;
@@ -1202,9 +1210,9 @@ export function NodeGrid() {
       totalProcesses,
       totalCores,
       recentRebootNode,
-      carrierLoss,
+      carrierLoss: effectiveCarrierLoss,
     };
-  }, [overviewNodes, visibleMeta, carrierLoss]);
+  }, [overviewNodes, visibleMeta, effectiveCarrierLoss]);
 
   const overviewRenewalNodes = useMemo(() => {
     if (!themeSettings.isReady || !themeSettings.overviewFollowGroup) return renewalNodes;
