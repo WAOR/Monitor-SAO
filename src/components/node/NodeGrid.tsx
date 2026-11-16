@@ -66,7 +66,12 @@ import {
   type MatrixColorTheme,
   type MatrixBootEffect,
 } from "@/utils/themeSettings";
-import type { OverviewCardId, OverviewCardVisualMode, OverviewMicroVisualMode } from "@/types/komari";
+import type {
+  OverviewCardId,
+  OverviewCardVisualMode,
+  OverviewMicroVisualMode,
+  PublicConfig,
+} from "@/types/komari";
 import type { HourlyTrafficBucket } from "@/utils/trafficStats";
 import { getRenewalReminders, type RenewalReminderSource } from "@/utils/renewalReminder";
 import { DiaTextReveal } from "@/components/ui/DiaTextReveal";
@@ -269,23 +274,48 @@ function HomeOverviewCards({
   const queryClient = useQueryClient();
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
+  const [overrideNickname, setOverrideNickname] = useState<string | null>(null);
+
+  const currentDisplayName = overrideNickname ?? (username || "Guest");
+
+  useEffect(() => {
+    setOverrideNickname(null);
+  }, [username]);
 
   const handleStartEdit = () => {
     if (!loggedIn) return;
-    setTempName(username === "Admin" ? "" : username);
+    setTempName(currentDisplayName === "Admin" ? "" : currentDisplayName);
     setIsEditingName(true);
   };
 
   const handleSaveName = async () => {
     const finalName = tempName.trim().slice(0, 40);
-    if (finalName) {
-      void saveAdminUsername(finalName);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["me"] }),
-        queryClient.invalidateQueries({ queryKey: ["public"] }),
-      ]);
-    }
     setIsEditingName(false);
+    setOverrideNickname(finalName || "Admin");
+
+    // 1. 立即乐观更新 React Query 缓存，确保界面无延迟即时展示新昵称
+    queryClient.setQueryData<PublicConfig>(["public"], (old) => {
+      if (!old) return old;
+      const nextSettings = { ...old.theme_settings };
+      if (finalName) {
+        nextSettings.adminNickname = finalName;
+      } else {
+        delete nextSettings.adminNickname;
+      }
+      return {
+        ...old,
+        theme_settings: nextSettings,
+      };
+    });
+
+    // 2. 等待服务端持久化与本地存储写入完成
+    await saveAdminUsername(finalName);
+
+    // 3. 重新同步确保与服务端数据严格一致
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["me"] }),
+      queryClient.invalidateQueries({ queryKey: ["public"] }),
+    ]);
   };
 
   const onlinePct =
@@ -404,7 +434,7 @@ function HomeOverviewCards({
                 onClick={loggedIn ? handleStartEdit : undefined}
                 title={loggedIn ? "点击快速修改管理员昵称" : undefined}
               >
-                <DiaTextReveal text={username || "Guest"} />
+                <DiaTextReveal text={currentDisplayName} />
                 {loggedIn && (
                   <Pencil
                     size={13}
