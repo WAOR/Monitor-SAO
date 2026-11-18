@@ -1751,6 +1751,10 @@
   font-family: var(--font-sans);
 }
 
+.instance-uplot-wrap .u-over {
+  touch-action: pan-y pinch-zoom;
+}
+
 .instance-uplot-wrap .u-title,
 .instance-uplot-wrap .u-legend {
   display: none;
