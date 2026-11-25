@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { normalizeThemeSettings, THEME_CONFIG_KEYS } from "@/utils/themeSettings";
+import {
+  normalizeThemeSettings,
+  readStoredDarkBrandColor,
+  persistDarkBrandColor,
+  THEME_CONFIG_KEYS,
+} from "@/utils/themeSettings";
 import themeManifest from "../../../theme.json";
 
 describe("normalizeThemeSettings", () => {
@@ -94,6 +99,13 @@ describe("normalizeThemeSettings", () => {
     ).toEqual(["节点A", "uuid-1", "节点B"]);
   });
 
+  it("normalizes enableClusterFlip correctly with default true", () => {
+    expect(normalizeThemeSettings({ enableClusterFlip: true }).enableClusterFlip).toBe(true);
+    expect(normalizeThemeSettings({ enableClusterFlip: false }).enableClusterFlip).toBe(false);
+    expect(normalizeThemeSettings({}).enableClusterFlip).toBe(true);
+    expect(normalizeThemeSettings({ enableClusterFlip: undefined }).enableClusterFlip).toBe(true);
+  });
+
   it("normalizes adminNickname string, trims whitespace and limits length", () => {
     expect(normalizeThemeSettings({}).adminNickname).toBe("");
     expect(normalizeThemeSettings({ adminNickname: "  jerry  " }).adminNickname).toBe("jerry");
@@ -118,7 +130,7 @@ describe("normalizeThemeSettings", () => {
     expect(normalizeThemeSettings({ clusterOverviewMode: "nodes" }).clusterOverviewMode).toBe("nodes");
     expect(normalizeThemeSettings({ clusterOverviewMode: "traffic" as never }).clusterOverviewMode).toBe("classic");
     expect(normalizeThemeSettings({ clusterOverviewMode: "carousel" as never }).clusterOverviewMode).toBe("nodes");
-    expect(normalizeThemeSettings({ clusterOverviewMode: "invalid" as never }).clusterOverviewMode).toBe("classic");
+    expect(normalizeThemeSettings({ clusterOverviewMode: "invalid" as never }).clusterOverviewMode).toBe("nodes");
   });
 
   it("normalizes serverCardTemplate correctly across classic and layered options", () => {
@@ -131,14 +143,16 @@ describe("normalizeThemeSettings", () => {
   it("normalizes matrixColorTheme correctly", () => {
     expect(normalizeThemeSettings({ matrixColorTheme: "default" }).matrixColorTheme).toBe("default");
     expect(normalizeThemeSettings({ matrixColorTheme: "eva" }).matrixColorTheme).toBe("eva");
-    expect(normalizeThemeSettings({ matrixColorTheme: "invalid" as never }).matrixColorTheme).toBe("eva");
+    expect(normalizeThemeSettings({ matrixColorTheme: "divergence" }).matrixColorTheme).toBe("divergence");
+    expect(normalizeThemeSettings({ matrixColorTheme: "aurora" }).matrixColorTheme).toBe("aurora");
+    expect(normalizeThemeSettings({ matrixColorTheme: "invalid" as never }).matrixColorTheme).toBe("aurora");
   });
 
   it("normalizes matrixMockFill correctly", () => {
     expect(normalizeThemeSettings({ matrixMockFill: true }).matrixMockFill).toBe(true);
     expect(normalizeThemeSettings({ matrixMockFill: false }).matrixMockFill).toBe(false);
-    expect(normalizeThemeSettings({ matrixMockFill: "yes" as never }).matrixMockFill).toBe(false);
-    expect(normalizeThemeSettings({}).matrixMockFill).toBe(false);
+    expect(normalizeThemeSettings({ matrixMockFill: "yes" as never }).matrixMockFill).toBe(true);
+    expect(normalizeThemeSettings({}).matrixMockFill).toBe(true);
   });
 
   it("normalizes matrixBootAnimation correctly", () => {
@@ -165,7 +179,7 @@ describe("normalizeThemeSettings", () => {
     expect(colorThemeConfig).toBeDefined();
     const colorValues = (colorThemeConfig?.options || []).map((opt) => opt.value);
     expect(colorValues).not.toContain("cyberpunk");
-    expect(colorValues).toEqual(["default", "eva", "divergence"]);
+    expect(colorValues).toEqual(["default", "eva", "divergence", "aurora"]);
 
     // 提取 theme.json 中除去 pure title 之外的全部实际配置 keys
     const manifestKeys = configs
@@ -175,5 +189,19 @@ describe("normalizeThemeSettings", () => {
     // 确保与 THEME_CONFIG_KEYS 包含相同的字段
     expect(new Set(manifestKeys)).toEqual(new Set(THEME_CONFIG_KEYS));
     expect(manifestKeys.length).toBe(THEME_CONFIG_KEYS.length);
+  });
+
+  it("defaults enableDarkBrandColor to true and normalizes false when explicitly set", () => {
+    expect(normalizeThemeSettings({}).enableDarkBrandColor).toBe(true);
+    expect(normalizeThemeSettings(null).enableDarkBrandColor).toBe(true);
+    expect(normalizeThemeSettings({ enableDarkBrandColor: true }).enableDarkBrandColor).toBe(true);
+    expect(normalizeThemeSettings({ enableDarkBrandColor: false }).enableDarkBrandColor).toBe(false);
+  });
+
+  it("reads and persists dark brand color in localStorage", () => {
+    persistDarkBrandColor(false);
+    expect(readStoredDarkBrandColor()).toBe(false);
+    persistDarkBrandColor(true);
+    expect(readStoredDarkBrandColor()).toBe(true);
   });
 });

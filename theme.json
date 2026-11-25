@@ -2,7 +2,7 @@
   "name": "SAO",
   "short": "sao",
   "description": "服务于探针数据呈现本身的高自由度模块化主题，更多主题卡片可安装后在设置页面自由组合搭配。",
-  "version": "2.0.3",
+  "version": "2.5.0",
   "author": "WAOR",
   "url": "https://github.com/WAOR/Monitor-SAO",
   "config": [
@@ -191,7 +191,7 @@
       "type": "select",
       "label": "大盘形态",
       "help": "选择双轨实时波形曲线或整屏机架方格",
-      "default": "classic",
+      "default": "nodes",
       "options": [
         {
           "value": "classic",
@@ -204,11 +204,18 @@
       ]
     },
     {
+      "key": "enableClusterFlip",
+      "type": "boolean",
+      "label": "3D 翻转交互",
+      "help": "开启后点击大盘卡片可在趋势大盘与方格矩阵间无缝翻面查看",
+      "default": true
+    },
+    {
       "key": "matrixColorTheme",
       "type": "select",
       "label": "机架配色",
       "help": "设定方格矩阵与大盘核心模块的色彩风格",
-      "default": "eva",
+      "default": "aurora",
       "options": [
         {
           "value": "default",
@@ -221,6 +228,10 @@
         {
           "value": "divergence",
           "label": "命运石之门 (暖杏橙)"
+        },
+        {
+          "value": "aurora",
+          "label": "云雾抹茶 (薄雾绿·浓醇抹茶)"
         }
       ]
     },
@@ -261,7 +272,7 @@
       "type": "boolean",
       "label": "虚位补全",
       "help": "用动态呼吸数据补齐方格矩阵未接入的机位",
-      "default": false
+      "default": true
     },
     {
       "type": "title",

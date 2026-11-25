@@ -22,6 +22,7 @@ function createMockNode(overrides: Partial<HomeNodeSummary> = {}): HomeNodeSumma
     diskTotal: 8192,
     connectionsTcp: 10,
     connectionsUdp: 5,
+    uptime: 0,
     ...overrides,
   };
 }

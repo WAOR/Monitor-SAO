@@ -42,6 +42,7 @@ export interface HomeNodeSummary {
   diskTotal: number;
   connectionsTcp: number;
   connectionsUdp: number;
+  uptime: number;
 }
 
 export interface NodeOnlineSummary {
@@ -750,6 +751,7 @@ export function getHomeNodeSummariesSnapshot(): HomeNodeSummary[] {
       diskTotal: metrics?.diskTotal || 0,
       connectionsTcp: metrics?.connectionsTcp || 0,
       connectionsUdp: metrics?.connectionsUdp || 0,
+      uptime: metrics?.online === false ? 0 : metrics?.uptime || 0,
     };
   });
   homeNodeSummariesSnapshotVersion = storeVersion;

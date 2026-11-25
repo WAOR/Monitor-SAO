@@ -1,4 +1,10 @@
 import type { NodeInfo } from "@/types/komari";
+import {
+  DEFAULT_CARD_METRIC_COLORS,
+  DEFAULT_PING_LATENCY_COLORS,
+  DEFAULT_PING_LOSS_COLORS,
+  DEFAULT_TRAFFIC_SPECTRUM_COLORS,
+} from "@/utils/themeSettings";
 
 const MIB = 1024 * 1024;
 const GIB = 1024 * MIB;
@@ -668,6 +674,12 @@ export function installDevMockApi() {
   const MOCK_STORAGE_KEY = "monitor_mock_theme_settings";
   const LEGACY_STORAGE_KEY = "komari_mock_theme_settings";
   const defaultMockThemeSettings: Record<string, unknown> = {
+    matrixColorTheme: "aurora",
+    enablePingLossHatch: true,
+    metricColors: { ...DEFAULT_CARD_METRIC_COLORS },
+    trafficSpectrumColors: { ...DEFAULT_TRAFFIC_SPECTRUM_COLORS },
+    pingLatencyColors: { ...DEFAULT_PING_LATENCY_COLORS },
+    pingLossColors: { ...DEFAULT_PING_LOSS_COLORS },
     serverCardTemplate:
       urlTemplate === "layered" || urlTemplate === "classic"
         ? urlTemplate
@@ -680,7 +692,8 @@ export function installDevMockApi() {
     ...(urlAppearance === "light" || urlAppearance === "dark" || urlAppearance === "system"
       ? { defaultAppearance: urlAppearance }
       : {}),
-    clusterOverviewMode: "classic",
+    clusterOverviewMode: "nodes",
+    enableClusterFlip: true,
     showHomeOverview: true,
     overviewCardVisualMode: "visual",
     overviewMicroVisualMode: "dynamic",
